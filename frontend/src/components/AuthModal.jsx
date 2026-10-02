@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { User, Phone, MapPin, ShieldCheck, X, ArrowRight, UserCheck } from 'lucide-react';
+import { User, Phone, MapPin, X, ArrowRight, UserCheck } from 'lucide-react';
 
-export default function AuthModal({ isOpen, onClose, onLogin, onContinueAsGuest }) {
+export default function AuthModal({ isOpen, onClose, onLogin, onContinueAsGuest, t = (k) => k }) {
   const [formData, setFormData] = useState({
     name: '',
     mobile: '',
@@ -21,7 +21,7 @@ export default function AuthModal({ isOpen, onClose, onLogin, onContinueAsGuest 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.name.trim()) {
-      alert('Pakilagay po ang inyong buong pangalan.');
+      alert(t('fullName'));
       return;
     }
     onLogin({
@@ -39,21 +39,15 @@ export default function AuthModal({ isOpen, onClose, onLogin, onContinueAsGuest 
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <div className="modal-header-row">
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ backgroundColor: 'var(--primary-light)', padding: 8, borderRadius: 6, color: 'var(--primary)' }}>
-              <UserCheck size={20} />
-            </div>
+            <UserCheck size={22} color="var(--primary)" />
             <div>
-              <h3 style={{ fontSize: 18, fontWeight: 700 }}>Pag-login o Rehistro ng Residente</h3>
-              <p style={{ fontSize: 13, color: 'var(--slate-500)' }}>I-save ang iyong profile para sa awtomatikong intake slips</p>
+              <h3>{t('authTitle')}</h3>
+              <p style={{ fontSize: 14, color: 'var(--slate-500)' }}>{t('authSubtitle')}</p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--slate-500)' }}
-          >
+          <button type="button" className="icon-btn" onClick={onClose}>
             <X size={20} />
           </button>
         </div>
@@ -61,55 +55,24 @@ export default function AuthModal({ isOpen, onClose, onLogin, onContinueAsGuest 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label className="form-label">
-              <User size={15} /> Buong Pangalan (Full Name) *
+              <User size={15} /> {t('fullName')} *
             </label>
-            <input
-              type="text"
-              name="name"
-              required
-              placeholder="Hal. Maria Clara De Los Santos"
-              value={formData.name}
-              onChange={handleChange}
-              className="form-input"
-            />
+            <input type="text" name="name" required value={formData.name} onChange={handleChange} className="form-input form-input-lg" />
           </div>
 
           <div className="form-group">
             <label className="form-label">
-              <Phone size={15} /> Numero ng Telepono / Mobile
+              <Phone size={15} /> {t('phone')}
             </label>
-            <input
-              type="tel"
-              name="mobile"
-              placeholder="0917-123-4567"
-              value={formData.mobile}
-              onChange={handleChange}
-              className="form-input"
-            />
+            <input type="tel" name="mobile" value={formData.mobile} onChange={handleChange} className="form-input" />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="form-grid">
             <div className="form-group">
-              <label className="form-label">Lalawigan (Province)</label>
-              <input
-                type="text"
-                name="province"
-                placeholder="Hal. Albay"
-                value={formData.province}
-                onChange={handleChange}
-                className="form-input"
-              />
+              <input type="text" name="province" placeholder="Province" value={formData.province} onChange={handleChange} className="form-input" />
             </div>
             <div className="form-group">
-              <label className="form-label">Lungsod / Bayan</label>
-              <input
-                type="text"
-                name="cityMunicipality"
-                placeholder="Hal. Legazpi City"
-                value={formData.cityMunicipality}
-                onChange={handleChange}
-                className="form-input"
-              />
+              <input type="text" name="cityMunicipality" placeholder="City" value={formData.cityMunicipality} onChange={handleChange} className="form-input" />
             </div>
           </div>
 
@@ -117,32 +80,16 @@ export default function AuthModal({ isOpen, onClose, onLogin, onContinueAsGuest 
             <label className="form-label">
               <MapPin size={15} /> Barangay
             </label>
-            <input
-              type="text"
-              name="barangay"
-              placeholder="Hal. Barangay 14"
-              value={formData.barangay}
-              onChange={handleChange}
-              className="form-input"
-            />
+            <input type="text" name="barangay" value={formData.barangay} onChange={handleChange} className="form-input" />
           </div>
 
           <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
-              Magpatuloy at I-save ang Profile
+            <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%' }}>
+              {t('authSubmit')}
               <ArrowRight size={16} />
             </button>
-
-            <button
-              type="button"
-              className="btn btn-secondary"
-              style={{ width: '100%' }}
-              onClick={() => {
-                onContinueAsGuest();
-                onClose();
-              }}
-            >
-              Magpatuloy bilang Bisita (Continue as Guest)
+            <button type="button" className="btn btn-secondary btn-lg" style={{ width: '100%' }} onClick={() => { onContinueAsGuest(); onClose(); }}>
+              {t('continueAsGuest')}
             </button>
           </div>
         </form>
