@@ -6,6 +6,7 @@ import DamageAssessmentForm from './components/DamageAssessmentForm';
 import SubsidyCatalog from './components/SubsidyCatalog';
 import OfficialApplicationView from './components/OfficialApplicationView';
 import SavedApplicationsList from './components/SavedApplicationsList';
+import RecoveryDashboard from './components/RecoveryDashboard';
 import { translations } from './utils/translations';
 
 export default function App() {
@@ -118,14 +119,23 @@ export default function App() {
           {activeTab === 'landing' && (
             <LandingPage
               onStartAssessment={() => {
-                setActiveTab('assessment');
+                setActiveTab('dashboard');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
               onContinueAsGuest={() => {
                 handleContinueAsGuest();
-                setActiveTab('assessment');
+                setActiveTab('dashboard');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
+              t={t}
+            />
+          )}
+
+          {activeTab === 'dashboard' && (
+            <RecoveryDashboard
+              onStartCase={() => setActiveTab('assessment')}
+              onOpenPrograms={() => setActiveTab('subsidies')}
+              onOpenRecords={() => setActiveTab('saved')}
               t={t}
             />
           )}
@@ -152,12 +162,13 @@ export default function App() {
               initialData={selectedApplicationData}
               user={user}
               t={t}
+              lang={lang}
               onSavedSuccess={() => {}}
             />
           )}
 
           {activeTab === 'saved' && (
-            <SavedApplicationsList onSelectApplication={handleSelectSavedApplication} />
+            <SavedApplicationsList onSelectApplication={handleSelectSavedApplication} t={t} lang={lang} />
           )}
         </main>
 

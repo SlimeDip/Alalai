@@ -1,56 +1,27 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Archive,
   Printer,
   Trash2,
   Eye,
-  Calendar,
   MapPin,
-  RefreshCw,
-  Search,
-  FileCheck
+  RefreshCw
 } from 'lucide-react';
+import { readSavedApplications, writeSavedApplications } from '../utils/mockData';
 
-export default function SavedApplicationsList({ onSelectApplication }) {
-  const [applications, setApplications] = useState([]);
-  const [loading, setLoading] = useState(true);
+export default function SavedApplicationsList({ onSelectApplication, t = (key) => key, lang = 'en' }) {
+  const [applications, setApplications] = useState(() => readSavedApplications());
   const [searchTerm, setSearchTerm] = useState('');
 
-  useEffect(() => {
-    fetchApplications();
-  }, []);
-
-  const fetchApplications = async () => {
-    try {
-      setLoading(true);
-      const res = await fetch('/api/applications');
-      const data = await res.json();
-      if (data.success) {
-        setApplications(data.data);
-      }
-    } catch (err) {
-      console.error('Failed to fetch applications:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleDelete = async (id, refNum) => {
-    if (!window.confirm(`Sigurado ka bang nais mong burahin ang rekord ${refNum}?`)) {
+    if (!window.confirm(`${t('deleteRecordConfirm')} ${refNum}?`)) {
       return;
     }
-
-    try {
-      const res = await fetch(`/api/applications/${id}`, { method: 'DELETE' });
-      const data = await res.json();
-      if (data.success) {
-        setApplications((prev) => prev.filter((a) => a.id !== id));
-      } else {
-        alert('Nabigo ang pagbura: ' + data.error);
-      }
-    } catch (err) {
-      alert('Error sa pagbura: ' + err.message);
-    }
+    setApplications((prev) => {
+      const next = prev.filter((a) => a.id !== id);
+      writeSavedApplications(next);
+      return next;
+    });
   };
 
   const filtered = applications.filter((app) => {
@@ -70,39 +41,35 @@ export default function SavedApplicationsList({ onSelectApplication }) {
         <div>
           <h2 className="card-heading">
             <Archive size={20} color="var(--primary)" />
-            Mga Naitalang Aplikasyon sa Database
+            {t('recordsTitle')}
           </h2>
           <p className="card-subheading">
-            Talaan ng mga na-save na intake forms sa lokal na SQLite database.
+            {t('recordsSubtitle')}
           </p>
         </div>
 
         <button
           type="button"
           className="btn btn-secondary btn-sm"
-          onClick={fetchApplications}
+          onClick={() => setApplications(readSavedApplications())}
         >
-          <RefreshCw size={14} /> I-refresh
+          <RefreshCw size={14} /> {t('refresh')}
         </button>
       </div>
 
       <div style={{ marginBottom: 18 }}>
         <input
           type="text"
-          placeholder="Maghanap ayon sa Pangalan, Reference Blg, o Munisipyo..."
+          placeholder={t('recordsSearch')}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="form-input"
         />
       </div>
 
-      {loading ? (
-        <div style={{ textAlign: 'center', padding: '30px 0', color: 'var(--slate-500)' }}>
-          Ikinakarga ang mga naitalang rekord...
-        </div>
-      ) : filtered.length === 0 ? (
+      {filtered.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--slate-500)' }}>
-          Walang natagpuang aplikasyon. Maaari kang mag-save ng bago mula sa tab na Intake Form.
+          {t('recordsEmpty')}
         </div>
       ) : (
         <div>
@@ -129,7 +96,7 @@ export default function SavedApplicationsList({ onSelectApplication }) {
                       {item.reference_number}
                     </strong>
                     <span className="badge badge-agency">
-                      {item.damage_level}
+                      {item.damage_level || t('draft')}
                     </span>
                     <span style={{ fontSize: 12, color: 'var(--slate-500)' }}>
                       {item.incident_date}
@@ -152,14 +119,14 @@ export default function SavedApplicationsList({ onSelectApplication }) {
                     className="btn btn-primary btn-sm"
                     onClick={() => onSelectApplication(item)}
                   >
-                    <Eye size={14} /> Buksan / I-print
+                    <Eye size={14} /> {t('openPrint')}
                   </button>
 
                   <button
                     type="button"
                     className="btn btn-secondary btn-sm"
                     onClick={() => handleDelete(item.id, item.reference_number)}
-                    title="Burahin"
+                    title={t('delete')}
                   >
                     <Trash2 size={14} color="var(--rose-700)" />
                   </button>

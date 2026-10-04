@@ -1,7 +1,8 @@
 /**
  * Client-side damage assessment (no external AI API).
- * Uses simple keyword heuristics and matches against subsidy catalog from the API.
+ * Uses simple keyword heuristics and matches against the local prototype catalog.
  */
+import { mockSubsidies } from './mockData';
 
 function analyzeText({ disasterType, damageDescription, householdSize = 3 }) {
   const text = (damageDescription || '').toLowerCase();
@@ -185,19 +186,10 @@ export async function runLocalDamageAssessment(formPayload) {
     core.estimated_cost_max = 40000;
   }
 
-  let subsidies = [];
-  try {
-    const res = await fetch('/api/subsidies');
-    const data = await res.json();
-    if (data.success) subsidies = data.data;
-  } catch {
-    subsidies = [];
-  }
-
   const id = 'LOCAL-' + Date.now().toString(36).toUpperCase();
   return {
     id,
     ...core,
-    matched_subsidies: matchSubsidies(core, subsidies)
+    matched_subsidies: matchSubsidies(core, mockSubsidies)
   };
 }

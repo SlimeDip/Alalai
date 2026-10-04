@@ -21,8 +21,9 @@ export default function Header({
 
   const navItems = [
     { id: 'landing', label: t('home') },
+    { id: 'dashboard', label: t('dashboard') },
     { id: 'assessment', label: t('assessment') },
-    { id: 'application', label: t('application') },
+    { id: 'subsidies', label: t('subsidies') },
     { id: 'saved', label: t('records') }
   ];
 

@@ -1,28 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Layers, ArrowRight, Search, X } from 'lucide-react';
+import { mockSubsidies } from '../utils/mockData';
 
 export default function SubsidyCatalog({ onSelectSubsidyForApplication, t, lang = 'en' }) {
-  const [subsidies, setSubsidies] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [subsidies] = useState(mockSubsidies);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedModalSubsidy, setSelectedModalSubsidy] = useState(null);
-
-  useEffect(() => {
-    fetchSubsidies();
-  }, []);
-
-  const fetchSubsidies = async () => {
-    try {
-      setLoading(true);
-      const res = await fetch('/api/subsidies');
-      const data = await res.json();
-      if (data.success) setSubsidies(data.data);
-    } catch (err) {
-      console.error('Failed to fetch subsidies:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const filtered = subsidies.filter((sub) => {
     const q = searchTerm.toLowerCase();
@@ -55,10 +38,7 @@ export default function SubsidyCatalog({ onSelectSubsidyForApplication, t, lang 
           />
         </div>
 
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--slate-500)' }}>…</div>
-        ) : (
-          <div className="subsidy-grid" style={{ marginTop: 20 }}>
+        <div className="subsidy-grid" style={{ marginTop: 20 }}>
             {filtered.map((sub) => (
               <div key={sub.id} className="subsidy-card">
                 <div>
@@ -82,8 +62,7 @@ export default function SubsidyCatalog({ onSelectSubsidyForApplication, t, lang 
                 </div>
               </div>
             ))}
-          </div>
-        )}
+        </div>
       </div>
 
       {selectedModalSubsidy && (

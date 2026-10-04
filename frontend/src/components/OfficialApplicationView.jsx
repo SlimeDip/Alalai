@@ -15,12 +15,14 @@ import {
   Calendar,
   AlertTriangle
 } from 'lucide-react';
+import { readSavedApplications, writeSavedApplications } from '../utils/mockData';
 
 export default function OfficialApplicationView({
   initialData,
   user,
   onSavedSuccess,
-  t = (k) => k
+  t = (k) => k,
+  lang = 'en'
 }) {
   const [activeView, setActiveView] = useState('editor'); // 'editor' | 'preview'
   const [formData, setFormData] = useState({
@@ -141,25 +143,21 @@ export default function OfficialApplicationView({
     setSaving(true);
     setSaveSuccess('');
     try {
-      const res = await fetch('/api/applications', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Failed to save application.');
-      }
-
-      setFormData((prev) => ({
-        ...prev,
-        id: data.data.id,
-        reference_number: data.data.reference_number,
-        status: data.data.status
-      }));
-
-      setSaveSuccess(`Naitala ang aplikasyon! Reference: ${data.data.reference_number}`);
-      if (onSavedSuccess) onSavedSuccess(data.data);
+      const id = formData.id || `LOCAL-${Date.now().toString(36).toUpperCase()}`;
+      const referenceNumber = formData.reference_number || `AL-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}`;
+      const savedApplication = {
+        ...formData,
+        id,
+        reference_number: referenceNumber,
+        status: 'DRAFT',
+        saved_at: new Date().toISOString(),
+        applicant_name: formData.applicant_name || user?.name || 'Guest'
+      };
+      const existing = readSavedApplications().filter((item) => item.id !== id);
+      writeSavedApplications([savedApplication, ...existing]);
+      setFormData((prev) => ({ ...prev, id, reference_number: referenceNumber, status: 'DRAFT' }));
+      setSaveSuccess(`${t('recordSaved')} ${referenceNumber}`);
+      if (onSavedSuccess) onSavedSuccess(savedApplication);
     } catch (err) {
       console.error(err);
       alert('May aberya sa pag-save: ' + err.message);
@@ -236,12 +234,12 @@ export default function OfficialApplicationView({
       {activeView === 'editor' && (
         <div className="flow-card no-print">
           <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 16, color: 'var(--slate-900)' }}>
-            I. Detalye ng Aplikante at Tirahan
+            {t('applicantDetailsSection')}
           </h3>
 
           <div className="form-grid">
             <div className="form-group">
-              <label className="form-label">Buong Pangalan ng Aplikante *</label>
+              <label className="form-label">{t('fullName')} *</label>
               <input
                 type="text"
                 name="applicant_name"
@@ -253,7 +251,7 @@ export default function OfficialApplicationView({
             </div>
 
             <div className="form-group">
-              <label className="form-label">Edad (Age)</label>
+              <label className="form-label">{t('age')}</label>
               <input
                 type="number"
                 name="applicant_age"
@@ -264,7 +262,7 @@ export default function OfficialApplicationView({
             </div>
 
             <div className="form-group">
-              <label className="form-label">Katayuang Sibil</label>
+              <label className="form-label">{t('civilStatus')}</label>
               <select
                 name="civil_status"
                 value={formData.civil_status}
@@ -279,7 +277,7 @@ export default function OfficialApplicationView({
             </div>
 
             <div className="form-group">
-              <label className="form-label">Uri ng Valid ID</label>
+              <label className="form-label">{t('idType')}</label>
               <select
                 name="valid_id_type"
                 value={formData.valid_id_type}
@@ -296,7 +294,7 @@ export default function OfficialApplicationView({
             </div>
 
             <div className="form-group">
-              <label className="form-label">Numero ng ID</label>
+              <label className="form-label">{t('idNumber')}</label>
               <input
                 type="text"
                 name="valid_id_number"
@@ -308,7 +306,7 @@ export default function OfficialApplicationView({
             </div>
 
             <div className="form-group">
-              <label className="form-label">Telepono / Cellphone</label>
+              <label className="form-label">{t('phone')}</label>
               <input
                 type="text"
                 name="contact_number"
@@ -322,7 +320,7 @@ export default function OfficialApplicationView({
 
           <div className="form-grid" style={{ marginTop: 8 }}>
             <div className="form-group">
-              <label className="form-label">Purok / Kalye</label>
+              <label className="form-label">{t('street')}</label>
               <input
                 type="text"
                 name="purok_street"
@@ -334,7 +332,7 @@ export default function OfficialApplicationView({
             </div>
 
             <div className="form-group">
-              <label className="form-label">Barangay *</label>
+              <label className="form-label">{t('barangay')} *</label>
               <input
                 type="text"
                 name="barangay"
@@ -345,7 +343,7 @@ export default function OfficialApplicationView({
             </div>
 
             <div className="form-group">
-              <label className="form-label">Lungsod / Bayan *</label>
+              <label className="form-label">{t('city')} *</label>
               <input
                 type="text"
                 name="city_municipality"
@@ -356,7 +354,7 @@ export default function OfficialApplicationView({
             </div>
 
             <div className="form-group">
-              <label className="form-label">Lalawigan (Province) *</label>
+              <label className="form-label">{t('province')} *</label>
               <input
                 type="text"
                 name="province"
@@ -368,12 +366,12 @@ export default function OfficialApplicationView({
           </div>
 
           <h3 style={{ fontSize: 16, fontWeight: 800, margin: '24px 0 14px 0', color: 'var(--slate-900)' }}>
-            II. Detalye ng Kalamidad at Pinsala
+            {t('disasterDetailsSection')}
           </h3>
 
           <div className="form-grid">
             <div className="form-group">
-              <label className="form-label">Kalamidad (Disaster Event)</label>
+              <label className="form-label">{t('disasterEvent')}</label>
               <input
                 type="text"
                 name="disaster_type"
@@ -384,7 +382,7 @@ export default function OfficialApplicationView({
             </div>
 
             <div className="form-group">
-              <label className="form-label">Petsa ng Sakuna</label>
+              <label className="form-label">{t('disasterDate')}</label>
               <input
                 type="date"
                 name="incident_date"
@@ -395,7 +393,7 @@ export default function OfficialApplicationView({
             </div>
 
             <div className="form-group">
-              <label className="form-label">Tantiya ng Halaga ng Pinsala (₱)</label>
+              <label className="form-label">{t('estimatedDamage')}</label>
               <input
                 type="number"
                 name="estimated_damage_php"
@@ -406,7 +404,7 @@ export default function OfficialApplicationView({
             </div>
 
             <div className="form-group">
-              <label className="form-label">Hinihiling na Halaga ng Ayuda (₱)</label>
+              <label className="form-label">{t('requestedAmount')}</label>
               <input
                 type="number"
                 name="requested_amount_php"
@@ -418,7 +416,7 @@ export default function OfficialApplicationView({
           </div>
 
           <div className="form-group" style={{ marginTop: 8 }}>
-            <label className="form-label">Opisyal na Buod ng Pinsala</label>
+            <label className="form-label">{t('damageSummary')}</label>
             <textarea
               name="damage_summary"
               rows={3}
@@ -429,7 +427,7 @@ export default function OfficialApplicationView({
           </div>
 
           <div className="form-group">
-            <label className="form-label">Pangangailangan ng Pamilya (Declared Needs)</label>
+            <label className="form-label">{t('declaredNeeds')}</label>
             <input
               type="text"
               name="declared_needs"
@@ -442,13 +440,13 @@ export default function OfficialApplicationView({
           {/* Household members list */}
           <div style={{ marginTop: 20 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-              <strong style={{ fontSize: 15 }}>Kasama sa Tirahan (Household Members):</strong>
+              <strong style={{ fontSize: 15 }}>{t('householdMembers')}</strong>
               <button
                 type="button"
                 className="btn btn-secondary btn-sm"
                 onClick={handleAddMember}
               >
-                <Plus size={14} /> Magdagdag
+                <Plus size={14} /> {t('addMember')}
               </button>
             </div>
 
@@ -544,9 +542,9 @@ export default function OfficialApplicationView({
                 </div>
 
                 <div className="official-meta-bar">
-                  <span>REFERENCE BLG: <strong>{formData.reference_number || 'TBA SA PAG-SAVE'}</strong></span>
-                  <span>PETSA: <strong>{new Date().toLocaleDateString('fil-PH', { year: 'numeric', month: 'long', day: 'numeric' })}</strong></span>
-                  <span>KATAYUAN: <strong>{formData.status}</strong></span>
+                  <span>{t('referenceNumber')}: <strong>{formData.reference_number || t('toBeSaved')}</strong></span>
+                  <span>{t('dateLabel')}: <strong>{new Date().toLocaleDateString(lang === 'tl' ? 'fil-PH' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</strong></span>
+                  <span>{t('statusLabel')}: <strong>{formData.status}</strong></span>
                 </div>
               </div>
 
@@ -559,11 +557,11 @@ export default function OfficialApplicationView({
                   <tr>
                     <th style={{ width: '25%' }}>Pangalan ng Ulo ng Pamilya</th>
                     <td style={{ width: '45%' }}><strong>{formData.applicant_name || '________________________'}</strong></td>
-                    <th style={{ width: '15%' }}>Edad</th>
+                    <th style={{ width: '15%' }}>{t('age')}</th>
                     <td style={{ width: '15%' }}>{formData.applicant_age || '___'} taong gulang</td>
                   </tr>
                   <tr>
-                    <th>Katayuang Sibil</th>
+                    <th>{t('civilStatus')}</th>
                     <td>{formData.civil_status}</td>
                     <th>Telepono</th>
                     <td>{formData.contact_number || 'N/A'}</td>
@@ -594,7 +592,7 @@ export default function OfficialApplicationView({
                   <tr>
                     <th style={{ width: '25%' }}>Uri ng Kalamidad</th>
                     <td style={{ width: '40%' }}><strong>{formData.disaster_type}</strong></td>
-                    <th style={{ width: '15%' }}>Petsa ng Sakuna</th>
+                    <th style={{ width: '15%' }}>{t('disasterDate')}</th>
                     <td style={{ width: '20%' }}>{formData.incident_date}</td>
                   </tr>
                   <tr>
@@ -606,7 +604,7 @@ export default function OfficialApplicationView({
                     <td><strong>₱{Number(formData.estimated_damage_php || 0).toLocaleString()}</strong></td>
                   </tr>
                   <tr>
-                    <th>Opisyal na Buod ng Pinsala</th>
+                    <th>{t('damageSummary')}</th>
                     <td colSpan={3} style={{ fontStyle: 'italic', padding: '6px' }}>
                       "{formData.damage_summary || 'Naisagawa ang pagsusuri batay sa testimonya ng mamamayan.'}"
                     </td>
@@ -625,7 +623,7 @@ export default function OfficialApplicationView({
                     </td>
                   </tr>
                   <tr>
-                    <th>Pangangailangan ng Pamilya</th>
+                    <th>{t('declaredNeeds')}</th>
                     <td colSpan={3}>{formData.declared_needs}</td>
                   </tr>
                 </tbody>
@@ -639,9 +637,9 @@ export default function OfficialApplicationView({
                 <thead>
                   <tr>
                     <th style={{ width: '8%' }}>Blg.</th>
-                    <th style={{ width: '52%' }}>Buong Pangalan</th>
-                    <th style={{ width: '15%' }}>Edad</th>
-                    <th style={{ width: '25%' }}>Relasyon sa Ulo ng Pamilya</th>
+                    <th style={{ width: '52%' }}>{t('fullName')}</th>
+                    <th style={{ width: '15%' }}>{t('age')}</th>
+                    <th style={{ width: '25%' }}>{t('relation')}</th>
                   </tr>
                 </thead>
                 <tbody>
