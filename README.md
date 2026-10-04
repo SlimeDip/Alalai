@@ -72,8 +72,12 @@ WebSysGroup12/
         ├── main.jsx                 # React root renderer
         ├── App.jsx                  # Main application orchestrator with tab routing
         ├── index.css                # Solid-color accessible CSS with @media print rules
+        ├── utils/
+        │   └── translations.js      # English and Filipino UI translations
         └── components/
             ├── Header.jsx           # Gov.ph header banner with emergency hotlines
+            ├── LandingPage.jsx      # Landing page and guest entry point
+            ├── AuthModal.jsx        # Resident login/register dialog
             ├── DamageAssessmentForm.jsx  # Damage assessment input & AI results display
             ├── SubsidyCatalog.jsx   # Directory of government subsidy programs
             ├── OfficialApplicationView.jsx # Live editable official form & print layout
@@ -85,29 +89,35 @@ WebSysGroup12/
 ## Quick Start Guide
 
 ### 1. Prerequisites
-- **Node.js**: v18.0.0 or higher (Tested on Node.js v22.14.0)
+- **Node.js**: v18.0.0 or higher (tested on Node.js v22.14.0)
 - **npm**: v9.0.0 or higher
+- A modern browser with JavaScript enabled
 
 ### 2. Setup & Installation
 Run from the root directory:
 ```bash
-# Install root, backend, and frontend packages
+# Install root, backend, and frontend dependencies
 npm run install:all
 ```
 Or manually install each folder:
 ```bash
-cd backend && npm install
-cd ../frontend && npm install
+cd backend
+npm install
+cd ../frontend
+npm install
 ```
 
 ### 3. (Optional) Set your Gemini API Key
-By default, the application runs immediately using the built-in Heuristic Damage Analyzer. If you want to use Google Gemini:
-1. Create a `.env` file in `backend/.env`:
+By default, the application uses the built-in heuristic damage analyzer. To enable Google Gemini:
+1. Copy `backend/.env.example` to `backend/.env`.
+2. Set your API key in `backend/.env`:
    ```env
    PORT=5000
    GEMINI_API_KEY=your_actual_gemini_api_key_here
    ```
-2. Get an API key for free at [Google AI Studio](https://aistudio.google.com/).
+3. Get an API key from [Google AI Studio](https://aistudio.google.com/).
+
+Never commit `backend/.env` or an API key to source control.
 
 ### 4. Running the Development Servers
 
@@ -123,7 +133,35 @@ cd frontend
 npm run dev
 ```
 
-Open your browser at `http://localhost:3000` to use the portal.
+Open `http://localhost:3000` in your browser. The Vite development server proxies
+requests under `/api` to the backend at `http://localhost:5000`.
+
+To verify that the backend is running, open
+`http://localhost:5000/api/health`.
+
+### Root scripts
+
+The following convenience scripts can be run from the repository root:
+
+```bash
+npm run backend        # Start the backend in watch mode
+npm run frontend       # Start the Vite development server
+npm run build:frontend # Create a production frontend build in frontend/dist
+npm start              # Start only the backend
+```
+
+### Production frontend build
+
+The frontend is a Vite single-page application. Build it with:
+
+```bash
+cd frontend
+npm run build
+```
+
+The generated static files are written to `frontend/dist`. The backend currently
+serves the API only, so deploy the contents of `frontend/dist` using a static
+web server or hosting service and point its `/api` requests to the backend.
 
 ---
 
