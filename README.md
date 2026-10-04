@@ -39,6 +39,12 @@ A disaster risk reduction and social welfare web application built with **React*
 5. **Local SQLite Database**
    - Stores subsidies catalog, assessment history, and editable applications with generated reference tracking numbers (`NDRRMC-PH-2026-XXXX`).
 
+6. **Guarded Image-Assisted Assessment**
+   - Optional JPG, PNG, or WebP damage photo upload (maximum 8 MB) alongside the written report.
+   - Gemini checks that the image visibly shows damage relevant to the selected disaster before using it for assessment.
+   - Rejects invalid files, unrelated images, screenshots, stock graphics, and ambiguous images; image requests fail closed if Gemini is unavailable.
+   - Uploaded images are held in memory for analysis and are not stored in SQLite.
+
 ---
 
 ## Project Structure
@@ -108,16 +114,17 @@ npm install
 ```
 
 ### 3. (Optional) Set your Gemini API Key
-By default, the application uses the built-in heuristic damage analyzer. To enable Google Gemini:
-1. Copy `backend/.env.example` to `backend/.env`.
-2. Set your API key in `backend/.env`:
+By default, text-only assessments can use the built-in heuristic damage analyzer. Image-assisted
+assessments require Google Gemini:
+1. Copy `backend/.env.example` to either `backend/.env` or the repository root `.env`.
+2. Set your API key in that file:
    ```env
    PORT=5000
    GEMINI_API_KEY=your_actual_gemini_api_key_here
    ```
 3. Get an API key from [Google AI Studio](https://aistudio.google.com/).
 
-Never commit `backend/.env` or an API key to source control.
+Never commit `.env` files or an API key to source control.
 
 ### 4. Running the Development Servers
 

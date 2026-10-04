@@ -193,3 +193,26 @@ export async function runLocalDamageAssessment(formPayload) {
     matched_subsidies: matchSubsidies(core, mockSubsidies)
   };
 }
+
+export async function runImageDamageAssessment(formPayload) {
+  const body = new FormData();
+  Object.entries(formPayload).forEach(([key, value]) => {
+    if (key !== 'damageImage' && value !== undefined && value !== null) {
+      body.append(key, typeof value === 'object' ? JSON.stringify(value) : String(value));
+    }
+  });
+  body.append('damageImage', formPayload.damageImage);
+
+  const response = await fetch('/api/assessments', {
+    method: 'POST',
+    body
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok || !payload.success) {
+    const error = new Error(payload.error || 'Unable to analyze the image.');
+    error.code = payload.code;
+    error.status = response.status;
+    throw error;
+  }
+  return payload.data;
+}

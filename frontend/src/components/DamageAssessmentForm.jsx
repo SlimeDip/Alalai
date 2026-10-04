@@ -18,8 +18,10 @@ import {
   Tornado,
   Waves,
   Sun,
+  ImagePlus,
+  X,
 } from 'lucide-react';
-import { runLocalDamageAssessment } from '../utils/mockAssessment';
+import { runImageDamageAssessment, runLocalDamageAssessment } from '../utils/mockAssessment';
 
 const DISASTERS = [
   { value: 'Typhoon', icon: Wind, titleKey: 'disasterTyphoon', descKey: 'disasterTyphoonDesc' },
@@ -70,6 +72,8 @@ export default function DamageAssessmentForm({ user, t, lang = 'en', onSelectSub
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
+  const [damageImage, setDamageImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
 
   useEffect(() => {
     if (user && !user.isGuest) {
@@ -92,6 +96,31 @@ export default function DamageAssessmentForm({ user, t, lang = 'en', onSelectSub
   const selectDisaster = (value) => {
     setFormData((prev) => ({ ...prev, disasterType: value }));
     setErrorMsg('');
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      setErrorMsg(t('imageTypeError'));
+      e.target.value = '';
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      setErrorMsg(t('imageSizeError'));
+      e.target.value = '';
+      return;
+    }
+    setDamageImage(file);
+    setImagePreview(URL.createObjectURL(file));
+    setErrorMsg('');
+  };
+
+  const clearImage = () => {
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setDamageImage(null);
+    setImagePreview('');
   };
 
   const goStep = (step) => {
@@ -125,7 +154,7 @@ export default function DamageAssessmentForm({ user, t, lang = 'en', onSelectSub
     setErrorMsg('');
     try {
       const tierLabel = COST_TIERS.find((c) => c.value === costTier);
-      const assessment = await runLocalDamageAssessment({
+      const assessmentPayload = {
         disasterType: formData.disasterType,
         damageDescription: formData.damageDescription,
         householdSize: formData.householdSize,
@@ -133,12 +162,24 @@ export default function DamageAssessmentForm({ user, t, lang = 'en', onSelectSub
           MANUAL_CHECK_KEYS.filter((k) => manualChecks[k.id]).map((k) => [t(k.labelKey), true])
         ),
         costTier: tierLabel ? t(tierLabel.labelKey) : ''
-      });
+      };
+      const assessment = damageImage
+        ? await runImageDamageAssessment({
+            ...formData,
+            ...assessmentPayload,
+            incidentDate: formData.incidentDate,
+            damageImage
+          })
+        : await runLocalDamageAssessment(assessmentPayload);
       setResult(assessment);
       goStep(3);
     } catch (err) {
       console.error(err);
-      setErrorMsg('Unable to complete assessment. Please try again.');
+      setErrorMsg(
+        err.code === 'IRRELEVANT_IMAGE'
+          ? t('imageRelevanceError')
+          : err.message || 'Unable to complete assessment. Please try again.'
+      );
     } finally {
       setLoading(false);
     }
@@ -166,6 +207,7 @@ export default function DamageAssessmentForm({ user, t, lang = 'en', onSelectSub
     setManualChecks({});
     setResult(null);
     setErrorMsg('');
+    clearImage();
     setFormData((prev) => ({ ...prev, disasterType: '', damageDescription: '' }));
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -283,6 +325,25 @@ export default function DamageAssessmentForm({ user, t, lang = 'en', onSelectSub
                       className="form-textarea form-input-lg"
                       placeholder={t('aiInputPlaceholder')}
                     />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label"><ImagePlus size={15} /> {t('damageImageLabel')}</label>
+                    <p className="field-help">{t('damageImageHelp')}</p>
+                    {!damageImage ? (
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        onChange={handleImageChange}
+                        className="form-input"
+                      />
+                    ) : (
+                      <div className="image-upload-preview">
+                        <img src={imagePreview} alt={t('damageImagePreviewAlt')} />
+                        <button type="button" className="btn btn-secondary btn-sm" onClick={clearImage}>
+                          <X size={14} /> {t('removeImage')}
+                        </button>
+                      </div>
+                    )}
                   </div>
                   <p className="field-help" style={{ marginBottom: 10 }}>{t('aiQuickExamples')}</p>
                   <div className="preset-chips">

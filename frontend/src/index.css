@@ -678,6 +678,21 @@ body {
   resize: vertical;
 }
 
+.image-upload-preview {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.image-upload-preview img {
+  width: min(100%, 280px);
+  max-height: 220px;
+  object-fit: cover;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+}
+
 .preset-chips {
   display: flex;
   flex-wrap: wrap;
