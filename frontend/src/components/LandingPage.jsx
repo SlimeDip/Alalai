@@ -1,7 +1,7 @@
 import React from 'react';
 import { HelpCircle, CheckCircle2, FileText, CloudRain } from 'lucide-react';
 
-export default function LandingPage({ onStartAssessment, onContinueAsGuest, t }) {
+export default function LandingPage({ onStartAssessment, t }) {
   const faqs = [
     { q: t('faq1Q'), a: t('faq1A') },
     { q: t('faq2Q'), a: t('faq2A') },
@@ -29,9 +29,6 @@ export default function LandingPage({ onStartAssessment, onContinueAsGuest, t })
         <div className="landing-cta-row">
           <button type="button" className="btn-pill-primary btn-lg-senior" onClick={onStartAssessment}>
             {t('startAssessment')}
-          </button>
-          <button type="button" className="btn-pill-secondary btn-lg-senior" onClick={onContinueAsGuest}>
-            {t('continueAsGuest')}
           </button>
         </div>
       </section>

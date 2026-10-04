@@ -155,40 +155,6 @@ body {
   font-size: 14px;
 }
 
-.process-card-heading {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  align-items: flex-start;
-  margin-bottom: 20px;
-}
-
-.process-flow-grid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 10px;
-}
-
-.process-flow-step {
-  min-height: 82px;
-  padding: 12px;
-  border: 1px solid var(--slate-200);
-  border-radius: 12px;
-  background-color: var(--slate-50);
-}
-
-.process-flow-step span {
-  display: block;
-  color: var(--primary);
-  font-size: 12px;
-  font-weight: 800;
-  margin-bottom: 5px;
-}
-
-.process-flow-step strong {
-  font-size: 13px;
-  line-height: 1.25;
-}
 
 .brand-logo {
   font-size: 26px;
@@ -1600,9 +1566,6 @@ body {
     grid-template-columns: 1fr;
   }
 
-  .process-flow-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
 }
 
 @media (max-width: 640px) {
@@ -1663,11 +1626,4 @@ body {
     justify-content: center;
   }
 
-  .process-card-heading {
-    flex-direction: column;
-  }
-
-  .process-flow-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
 }

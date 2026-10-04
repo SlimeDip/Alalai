@@ -122,11 +122,6 @@ export default function App() {
                 setActiveTab('dashboard');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
-              onContinueAsGuest={() => {
-                handleContinueAsGuest();
-                setActiveTab('dashboard');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
               t={t}
             />
           )}
@@ -134,8 +129,6 @@ export default function App() {
           {activeTab === 'dashboard' && (
             <RecoveryDashboard
               onStartCase={() => setActiveTab('assessment')}
-              onOpenPrograms={() => setActiveTab('subsidies')}
-              onOpenRecords={() => setActiveTab('saved')}
               t={t}
             />
           )}
