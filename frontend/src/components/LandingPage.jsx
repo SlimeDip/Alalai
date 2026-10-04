@@ -1,5 +1,5 @@
 import React from 'react';
-import { HelpCircle, CheckCircle2, FileText, CloudRain } from 'lucide-react';
+import { HelpCircle } from 'lucide-react';
 import RecoveryDashboard from './RecoveryDashboard';
 
 export default function LandingPage({ onStartAssessment, t }) {
@@ -28,30 +28,6 @@ export default function LandingPage({ onStartAssessment, t }) {
       </section>
 
       <RecoveryDashboard onStartCase={onStartAssessment} t={t} />
-
-      <section className="landing-trust-row">
-        <div className="trust-card">
-          <CheckCircle2 size={22} color="var(--emerald-700)" aria-hidden />
-          <div>
-            <strong>{t('statFreeTitle')}</strong>
-            <p>{t('statFreeDesc')}</p>
-          </div>
-        </div>
-        <div className="trust-card">
-          <FileText size={22} color="var(--primary)" aria-hidden />
-          <div>
-            <strong>{t('statPrintTitle')}</strong>
-            <p>{t('statPrintDesc')}</p>
-          </div>
-        </div>
-        <div className="trust-card">
-          <CloudRain size={22} color="var(--slate-900)" aria-hidden />
-          <div>
-            <strong>{t('statDisasterTitle')}</strong>
-            <p>{t('statDisasterDesc')}</p>
-          </div>
-        </div>
-      </section>
 
       <section className="landing-faq">
         <div className="landing-faq-header">

@@ -1,19 +1,15 @@
 import React, { useState } from 'react';
-import { Layers, ArrowRight, Search, X } from 'lucide-react';
+import { Layers, ArrowRight, SlidersHorizontal, X } from 'lucide-react';
 import { mockSubsidies } from '../utils/mockData';
 
 export default function SubsidyCatalog({ onSelectSubsidyForApplication, t, lang = 'en' }) {
   const [subsidies] = useState(mockSubsidies);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
   const [selectedModalSubsidy, setSelectedModalSubsidy] = useState(null);
 
-  const filtered = subsidies.filter((sub) => {
-    const q = searchTerm.toLowerCase();
-    return (
-      sub.title.toLowerCase().includes(q) ||
-      sub.short_description.toLowerCase().includes(q)
-    );
-  });
+  const filtered = subsidies.filter((sub) => (
+    categoryFilter === 'all' || sub.damage_types.split(',').map((type) => type.trim()).includes(categoryFilter)
+  ));
 
   return (
     <div>
@@ -25,15 +21,16 @@ export default function SubsidyCatalog({ onSelectSubsidyForApplication, t, lang 
         <p className="card-subheading-lg">{t('subsidiesSubtitle')}</p>
         <div className="form-group" style={{ marginTop: 20, maxWidth: 480 }}>
           <label className="form-label">
-            <Search size={15} /> {lang === 'tl' ? 'Maghanap' : 'Search'}
+            <SlidersHorizontal size={15} /> {lang === 'tl' ? 'Uri ng ayuda' : 'Filter by aid type'}
           </label>
-          <input
-            type="text"
-            placeholder={lang === 'tl' ? 'Hal. bubong, bigas, pabahay…' : 'e.g. roof, food, shelter…'}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="form-input form-input-lg"
-          />
+          <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="form-select form-input-lg">
+            <option value="all">{lang === 'tl' ? 'Lahat ng ayuda' : 'All aid types'}</option>
+            <option value="general">{lang === 'tl' ? 'Pangkalahatang tulong' : 'General relief'}</option>
+            <option value="food">{lang === 'tl' ? 'Pagkain at pangunahing pangangailangan' : 'Food and essentials'}</option>
+            <option value="structural">{lang === 'tl' ? 'Pabahay at istruktura' : 'Shelter and structural'}</option>
+            <option value="agricultural">{lang === 'tl' ? 'Agrikultura' : 'Agriculture'}</option>
+            <option value="livelihood">{lang === 'tl' ? 'Kabuhayan' : 'Livelihood'}</option>
+          </select>
         </div>
 
         <div className="subsidy-grid" style={{ marginTop: 20 }}>
@@ -52,7 +49,7 @@ export default function SubsidyCatalog({ onSelectSubsidyForApplication, t, lang 
                     type="button"
                     className="btn btn-primary btn-sm"
                     style={{ flex: 1 }}
-                    onClick={() => onSelectSubsidyForApplication({ subsidy: sub })}
+                    onClick={() => onSelectSubsidyForApplication({ subsidy: sub, returnTab: 'subsidies' })}
                   >
                     {t('applySubsidyBtn')}
                     <ArrowRight size={14} />
@@ -84,7 +81,7 @@ export default function SubsidyCatalog({ onSelectSubsidyForApplication, t, lang 
                 onClick={() => {
                   const chosen = selectedModalSubsidy;
                   setSelectedModalSubsidy(null);
-                  onSelectSubsidyForApplication({ subsidy: chosen });
+                  onSelectSubsidyForApplication({ subsidy: chosen, returnTab: 'subsidies' });
                 }}
               >
                 {t('applySubsidyBtn')}

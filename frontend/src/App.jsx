@@ -63,11 +63,12 @@ export default function App() {
     setAuthModalOpen(false);
   };
 
-  const handleSelectSubsidyForApplication = ({ subsidy, assessment, applicant }) => {
+  const handleSelectSubsidyForApplication = ({ subsidy, assessment, applicant, returnTab = 'subsidies' }) => {
     setSelectedApplicationData({
       subsidy,
       assessment,
-      applicant
+      applicant,
+      returnTab
     });
     setActiveTab('application');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -125,22 +126,23 @@ export default function App() {
             />
           )}
 
-          {activeTab === 'assessment' && (
+          <div style={{ display: activeTab === 'assessment' ? 'block' : 'none' }}>
             <DamageAssessmentForm
               user={user}
               t={t}
               lang={lang}
               onSelectSubsidyForApplication={handleSelectSubsidyForApplication}
+              onViewReliefOptions={() => setActiveTab('subsidies')}
             />
-          )}
+          </div>
 
-          {activeTab === 'subsidies' && (
+          <div style={{ display: activeTab === 'subsidies' ? 'block' : 'none' }}>
             <SubsidyCatalog
               t={t}
               lang={lang}
               onSelectSubsidyForApplication={handleSelectSubsidyForApplication}
             />
-          )}
+          </div>
 
           {activeTab === 'application' && (
             <OfficialApplicationView
@@ -148,7 +150,8 @@ export default function App() {
               user={user}
               t={t}
               lang={lang}
-              onBack={() => setActiveTab('assessment')}
+              onBack={() => setActiveTab(selectedApplicationData?.returnTab || 'subsidies')}
+              backLabel={selectedApplicationData?.returnTab === 'assessment' ? t('backToAssessment') : t('backToSubsidies')}
               onSavedSuccess={() => {}}
             />
           )}

@@ -21,6 +21,7 @@ export default function OfficialApplicationView({
   user,
   onSavedSuccess,
   onBack,
+  backLabel,
   t = (k) => k,
   lang = 'en'
 }) {
@@ -146,7 +147,7 @@ export default function OfficialApplicationView({
 
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             <button type="button" className="btn btn-secondary btn-sm" onClick={onBack}>
-              <ArrowLeft size={14} /> {t('backToAssessment')}
+              <ArrowLeft size={14} /> {backLabel || t('backToAssessment')}
             </button>
             <div style={{ display: 'inline-flex', backgroundColor: 'var(--slate-100)', padding: 3, borderRadius: 9999 }}>
               <button
@@ -436,7 +437,7 @@ export default function OfficialApplicationView({
               <Eye size={16} /> I-preview ang A4 Form
             </button>
           </div>
-          <div className="form-actions-row application-bottom-actions">
+          <div className="form-actions-row application-bottom-actions" style={{ flexDirection: 'column', alignItems: 'flex-end' }}>
             <button type="button" className="btn btn-primary btn-lg" disabled={saving} onClick={handleSaveToDatabase}>
               <Save size={16} /> {saving ? '…' : t('saveBtn')}
             </button>
@@ -590,10 +591,6 @@ export default function OfficialApplicationView({
                     <td><strong>{formData.spouse_name || 'N/A'}</strong></td>
                     <td>{formData.children_count || 'N/A'}</td>
                     <td>{t('spouseAndChildren')}</td>
-                  </tr>
-                  <tr>
-                    <td>1</td>
-                    <td colSpan={3}>{t('applicantDetailsSection')}</td>
                   </tr>
                 </tbody>
               </table>

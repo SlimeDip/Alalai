@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, ClipboardCheck, FileText, LayoutDashboard, ShieldCheck } from 'lucide-react';
+import { ArrowRight, LayoutDashboard } from 'lucide-react';
 
 export default function RecoveryDashboard({ onStartCase, t }) {
   return (
@@ -16,23 +16,6 @@ export default function RecoveryDashboard({ onStartCase, t }) {
         </button>
       </div>
 
-      <div className="recovery-summary-grid">
-        <div className="modern-card recovery-action-card">
-          <ClipboardCheck size={24} color="var(--primary)" />
-          <h2>{t('initialRecoveryPlan')}</h2>
-          <p>{t('initialRecoveryPlanDesc')}</p>
-        </div>
-        <div className="modern-card recovery-action-card">
-          <ShieldCheck size={24} color="var(--emerald-700)" />
-          <h2>{t('eligibilityCheck')}</h2>
-          <p>{t('eligibilityCheckDesc')}</p>
-        </div>
-        <div className="modern-card recovery-action-card">
-          <FileText size={24} color="var(--slate-900)" />
-          <h2>{t('continueTracking')}</h2>
-          <p>{t('continueTrackingDesc')}</p>
-        </div>
-      </div>
     </div>
   );
 }

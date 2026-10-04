@@ -14,25 +14,23 @@ import {
   Droplets,
   Flame,
   Mountain,
-  CloudLightning,
+  Activity,
   Tornado,
   Waves,
   Sun,
-  Snowflake
 } from 'lucide-react';
 import { runLocalDamageAssessment } from '../utils/mockAssessment';
 
 const DISASTERS = [
   { value: 'Typhoon', icon: Wind, titleKey: 'disasterTyphoon', descKey: 'disasterTyphoonDesc' },
   { value: 'Flash Flood', icon: Droplets, titleKey: 'disasterFlood', descKey: 'disasterFloodDesc' },
-  { value: 'Earthquake', icon: CloudLightning, titleKey: 'disasterEarthquake', descKey: 'disasterEarthquakeDesc' },
+  { value: 'Earthquake', icon: Activity, titleKey: 'disasterEarthquake', descKey: 'disasterEarthquakeDesc' },
   { value: 'Landslide', icon: Mountain, titleKey: 'disasterLandslide', descKey: 'disasterLandslideDesc' },
   { value: 'Fire', icon: Flame, titleKey: 'disasterFire', descKey: 'disasterFireDesc' },
   { value: 'Volcanic Eruption', icon: Mountain, titleKey: 'disasterVolcano', descKey: 'disasterVolcanoDesc' },
   { value: 'Tornado', icon: Tornado, titleKey: 'disasterTornado', descKey: 'disasterTornadoDesc' },
   { value: 'Storm Surge', icon: Waves, titleKey: 'disasterStormSurge', descKey: 'disasterStormSurgeDesc' },
   { value: 'Drought', icon: Sun, titleKey: 'disasterDrought', descKey: 'disasterDroughtDesc' },
-  { value: 'Extreme Cold', icon: Snowflake, titleKey: 'disasterCold', descKey: 'disasterColdDesc' }
 ];
 
 const MANUAL_CHECK_KEYS = [
@@ -51,7 +49,7 @@ const COST_TIERS = [
   { value: 'over100', labelKey: 'estOver100k' }
 ];
 
-export default function DamageAssessmentForm({ user, t, lang = 'en', onSelectSubsidyForApplication }) {
+export default function DamageAssessmentForm({ user, t, lang = 'en', onSelectSubsidyForApplication, onViewReliefOptions }) {
   const [currentStep, setCurrentStep] = useState(1);
   const [inputMethod, setInputMethod] = useState(null);
 
@@ -160,6 +158,16 @@ export default function DamageAssessmentForm({ user, t, lang = 'en', onSelectSub
 
   const applyAiSample = (text) => {
     setFormData((prev) => ({ ...prev, damageDescription: text }));
+  };
+
+  const startAnotherAssessment = () => {
+    setCurrentStep(1);
+    setInputMethod(null);
+    setManualChecks({});
+    setResult(null);
+    setErrorMsg('');
+    setFormData((prev) => ({ ...prev, disasterType: '', damageDescription: '' }));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
@@ -414,6 +422,14 @@ export default function DamageAssessmentForm({ user, t, lang = 'en', onSelectSub
             <button type="button" className="btn btn-secondary btn-sm" onClick={() => goStep(2)}>
               <ArrowLeft size={14} /> {t('backBtn')}
             </button>
+            <div className="form-actions-row" style={{ marginTop: 20 }}>
+              <button type="button" className="btn btn-secondary" onClick={onViewReliefOptions}>
+                {t('viewReliefOptions')}
+              </button>
+              <button type="button" className="btn btn-primary" onClick={startAnotherAssessment}>
+                {t('anotherAssessment')}
+              </button>
+            </div>
           </div>
 
           <div style={{ marginTop: 28 }}>
@@ -437,7 +453,8 @@ export default function DamageAssessmentForm({ user, t, lang = 'en', onSelectSub
                       onSelectSubsidyForApplication({
                         subsidy: sub,
                         assessment: result,
-                        applicant: formData
+                        applicant: formData,
+                        returnTab: 'assessment'
                       })
                     }
                   >
