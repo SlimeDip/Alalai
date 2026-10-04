@@ -6,7 +6,6 @@ import DamageAssessmentForm from './components/DamageAssessmentForm';
 import SubsidyCatalog from './components/SubsidyCatalog';
 import OfficialApplicationView from './components/OfficialApplicationView';
 import SavedApplicationsList from './components/SavedApplicationsList';
-import RecoveryDashboard from './components/RecoveryDashboard';
 import { translations } from './utils/translations';
 
 export default function App() {
@@ -119,16 +118,9 @@ export default function App() {
           {activeTab === 'landing' && (
             <LandingPage
               onStartAssessment={() => {
-                setActiveTab('dashboard');
+                setActiveTab('assessment');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
-              t={t}
-            />
-          )}
-
-          {activeTab === 'dashboard' && (
-            <RecoveryDashboard
-              onStartCase={() => setActiveTab('assessment')}
               t={t}
             />
           )}
@@ -156,6 +148,7 @@ export default function App() {
               user={user}
               t={t}
               lang={lang}
+              onBack={() => setActiveTab('assessment')}
               onSavedSuccess={() => {}}
             />
           )}

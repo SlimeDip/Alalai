@@ -14,7 +14,11 @@ import {
   Droplets,
   Flame,
   Mountain,
-  CloudLightning
+  CloudLightning,
+  Tornado,
+  Waves,
+  Sun,
+  Snowflake
 } from 'lucide-react';
 import { runLocalDamageAssessment } from '../utils/mockAssessment';
 
@@ -24,7 +28,11 @@ const DISASTERS = [
   { value: 'Earthquake', icon: CloudLightning, titleKey: 'disasterEarthquake', descKey: 'disasterEarthquakeDesc' },
   { value: 'Landslide', icon: Mountain, titleKey: 'disasterLandslide', descKey: 'disasterLandslideDesc' },
   { value: 'Fire', icon: Flame, titleKey: 'disasterFire', descKey: 'disasterFireDesc' },
-  { value: 'Volcanic Eruption', icon: AlertTriangle, titleKey: 'disasterVolcano', descKey: 'disasterVolcanoDesc' }
+  { value: 'Volcanic Eruption', icon: Mountain, titleKey: 'disasterVolcano', descKey: 'disasterVolcanoDesc' },
+  { value: 'Tornado', icon: Tornado, titleKey: 'disasterTornado', descKey: 'disasterTornadoDesc' },
+  { value: 'Storm Surge', icon: Waves, titleKey: 'disasterStormSurge', descKey: 'disasterStormSurgeDesc' },
+  { value: 'Drought', icon: Sun, titleKey: 'disasterDrought', descKey: 'disasterDroughtDesc' },
+  { value: 'Extreme Cold', icon: Snowflake, titleKey: 'disasterCold', descKey: 'disasterColdDesc' }
 ];
 
 const MANUAL_CHECK_KEYS = [

@@ -23,8 +23,6 @@ export default function SubsidyCatalog({ onSelectSubsidyForApplication, t, lang 
           {t('subsidiesTitle')}
         </h2>
         <p className="card-subheading-lg">{t('subsidiesSubtitle')}</p>
-        <p className="landing-disclaimer" style={{ marginTop: 8 }}>{t('notAffiliated')}</p>
-
         <div className="form-group" style={{ marginTop: 20, maxWidth: 480 }}>
           <label className="form-label">
             <Search size={15} /> {lang === 'tl' ? 'Maghanap' : 'Search'}

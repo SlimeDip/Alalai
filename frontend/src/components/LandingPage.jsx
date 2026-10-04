@@ -1,5 +1,6 @@
 import React from 'react';
 import { HelpCircle, CheckCircle2, FileText, CloudRain } from 'lucide-react';
+import RecoveryDashboard from './RecoveryDashboard';
 
 export default function LandingPage({ onStartAssessment, t }) {
   const faqs = [
@@ -14,8 +15,6 @@ export default function LandingPage({ onStartAssessment, t }) {
   return (
     <div className="landing-simple">
       <section className="landing-hero-simple">
-        <p className="landing-disclaimer">{t('notAffiliated')}</p>
-
         <h1 className="landing-title">
           {t('landingHeroTitle1')}
           <br />
@@ -26,12 +25,9 @@ export default function LandingPage({ onStartAssessment, t }) {
 
         <p className="landing-lead">{t('landingSubtitle')}</p>
 
-        <div className="landing-cta-row">
-          <button type="button" className="btn-pill-primary btn-lg-senior" onClick={onStartAssessment}>
-            {t('startAssessment')}
-          </button>
-        </div>
       </section>
+
+      <RecoveryDashboard onStartCase={onStartAssessment} t={t} />
 
       <section className="landing-trust-row">
         <div className="trust-card">

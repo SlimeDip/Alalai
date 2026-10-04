@@ -21,7 +21,6 @@ export default function Header({
 
   const navItems = [
     { id: 'landing', label: t('home') },
-    { id: 'dashboard', label: t('dashboard') },
     { id: 'assessment', label: t('assessment') },
     { id: 'subsidies', label: t('subsidies') },
     { id: 'saved', label: t('records') }
@@ -34,7 +33,6 @@ export default function Header({
           <div className="brand-logo">
             {t('appName')}
           </div>
-          <span className="brand-tagline">{t('appSubtitle')}</span>
         </div>
 
         <div className="navbar-links">
@@ -80,7 +78,7 @@ export default function Header({
             </div>
           ) : (
             <div className="nav-user-cluster">
-              <button type="button" className="btn btn-secondary btn-sm" onClick={onContinueAsGuest}>
+              <button type="button" className="btn btn-secondary" onClick={onContinueAsGuest}>
                 {t('continueAsGuest')}
               </button>
               <button type="button" className="btn-pill-dark" onClick={onOpenLogin}>

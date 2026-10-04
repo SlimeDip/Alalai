@@ -3,13 +3,12 @@ import {
   Printer,
   Save,
   CheckCircle2,
-  Plus,
-  Trash2,
   FileText,
   Edit3,
   Eye,
   Download,
   Check,
+  ArrowLeft,
   User,
   MapPin,
   Calendar,
@@ -21,6 +20,7 @@ export default function OfficialApplicationView({
   initialData,
   user,
   onSavedSuccess,
+  onBack,
   t = (k) => k,
   lang = 'en'
 }) {
@@ -38,11 +38,8 @@ export default function OfficialApplicationView({
     city_municipality: '',
     barangay: '',
     purok_street: '',
-    household_members_count: 3,
-    household_members_detail: [
-      { name: '', age: '', relationship: 'Asawa (Spouse)' },
-      { name: '', age: '', relationship: 'Anak (Child)' }
-    ],
+    spouse_name: 'N/A',
+    children_count: '0',
     disaster_type: 'Typhoon',
     incident_date: new Date().toISOString().split('T')[0],
     damage_level: 'Severe',
@@ -96,43 +93,11 @@ export default function OfficialApplicationView({
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === 'checkbox' ? checked : value,
+      ...(name === 'civil_status' && value.includes('Single')
+        ? { spouse_name: 'N/A', children_count: 'N/A' }
+        : {})
     }));
-  };
-
-  const handleMemberChange = (index, field, value) => {
-    const updated = [...formData.household_members_detail];
-    updated[index][field] = value;
-    setFormData((prev) => ({
-      ...prev,
-      household_members_detail: updated,
-      household_members_count: updated.length + 1
-    }));
-  };
-
-  const handleAddMember = () => {
-    setFormData((prev) => {
-      const updated = [
-        ...prev.household_members_detail,
-        { name: '', age: '', relationship: 'Anak (Child)' }
-      ];
-      return {
-        ...prev,
-        household_members_detail: updated,
-        household_members_count: updated.length + 1
-      };
-    });
-  };
-
-  const handleRemoveMember = (index) => {
-    setFormData((prev) => {
-      const updated = prev.household_members_detail.filter((_, i) => i !== index);
-      return {
-        ...prev,
-        household_members_detail: updated,
-        household_members_count: updated.length + 1
-      };
-    });
   };
 
   const handleDownloadPdfOrPrint = () => {
@@ -176,10 +141,13 @@ export default function OfficialApplicationView({
               <FileText size={20} color="var(--primary)" />
               {t('appTitle')}
             </h2>
-            <p className="flow-subheading">{t('appSubtitle')}</p>
+            <p className="flow-subheading">{t('applyingFor')}: <strong>{formData.applied_subsidies[0] || t('generalAssistance')}</strong></p>
           </div>
 
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={onBack}>
+              <ArrowLeft size={14} /> {t('backToAssessment')}
+            </button>
             <div style={{ display: 'inline-flex', backgroundColor: 'var(--slate-100)', padding: 3, borderRadius: 9999 }}>
               <button
                 type="button"
@@ -198,16 +166,6 @@ export default function OfficialApplicationView({
                 <Eye size={14} /> {t('previewTab')}
               </button>
             </div>
-
-            <button
-              type="button"
-              className="btn btn-secondary btn-sm"
-              disabled={saving}
-              onClick={handleSaveToDatabase}
-            >
-              <Save size={15} />
-              {saving ? '…' : t('saveBtn')}
-            </button>
 
             <button
               type="button"
@@ -437,54 +395,33 @@ export default function OfficialApplicationView({
             />
           </div>
 
-          {/* Household members list */}
+          {/* Household summary */}
           <div style={{ marginTop: 20 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-              <strong style={{ fontSize: 15 }}>{t('householdMembers')}</strong>
-              <button
-                type="button"
-                className="btn btn-secondary btn-sm"
-                onClick={handleAddMember}
-              >
-                <Plus size={14} /> {t('addMember')}
-              </button>
-            </div>
-
-            {formData.household_members_detail.map((m, idx) => (
-              <div key={idx} style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'center' }}>
+            <strong style={{ display: 'block', fontSize: 15, marginBottom: 10 }}>{t('householdMembers')}</strong>
+            <div className="form-grid">
+              <div className="form-group">
+                <label className="form-label">{t('spouseName')}</label>
                 <input
                   type="text"
-                  placeholder="Pangalan"
-                  value={m.name}
-                  onChange={(e) => handleMemberChange(idx, 'name', e.target.value)}
+                  name="spouse_name"
+                  value={formData.spouse_name}
+                  onChange={handleChange}
                   className="form-input"
-                  style={{ flex: 2 }}
+                  placeholder={formData.civil_status.includes('Single') ? 'N/A' : t('spouseName')}
                 />
-                <input
-                  type="number"
-                  placeholder="Edad"
-                  value={m.age}
-                  onChange={(e) => handleMemberChange(idx, 'age', e.target.value)}
-                  className="form-input"
-                  style={{ flex: 1 }}
-                />
-                <input
-                  type="text"
-                  placeholder="Relasyon"
-                  value={m.relationship}
-                  onChange={(e) => handleMemberChange(idx, 'relationship', e.target.value)}
-                  className="form-input"
-                  style={{ flex: 1.5 }}
-                />
-                <button
-                  type="button"
-                  className="btn btn-danger btn-sm"
-                  onClick={() => handleRemoveMember(idx)}
-                >
-                  <Trash2 size={14} />
-                </button>
               </div>
-            ))}
+              <div className="form-group">
+                <label className="form-label">{t('childrenCount')}</label>
+                <input
+                  type="text"
+                  name="children_count"
+                  value={formData.children_count}
+                  onChange={handleChange}
+                  className="form-input"
+                  placeholder={formData.civil_status.includes('Single') ? 'N/A' : '0'}
+                />
+              </div>
+            </div>
           </div>
 
           <div style={{ marginTop: 24, display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
@@ -497,6 +434,11 @@ export default function OfficialApplicationView({
               }}
             >
               <Eye size={16} /> I-preview ang A4 Form
+            </button>
+          </div>
+          <div className="form-actions-row application-bottom-actions">
+            <button type="button" className="btn btn-primary btn-lg" disabled={saving} onClick={handleSaveToDatabase}>
+              <Save size={16} /> {saving ? '…' : t('saveBtn')}
             </button>
           </div>
         </div>
@@ -631,32 +573,28 @@ export default function OfficialApplicationView({
 
               {/* SECTION 3 */}
               <div className="official-section-title">
-                III. TALAAN NG MGA KASAMBAHAY (LIST OF HOUSEHOLD MEMBERS)
+                III. ASAWA AT MGA ANAK (SPOUSE AND CHILDREN)
               </div>
               <table className="official-table">
                 <thead>
                   <tr>
                     <th style={{ width: '8%' }}>Blg.</th>
-                    <th style={{ width: '52%' }}>{t('fullName')}</th>
-                    <th style={{ width: '15%' }}>{t('age')}</th>
+                    <th style={{ width: '52%' }}>{t('spouseName')}</th>
+                    <th style={{ width: '15%' }}>{t('childrenCount')}</th>
                     <th style={{ width: '25%' }}>{t('relation')}</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr>
                     <td>1</td>
-                    <td><strong>{formData.applicant_name} (Applicant / Ulo ng Pamilya)</strong></td>
-                    <td>{formData.applicant_age}</td>
-                    <td>Head of Household</td>
+                    <td><strong>{formData.spouse_name || 'N/A'}</strong></td>
+                    <td>{formData.children_count || 'N/A'}</td>
+                    <td>{t('spouseAndChildren')}</td>
                   </tr>
-                  {formData.household_members_detail.slice(0, 3).map((member, mIdx) => (
-                    <tr key={mIdx}>
-                      <td>{mIdx + 2}</td>
-                      <td>{member.name || '(Pangalan ng Miyembro)'}</td>
-                      <td>{member.age || '—'}</td>
-                      <td>{member.relationship || 'Kasambahay'}</td>
-                    </tr>
-                  ))}
+                  <tr>
+                    <td>1</td>
+                    <td colSpan={3}>{t('applicantDetailsSection')}</td>
+                  </tr>
                 </tbody>
               </table>
 
