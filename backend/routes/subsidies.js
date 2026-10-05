@@ -7,7 +7,7 @@ const router = express.Router();
 router.get('/', (req, res) => {
   try {
     const { category, agency } = req.query;
-    let query = 'SELECT * FROM subsidies WHERE 1=1';
+    let query = 'SELECT subsidy_id AS id, * FROM subsidies WHERE 1=1';
     const params = [];
 
     if (category) {
@@ -39,7 +39,7 @@ router.get('/', (req, res) => {
 // Get single subsidy by ID
 router.get('/:id', (req, res) => {
   try {
-    const row = db.prepare('SELECT * FROM subsidies WHERE id = ?').get(req.params.id);
+    const row = db.prepare('SELECT subsidy_id AS id, * FROM subsidies WHERE subsidy_id = ?').get(req.params.id);
     if (!row) {
       return res.status(404).json({ success: false, error: 'Subsidy program not found.' });
     }
