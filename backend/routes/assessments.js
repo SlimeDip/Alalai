@@ -5,6 +5,37 @@ import { analyzeDisasterDamage } from '../services/aiService.js';
 
 const router = express.Router();
 
+function formatRecoveryCase(row) {
+  const lossRecords = db.prepare(`
+    SELECT * FROM loss_records WHERE case_id = ? ORDER BY created_at ASC
+  `).all(row.case_id);
+  const recoveryPlans = db.prepare(`
+    SELECT * FROM recovery_plans WHERE case_id = ? ORDER BY created_at ASC
+  `).all(row.case_id);
+
+  return {
+    id: row.case_id,
+    applicant_name: row.applicant_name,
+    contact_number: row.contact_number,
+    province: row.province,
+    city_municipality: row.city_municipality,
+    barangay: row.barangay,
+    disaster_type: row.disaster_type,
+    incident_date: row.incident_date,
+    raw_description: [...new Set(lossRecords.map((loss) => loss.description).filter(Boolean))].join('\n'),
+    severity_level: row.severity_level,
+    severity_score: row.severity_score,
+    damage_categories: JSON.parse(row.damage_categories || '[]'),
+    estimated_cost_min: row.estimated_cost_min,
+    estimated_cost_max: row.estimated_cost_max,
+    recommended_subsidies: JSON.parse(row.recommended_subsidies || '[]'),
+    safety_precautions: JSON.parse(row.safety_precautions || '[]'),
+    created_at: row.created_at,
+    loss_records: lossRecords,
+    recovery_plans: recoveryPlans
+  };
+}
+
 // Run damage assessment through AI template + heuristic and save to SQLite
 router.post('/', async (req, res) => {
   try {
@@ -17,7 +48,8 @@ router.post('/', async (req, res) => {
       cityMunicipality = '',
       barangay = '',
       householdSize = 1,
-      incidentDate = new Date().toISOString().split('T')[0]
+      incidentDate = new Date().toISOString().split('T')[0],
+      userId = req.body.user_id || null
     } = req.body;
 
     if (!damageDescription || damageDescription.trim().length === 0) {
@@ -25,6 +57,10 @@ router.post('/', async (req, res) => {
         success: false,
         error: 'Damage description is required for assessment.'
       });
+    }
+
+    if (userId && !db.prepare('SELECT 1 FROM users WHERE user_id = ?').get(userId)) {
+      return res.status(400).json({ success: false, error: 'The supplied user does not exist.' });
     }
 
     const location = [barangay, cityMunicipality, province].filter(Boolean).join(', ') || 'Philippines';
@@ -38,43 +74,92 @@ router.post('/', async (req, res) => {
     });
 
     // Generate unique ID
-    const assessmentId = 'ASSESS-' + crypto.randomUUID().slice(0, 8).toUpperCase();
-
-    // Save to SQLite
-    const insertStmt = db.prepare(`
-      INSERT INTO assessments (
-        id, applicant_name, contact_number, province, city_municipality,
-        barangay, disaster_type, incident_date, raw_description,
-        severity_level, severity_score, damage_categories,
-        estimated_cost_min, estimated_cost_max, recommended_subsidies,
-        safety_precautions
+    const assessmentId = 'CASE-' + crypto.randomUUID().slice(0, 8).toUpperCase();
+    const damageCategories = assessmentResult.damage_categories || [];
+    const lossCategories = damageCategories.length ? damageCategories : ['general'];
+    const estimatedCostMin = Number(assessmentResult.estimated_cost_min) || 0;
+    const estimatedCostMax = Number(assessmentResult.estimated_cost_max) || 0;
+    const insertCase = db.prepare(`
+      INSERT INTO recovery_cases (
+        case_id, user_id, applicant_name, contact_number, disaster_type,
+        incident_date, province, city_municipality, barangay, severity_level,
+        severity_score, estimated_cost_min, estimated_cost_max,
+        damage_categories, recommended_subsidies, safety_precautions
       ) VALUES (
-        @id, @applicant_name, @contact_number, @province, @city_municipality,
-        @barangay, @disaster_type, @incident_date, @raw_description,
-        @severity_level, @severity_score, @damage_categories,
-        @estimated_cost_min, @estimated_cost_max, @recommended_subsidies,
-        @safety_precautions
+        @case_id, @user_id, @applicant_name, @contact_number, @disaster_type,
+        @incident_date, @province, @city_municipality, @barangay, @severity_level,
+        @severity_score, @estimated_cost_min, @estimated_cost_max,
+        @damage_categories, @recommended_subsidies, @safety_precautions
       )
     `);
+    const insertLoss = db.prepare(`
+      INSERT INTO loss_records (
+        loss_record_id, case_id, item_name, item_category, condition,
+        loss_type, estimated_loss_php, description
+      ) VALUES (
+        @loss_record_id, @case_id, @item_name, @item_category, @condition,
+        @loss_type, @estimated_loss_php, @description
+      )
+    `);
+    const insertRecoveryPlan = db.prepare(`
+      INSERT INTO recovery_plans (
+        plan_id, case_id, category, estimated_cost_php, priority_level
+      ) VALUES (
+        @plan_id, @case_id, @category, @estimated_cost_php, @priority_level
+      )
+    `);
+    const severityLevel = assessmentResult.severity_level || 'Low';
+    const priorityLevel = severityLevel === 'Catastrophic' || severityLevel === 'Severe'
+      ? 'High'
+      : severityLevel === 'Moderate' ? 'Medium' : 'Low';
 
-    insertStmt.run({
-      id: assessmentId,
-      applicant_name: applicantName,
-      contact_number: contactNumber,
-      province,
-      city_municipality: cityMunicipality,
-      barangay,
-      disaster_type: disasterType,
-      incident_date: incidentDate,
-      raw_description: damageDescription,
-      severity_level: assessmentResult.severity_level,
-      severity_score: assessmentResult.severity_score || 50,
-      damage_categories: JSON.stringify(assessmentResult.damage_categories || []),
-      estimated_cost_min: assessmentResult.estimated_cost_min || 0,
-      estimated_cost_max: assessmentResult.estimated_cost_max || 0,
-      recommended_subsidies: JSON.stringify(assessmentResult.matched_subsidies || []),
-      safety_precautions: JSON.stringify(assessmentResult.safety_precautions || [])
+    const saveAssessment = db.transaction(() => {
+      insertCase.run({
+        case_id: assessmentId,
+        user_id: userId,
+        applicant_name: applicantName,
+        contact_number: contactNumber,
+        disaster_type: disasterType,
+        incident_date: incidentDate,
+        province: province || 'Unspecified',
+        city_municipality: cityMunicipality || 'Unspecified',
+        barangay: barangay || 'Unspecified',
+        severity_level: severityLevel,
+        severity_score: Number(assessmentResult.severity_score) || 0,
+        estimated_cost_min: estimatedCostMin,
+        estimated_cost_max: estimatedCostMax,
+        damage_categories: JSON.stringify(damageCategories),
+        recommended_subsidies: JSON.stringify(assessmentResult.matched_subsidies || []),
+        safety_precautions: JSON.stringify(assessmentResult.safety_precautions || [])
+      });
+
+      for (const category of lossCategories) {
+        const normalizedCategory = String(category);
+        const loweredCategory = normalizedCategory.toLowerCase();
+        const lossType = ['structural', 'agricultural', 'livelihood', 'general']
+          .find((type) => loweredCategory.includes(type)) || 'general';
+
+        insertLoss.run({
+          loss_record_id: 'LOSS-' + crypto.randomUUID().slice(0, 8).toUpperCase(),
+          case_id: assessmentId,
+          item_name: normalizedCategory,
+          item_category: normalizedCategory,
+          condition: severityLevel,
+          loss_type: lossType,
+          estimated_loss_php: estimatedCostMax / lossCategories.length,
+          description: damageDescription
+        });
+
+        insertRecoveryPlan.run({
+          plan_id: 'PLAN-' + crypto.randomUUID().slice(0, 8).toUpperCase(),
+          case_id: assessmentId,
+          category: normalizedCategory,
+          estimated_cost_php: estimatedCostMax / lossCategories.length,
+          priority_level: priorityLevel
+        });
+      }
     });
+    saveAssessment();
 
     res.json({
       success: true,
@@ -94,16 +179,10 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Get past assessments
 router.get('/', (req, res) => {
   try {
-    const rows = db.prepare('SELECT * FROM assessments ORDER BY created_at DESC LIMIT 50').all();
-    const formatted = rows.map(r => ({
-      ...r,
-      damage_categories: JSON.parse(r.damage_categories || '[]'),
-      recommended_subsidies: JSON.parse(r.recommended_subsidies || '[]'),
-      safety_precautions: JSON.parse(r.safety_precautions || '[]')
-    }));
+    const rows = db.prepare('SELECT * FROM recovery_cases ORDER BY created_at DESC LIMIT 50').all();
+    const formatted = rows.map(formatRecoveryCase);
     res.json({ success: true, count: formatted.length, data: formatted });
   } catch (error) {
     console.error('Error fetching assessments:', error);
@@ -114,16 +193,11 @@ router.get('/', (req, res) => {
 // Get single assessment
 router.get('/:id', (req, res) => {
   try {
-    const row = db.prepare('SELECT * FROM assessments WHERE id = ?').get(req.params.id);
+    const row = db.prepare('SELECT * FROM recovery_cases WHERE case_id = ?').get(req.params.id);
     if (!row) {
       return res.status(404).json({ success: false, error: 'Assessment record not found.' });
     }
-    const formatted = {
-      ...row,
-      damage_categories: JSON.parse(row.damage_categories || '[]'),
-      recommended_subsidies: JSON.parse(row.recommended_subsidies || '[]'),
-      safety_precautions: JSON.parse(row.safety_precautions || '[]')
-    };
+    const formatted = formatRecoveryCase(row);
     res.json({ success: true, data: formatted });
   } catch (error) {
     console.error('Error fetching assessment:', error);

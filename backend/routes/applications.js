@@ -16,6 +16,7 @@ router.post('/', (req, res) => {
   try {
     const {
       assessment_id = null,
+      case_id: requestedCaseId = null,
       applicant_name,
       applicant_age = 35,
       civil_status = 'Married',
@@ -47,12 +48,17 @@ router.post('/', (req, res) => {
       });
     }
 
+    const caseId = requestedCaseId || assessment_id;
+    if (caseId && !db.prepare('SELECT 1 FROM recovery_cases WHERE case_id = ?').get(caseId)) {
+      return res.status(400).json({ success: false, error: 'The linked recovery case was not found.' });
+    }
+
     const id = 'APP-' + crypto.randomUUID().slice(0, 8).toUpperCase();
     const reference_number = generateReferenceNumber();
 
     const insert = db.prepare(`
       INSERT INTO applications (
-        id, assessment_id, reference_number, applicant_name, applicant_age,
+        application_id, case_id, reference_number, applicant_name, applicant_age,
         civil_status, contact_number, valid_id_type, valid_id_number,
         province, city_municipality, barangay, purok_street,
         household_members_count, household_members_detail,
@@ -60,7 +66,7 @@ router.post('/', (req, res) => {
         applied_subsidies, estimated_damage_php, requested_amount_php,
         declared_needs, sworn_attestation, status
       ) VALUES (
-        @id, @assessment_id, @reference_number, @applicant_name, @applicant_age,
+        @application_id, @case_id, @reference_number, @applicant_name, @applicant_age,
         @civil_status, @contact_number, @valid_id_type, @valid_id_number,
         @province, @city_municipality, @barangay, @purok_street,
         @household_members_count, @household_members_detail,
@@ -71,8 +77,8 @@ router.post('/', (req, res) => {
     `);
 
     insert.run({
-      id,
-      assessment_id,
+      application_id: id,
+      case_id: caseId,
       reference_number,
       applicant_name,
       applicant_age: Number(applicant_age) || 30,
@@ -98,13 +104,15 @@ router.post('/', (req, res) => {
       status
     });
 
-    const created = db.prepare('SELECT * FROM applications WHERE id = ?').get(id);
+    const created = db.prepare('SELECT * FROM applications WHERE application_id = ?').get(id);
 
     res.status(201).json({
       success: true,
       message: 'Disaster aid application slip saved successfully.',
       data: {
         ...created,
+        id: created.application_id,
+        assessment_id: created.case_id,
         household_members_detail: JSON.parse(created.household_members_detail || '[]'),
         applied_subsidies: JSON.parse(created.applied_subsidies || '[]')
       }
@@ -119,7 +127,7 @@ router.post('/', (req, res) => {
 router.put('/:id', (req, res) => {
   try {
     const { id } = req.params;
-    const existing = db.prepare('SELECT * FROM applications WHERE id = ?').get(id);
+    const existing = db.prepare('SELECT * FROM applications WHERE application_id = ?').get(id);
     if (!existing) {
       return res.status(404).json({ success: false, error: 'Application not found.' });
     }
@@ -174,7 +182,7 @@ router.put('/:id', (req, res) => {
         sworn_attestation = @sworn_attestation,
         status = @status,
         updated_at = CURRENT_TIMESTAMP
-      WHERE id = @id
+      WHERE application_id = @id
     `);
 
     update.run({
@@ -203,13 +211,15 @@ router.put('/:id', (req, res) => {
       status
     });
 
-    const updated = db.prepare('SELECT * FROM applications WHERE id = ?').get(id);
+    const updated = db.prepare('SELECT * FROM applications WHERE application_id = ?').get(id);
 
     res.json({
       success: true,
       message: 'Application updated successfully.',
       data: {
         ...updated,
+        id: updated.application_id,
+        assessment_id: updated.case_id,
         household_members_detail: JSON.parse(updated.household_members_detail || '[]'),
         applied_subsidies: JSON.parse(updated.applied_subsidies || '[]')
       }
@@ -226,6 +236,8 @@ router.get('/', (req, res) => {
     const rows = db.prepare('SELECT * FROM applications ORDER BY created_at DESC LIMIT 100').all();
     const formatted = rows.map(r => ({
       ...r,
+      id: r.application_id,
+      assessment_id: r.case_id,
       household_members_detail: JSON.parse(r.household_members_detail || '[]'),
       applied_subsidies: JSON.parse(r.applied_subsidies || '[]')
     }));
@@ -239,12 +251,14 @@ router.get('/', (req, res) => {
 // Get single application
 router.get('/:id', (req, res) => {
   try {
-    const row = db.prepare('SELECT * FROM applications WHERE id = ?').get(req.params.id);
+    const row = db.prepare('SELECT * FROM applications WHERE application_id = ?').get(req.params.id);
     if (!row) {
       return res.status(404).json({ success: false, error: 'Application record not found.' });
     }
     const formatted = {
       ...row,
+      id: row.application_id,
+      assessment_id: row.case_id,
       household_members_detail: JSON.parse(row.household_members_detail || '[]'),
       applied_subsidies: JSON.parse(row.applied_subsidies || '[]')
     };
@@ -258,7 +272,7 @@ router.get('/:id', (req, res) => {
 // Delete application
 router.delete('/:id', (req, res) => {
   try {
-    const result = db.prepare('DELETE FROM applications WHERE id = ?').run(req.params.id);
+    const result = db.prepare('DELETE FROM applications WHERE application_id = ?').run(req.params.id);
     if (result.changes === 0) {
       return res.status(404).json({ success: false, error: 'Application not found.' });
     }

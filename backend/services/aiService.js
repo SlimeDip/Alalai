@@ -228,7 +228,7 @@ function analyzeWithHeuristic({ disasterType, damageDescription, householdSize }
  * Match subsidies from the SQLite database based on analyzed damage characteristics
  */
 function attachDatabaseSubsidies(analysis) {
-  const allSubsidies = db.prepare('SELECT * FROM subsidies').all();
+  const allSubsidies = db.prepare('SELECT subsidy_id AS id, * FROM subsidies').all();
   
   const matched = allSubsidies.map(sub => {
     let score = 0;
