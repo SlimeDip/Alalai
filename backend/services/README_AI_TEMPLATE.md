@@ -23,7 +23,7 @@ The backend loads its environment before requests are handled, and the client is
 
 ### 2. Zero-Downtime Heuristic Fallback
 Disaster response systems cannot afford downtime due to expired API keys, rate limits, or network connectivity issues at evacuation centers:
-- If `GEMINI_API_KEY` is configured in `backend/.env`, the system calls `analyzeWithGemini()` using `gemini-2.5-flash`.
+- If `GEMINI_API_KEY` is configured in `backend/.env`, the system calls `analyzeWithGemini()` using the currently supported `gemini-3.1-flash-lite` model.
 - Image assessments are sent as `multipart/form-data`; supported JPEG, PNG, and WebP images are passed to Gemini as inline multimodal input. Gemini rejects images that cannot be verified as damage related to the selected disaster.
 - If `GEMINI_API_KEY` is not present, or if an API exception occurs, the system automatically falls back to `analyzeWithHeuristic()`.
 - The health endpoint reports whether the Gemini client can be configured locally; it does not report a verified connection to Google's API.
@@ -89,7 +89,7 @@ The AI is instructed with an expert role prompt tailored to Philippine Disaster 
 ---
 
 ## Customizing the AI Model or Prompts
-- To switch to another model, change `'gemini-2.5-flash'` in `backend/services/aiService.js` to `'gemini-2.5-pro'`.
+- To switch to another model, change the model name in `backend/services/aiService.js`.
 - Subsidy matching is implemented in `backend/services/subsidyMatcher.js`. Both Gemini and heuristic results use the same attachment path. `matched_subsidies` preserves the existing frontend-facing fields and excludes programs with confirmed rule conflicts; `eligibility_results` additionally classifies every program as `potentially_eligible`, `not_eligible`, or `needs_more_information`. For compatibility, `eligibility_status` remains `potential_match` for potentially eligible programs and uses the corresponding explicit outcome for known mismatches or insufficient information.
 - A missing or malformed disaster, damage, or minimum-severity rule is unknown—not unrestricted. The explicit `*` value means unrestricted. Assessment severity is ordered Low < Moderate < Severe < Catastrophic.
 - `match_score` is compatibility points from matched disaster (35), damage (45), and severity (20) rules. It is not a probability of approval; `is_top_match` is only a ranking flag and cannot override a confirmed conflict. Textual requirements are not machine-evaluated, and neither field establishes official eligibility or guarantees approval.

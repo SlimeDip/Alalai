@@ -27,7 +27,7 @@ app.use(express.json());
 // API Routes
 app.use('/api/subsidies', subsidiesRouter);
 app.use('/api/auth', authRouter);
-app.use('/api/assessments', requireAuthenticatedUser, assessmentsRouter);
+app.use('/api/assessments', assessmentsRouter);
 app.use('/api/applications', requireAuthenticatedUser, applicationsRouter);
 
 app.use((error, req, res, next) => {

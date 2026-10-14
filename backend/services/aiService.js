@@ -157,7 +157,7 @@ Analyze the report thoroughly and return STRICTLY a valid JSON object matching t
 DO NOT include markdown fences, code blocks, or extraneous text. Return ONLY the raw JSON string.
 `;
 
-  // Model choice: 'gemini-2.5-flash' provides fast, structured responses
+  // Gemini's currently supported, responsive fast multimodal model.
   const contents = image
     ? [{
         role: 'user',
@@ -173,14 +173,31 @@ DO NOT include markdown fences, code blocks, or extraneous text. Return ONLY the
       }]
     : prompt;
 
-  const response = await getGeminiClient().models.generateContent({
-    model: 'gemini-2.5-flash',
-    contents,
-    config: {
-      temperature: 0.2,
-      responseMimeType: 'application/json'
+  let response;
+  let lastError;
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      response = await getGeminiClient().models.generateContent({
+        model: 'gemini-3.1-flash-lite',
+        contents,
+        config: {
+          temperature: 0.2,
+          responseMimeType: 'application/json'
+        }
+      });
+      break;
+    } catch (error) {
+      lastError = error;
+      const status = Number(error.status || error.code);
+      if (attempt === 3 || ![429, 500, 502, 503, 504].includes(status)) {
+        throw error;
+      }
+      await new Promise((resolve) => setTimeout(resolve, attempt * 1000));
     }
-  });
+  }
+  if (!response) {
+    throw lastError || new Error('Gemini returned no response.');
+  }
 
   const responseText = response.text?.trim() || '';
   // Clean potential backticks if returned

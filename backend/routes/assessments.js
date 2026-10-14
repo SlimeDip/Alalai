@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import multer from 'multer';
 import db from '../database.js';
 import { analyzeDisasterDamage } from '../services/aiService.js';
+import { requireAuthenticatedUser } from './auth.js';
 
 const router = express.Router();
 const upload = multer({
@@ -205,7 +206,7 @@ router.post('/', upload.single('damageImage'), async (req, res) => {
     const saveAssessment = db.transaction(() => {
       insertCase.run({
         case_id: assessmentId,
-        user_id: req.user.user_id,
+        user_id: req.user?.user_id ?? null,
         applicant_name: applicantName,
         contact_number: contactNumber,
         disaster_type: disasterType,
@@ -281,7 +282,7 @@ router.post('/', upload.single('damageImage'), async (req, res) => {
   }
 });
 
-router.get('/', (req, res) => {
+router.get('/', requireAuthenticatedUser, (req, res) => {
   try {
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
@@ -318,7 +319,7 @@ router.get('/', (req, res) => {
 });
 
 // Get single assessment
-router.get('/:id', (req, res) => {
+router.get('/:id', requireAuthenticatedUser, (req, res) => {
   try {
     const row = db.prepare(`
       SELECT * FROM recovery_cases
