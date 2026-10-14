@@ -12,10 +12,59 @@
 
 import { GoogleGenAI } from '@google/genai';
 import db from '../database.js';
+import { attachSubsidyEligibility } from './subsidyMatcher.js';
 
-// Initialize the Google Gen AI client if key is set in environment
-const apiKey = process.env.GEMINI_API_KEY || '';
-const aiClient = apiKey ? new GoogleGenAI({ apiKey }) : null;
+let aiClient = null;
+let aiClientApiKey = null;
+
+function getGeminiClient() {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    return null;
+  }
+
+  if (!aiClient || apiKey !== aiClientApiKey) {
+    aiClient = new GoogleGenAI({ apiKey });
+    aiClientApiKey = apiKey;
+  }
+
+  return aiClient;
+}
+
+export function isGeminiConfigured() {
+  return Boolean(getGeminiClient());
+}
+
+export function validateGeminiAnalysisResult(result) {
+  const validSeverityLevels = ['Low', 'Moderate', 'Severe', 'Catastrophic'];
+  const isStringArray = (value) => Array.isArray(value)
+    && value.every((entry) => typeof entry === 'string');
+
+  if (
+    !result
+    || typeof result !== 'object'
+    || Array.isArray(result)
+    || !validSeverityLevels.includes(result.severity_level)
+    || !Number.isFinite(result.severity_score)
+    || result.severity_score < 1
+    || result.severity_score > 100
+    || typeof result.damage_summary !== 'string'
+    || !isStringArray(result.damage_categories)
+    || !Number.isFinite(result.estimated_cost_min)
+    || result.estimated_cost_min < 0
+    || !Number.isFinite(result.estimated_cost_max)
+    || result.estimated_cost_max < 0
+    || result.estimated_cost_min > result.estimated_cost_max
+    || typeof result.urgency !== 'string'
+    || !isStringArray(result.recommended_aid_types)
+    || !isStringArray(result.safety_precautions)
+    || !isStringArray(result.suggested_actions)
+  ) {
+    throw new TypeError('Gemini returned an invalid assessment response.');
+  }
+
+  return result;
+}
 
 /**
  * Main Analysis Function
@@ -34,7 +83,8 @@ export async function analyzeDisasterDamage({
   householdSize = 1
 }) {
   // If Gemini API key is configured, use Gemini model
-  if (aiClient) {
+  const geminiClient = getGeminiClient();
+  if (geminiClient) {
     try {
       const geminiResult = await analyzeWithGemini({
         disasterType,
@@ -43,7 +93,7 @@ export async function analyzeDisasterDamage({
         householdSize
       });
       if (geminiResult) {
-        return attachDatabaseSubsidies(geminiResult);
+        return attachDatabaseSubsidies(geminiResult, disasterType);
       }
     } catch (err) {
       console.warn('Gemini API call failed or timed out. Falling back to heuristic engine:', err.message);
@@ -58,7 +108,7 @@ export async function analyzeDisasterDamage({
     householdSize
   });
 
-  return attachDatabaseSubsidies(heuristicResult);
+  return attachDatabaseSubsidies(heuristicResult, disasterType);
 }
 
 /**
@@ -97,7 +147,7 @@ DO NOT include markdown fences, code blocks, or extraneous text. Return ONLY the
 `;
 
   // Model choice: 'gemini-2.5-flash' provides fast, structured responses
-  const response = await aiClient.models.generateContent({
+  const response = await getGeminiClient().models.generateContent({
     model: 'gemini-2.5-flash',
     contents: prompt,
     config: {
@@ -109,7 +159,7 @@ DO NOT include markdown fences, code blocks, or extraneous text. Return ONLY the
   const responseText = response.text?.trim() || '';
   // Clean potential backticks if returned
   const cleanedText = responseText.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
-  const parsed = JSON.parse(cleanedText);
+  const parsed = validateGeminiAnalysisResult(JSON.parse(cleanedText));
   parsed.engine = 'Gemini 2.5 Flash';
   return parsed;
 }
@@ -119,7 +169,10 @@ DO NOT include markdown fences, code blocks, or extraneous text. Return ONLY the
  * Evaluates Tagalog and English disaster keywords, damage patterns, and scales.
  */
 function analyzeWithHeuristic({ disasterType, damageDescription, householdSize }) {
-  const text = (damageDescription || '').toLowerCase();
+  const text = (damageDescription || '')
+    .toLowerCase()
+    .replace(/\bno damage to the roof\b/g, ' ')
+    .replace(/\bwalang sira ang bubong\b/g, ' ');
 
   // Keyword lexicons (English & Filipino / Tagalog)
   const totalKeywords = ['wasak', 'guho', 'collapsed', 'washed away', 'anod', 'walang natira', 'total destruction', 'flattened', 'lipad lahat', 'lubog sa putik', 'abo lahat', 'sinunog', 'abo', 'lumubog'];
@@ -155,9 +208,9 @@ function analyzeWithHeuristic({ disasterType, damageDescription, householdSize }
 
   // Identify categories
   const categories = [];
-  const recommendedAid = ['general', 'food'];
+  const recommendedAid = [];
 
-  if (structuralKeywords.some(kw => text.includes(kw)) || severityScore >= 50) {
+  if (structuralKeywords.some(kw => text.includes(kw))) {
     categories.push('Structural & Roofing');
     recommendedAid.push('structural');
   }
@@ -175,10 +228,6 @@ function analyzeWithHeuristic({ disasterType, damageDescription, householdSize }
   if (livelihoodKeywords.some(kw => text.includes(kw))) {
     categories.push('Small Business & Livelihood');
     recommendedAid.push('livelihood');
-  }
-
-  if (categories.length === 0) {
-    categories.push('General Residential Damage');
   }
 
   // Cost estimates in PHP
@@ -201,11 +250,15 @@ function analyzeWithHeuristic({ disasterType, damageDescription, householdSize }
     costMax = Math.round(costMax * 1.2);
   }
 
+  const damageSummary = categories.length
+    ? `Initial intake identifies ${severityLevel.toLowerCase()} damage from ${disasterType}. Affected assets focus on ${categories.join(' and ')}. Urgent restoration is advised for family dwelling stability.`
+    : `Initial intake did not identify a supported damage category for ${disasterType}.`;
+
   return {
     engine: 'Heuristic Rule Analyzer (Gemini Ready)',
     severity_level: severityLevel,
     severity_score: severityScore,
-    damage_summary: `Initial intake identifies ${severityLevel.toLowerCase()} damage from ${disasterType}. Affected assets focus on ${categories.join(' and ')}. Urgent restoration is advised for family dwelling stability.`,
+    damage_summary: damageSummary,
     damage_categories: categories,
     estimated_cost_min: costMin,
     estimated_cost_max: costMax,
@@ -227,78 +280,8 @@ function analyzeWithHeuristic({ disasterType, damageDescription, householdSize }
 /**
  * Match subsidies from the SQLite database based on analyzed damage characteristics
  */
-function attachDatabaseSubsidies(analysis) {
+function attachDatabaseSubsidies(analysis, disasterType) {
   const allSubsidies = db.prepare('SELECT subsidy_id AS id, * FROM subsidies').all();
-  
-  const matched = allSubsidies.map(sub => {
-    let score = 0;
-    const subDamageTypes = sub.damage_types.split(',').map(s => s.trim().toLowerCase());
-    const subCategories = sub.disaster_categories.toLowerCase();
-    
-    // Check damage type overlap
-    for (const aidType of analysis.recommended_aid_types) {
-      if (subDamageTypes.includes(aidType.toLowerCase())) {
-        score += 35;
-      }
-    }
 
-    // Check severity suitability
-    if (analysis.severity_level === 'Catastrophic' && sub.id === 'dswd-esa-total') {
-      score += 50;
-    } else if (analysis.severity_level === 'Severe' && (sub.id === 'dswd-esa-total' || sub.id === 'dswd-esa-partial')) {
-      score += 40;
-    } else if (analysis.severity_level === 'Moderate' && sub.id === 'dswd-esa-partial') {
-      score += 45;
-    }
-
-    // AICS and Barangay relief are almost always relevant for low to high
-    if (sub.id === 'dswd-aics' || sub.id === 'lgu-barangay-relief') {
-      score += 25;
-    }
-
-    // Agriculture matching
-    if (analysis.damage_categories.some(c => c.toLowerCase().includes('agri')) && sub.id === 'da-sure-aid') {
-      score += 55;
-    }
-
-    // Livelihood matching
-    if (analysis.damage_categories.some(c => c.toLowerCase().includes('livelihood') || c.toLowerCase().includes('business')) && sub.id === 'ndrrmc-livelihood-grant') {
-      score += 55;
-    }
-
-    // Parse JSON fields
-    let requirements = [];
-    let applicationSteps = [];
-    try {
-      requirements = JSON.parse(sub.requirements);
-      applicationSteps = JSON.parse(sub.application_steps);
-    } catch {
-      // fallback
-    }
-
-    return {
-      id: sub.id,
-      agency: sub.agency,
-      title: sub.title,
-      short_description: sub.short_description,
-      details: sub.details,
-      max_amount_php: sub.max_amount_php,
-      amount_display: sub.amount_display,
-      disaster_categories: sub.disaster_categories,
-      min_severity: sub.min_severity,
-      requirements,
-      contact_info: sub.contact_info,
-      application_steps: applicationSteps,
-      match_score: score,
-      is_top_match: score >= 50
-    };
-  });
-
-  // Sort by match score descending
-  matched.sort((a, b) => b.match_score - a.match_score);
-
-  return {
-    ...analysis,
-    matched_subsidies: matched
-  };
+  return attachSubsidyEligibility(analysis, disasterType, allSubsidies);
 }

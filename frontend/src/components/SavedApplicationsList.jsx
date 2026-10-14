@@ -11,7 +11,7 @@ import {
   FileCheck
 } from 'lucide-react';
 
-export default function SavedApplicationsList({ onSelectApplication }) {
+export default function SavedApplicationsList({ onSelectApplication, csrfToken }) {
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -23,7 +23,7 @@ export default function SavedApplicationsList({ onSelectApplication }) {
   const fetchApplications = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/applications');
+      const res = await fetch('/api/applications', { credentials: 'include' });
       const data = await res.json();
       if (data.success) {
         setApplications(data.data);
@@ -41,7 +41,11 @@ export default function SavedApplicationsList({ onSelectApplication }) {
     }
 
     try {
-      const res = await fetch(`/api/applications/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/applications/${id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: { 'X-CSRF-Token': csrfToken }
+      });
       const data = await res.json();
       if (data.success) {
         setApplications((prev) => prev.filter((a) => a.id !== id));

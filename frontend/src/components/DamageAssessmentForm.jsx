@@ -54,6 +54,7 @@ const PRESETS = [
 
 export default function DamageAssessmentForm({
   user,
+  csrfToken,
   onSelectSubsidyForApplication
 }) {
   const [currentStep, setCurrentStep] = useState(1);
@@ -136,7 +137,11 @@ export default function DamageAssessmentForm({
     try {
       const response = await fetch('/api/assessments', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken
+        },
         body: JSON.stringify(formData)
       });
 

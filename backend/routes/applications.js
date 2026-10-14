@@ -3,6 +3,213 @@ import crypto from 'crypto';
 import db from '../database.js';
 
 const router = express.Router();
+const recognizedStatuses = new Set(['DRAFT', 'SUBMITTED', 'UNDER_REVIEW', 'APPROVED']);
+// No authorized review routes exist, so ordinary CRUD is limited to draft/submission states.
+const userEditableStatuses = new Set(['DRAFT', 'SUBMITTED']);
+const stringFields = [
+  'assessment_id',
+  'case_id',
+  'applicant_name',
+  'civil_status',
+  'contact_number',
+  'valid_id_type',
+  'valid_id_number',
+  'province',
+  'city_municipality',
+  'barangay',
+  'purok_street',
+  'disaster_type',
+  'incident_date',
+  'damage_level',
+  'damage_summary',
+  'declared_needs',
+  'status'
+];
+
+function isRecord(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function parseNumber(value, field, { integer = false, minimum = 0 } = {}) {
+  const number = typeof value === 'number'
+    ? value
+    : typeof value === 'string' && value.trim()
+      ? Number(value)
+      : NaN;
+  if (
+    !Number.isFinite(number)
+    || number < minimum
+    || (integer && !Number.isSafeInteger(number))
+  ) {
+    return { error: `${field} must be a ${integer ? 'whole' : 'valid'} number not less than ${minimum}.` };
+  }
+  return { value: number };
+}
+
+function validateHouseholdMembers(value) {
+  if (!Array.isArray(value)) {
+    return 'household_members_detail must be an array.';
+  }
+
+  for (let index = 0; index < value.length; index += 1) {
+    const member = value[index];
+    if (!isRecord(member)) {
+      return `household_members_detail[${index}] must be an object.`;
+    }
+    const allowedFields = new Set(['name', 'age', 'relationship']);
+    if (Object.keys(member).some((field) => !allowedFields.has(field))) {
+      return `household_members_detail[${index}] contains an unsupported field.`;
+    }
+    for (const field of ['name', 'relationship']) {
+      if (typeof member[field] !== 'string') {
+        return `household_members_detail[${index}].${field} must be a string.`;
+      }
+    }
+    if (member.age != null && member.age !== '') {
+      const age = parseNumber(member.age, `household_members_detail[${index}].age`, {
+        integer: true
+      });
+      if (age.error || age.value > 120) {
+        return `household_members_detail[${index}].age must be a whole number between 0 and 120.`;
+      }
+    }
+  }
+  return null;
+}
+
+function validateApplicationPayload(body, { existing = null, userId } = {}) {
+  if (!isRecord(body)) return { error: 'Request body must be a JSON object.' };
+
+  for (const field of stringFields) {
+    if (body[field] != null && typeof body[field] !== 'string') {
+      return { error: `${field} must be a string.` };
+    }
+  }
+
+  const requiredFields = ['applicant_name', 'province', 'city_municipality', 'barangay'];
+  for (const field of requiredFields) {
+    const value = body[field] ?? existing?.[field];
+    if (typeof value !== 'string' || !value.trim()) {
+      return { error: `${field} is required and must be a non-empty string.` };
+    }
+  }
+
+  const numericFields = {
+    applicant_age: { defaultValue: 35, integer: true },
+    household_members_count: { defaultValue: 1, integer: true, minimum: 1 },
+    estimated_damage_php: { defaultValue: 0 },
+    requested_amount_php: { defaultValue: 0 }
+  };
+  const numbers = {};
+  for (const [field, config] of Object.entries(numericFields)) {
+    const value = body[field] !== undefined
+      ? body[field]
+      : existing?.[field] ?? config.defaultValue;
+    const parsed = parseNumber(value, field, config);
+    if (parsed.error) return parsed;
+    if (field === 'applicant_age' && parsed.value > 120) {
+      return { error: 'applicant_age must be a whole number between 0 and 120.' };
+    }
+    numbers[field] = parsed.value;
+  }
+
+  const householdMembers = body.household_members_detail !== undefined
+    ? body.household_members_detail
+    : existing
+      ? JSON.parse(existing.household_members_detail || '[]')
+      : [];
+  const householdError = validateHouseholdMembers(householdMembers);
+  if (householdError) return { error: householdError };
+
+  const subsidies = body.applied_subsidies !== undefined
+    ? body.applied_subsidies
+    : existing
+      ? JSON.parse(existing.applied_subsidies || '[]')
+      : [];
+  if (!Array.isArray(subsidies) || subsidies.some(
+    (selection) => typeof selection !== 'string' || !selection.trim()
+  )) {
+    return { error: 'applied_subsidies must be an array of non-empty subsidy IDs or titles.' };
+  }
+  const findSubsidy = db.prepare(
+    'SELECT 1 FROM subsidies WHERE subsidy_id = ? OR title = ? LIMIT 1'
+  );
+  for (const selection of subsidies) {
+    const reference = selection.trim();
+    if (!findSubsidy.get(reference, reference)) {
+      return { error: `Unknown subsidy reference: ${reference}.` };
+    }
+  }
+
+  const requestedStatus = body.status !== undefined ? body.status : existing?.status ?? 'DRAFT';
+  if (!recognizedStatuses.has(requestedStatus)) {
+    return { error: 'status must be one of DRAFT, SUBMITTED, UNDER_REVIEW, or APPROVED.' };
+  }
+  if (!userEditableStatuses.has(requestedStatus)) {
+    return {
+      error: 'Applications may be created or edited only as DRAFT or SUBMITTED; review decisions require an authorized workflow.'
+    };
+  }
+
+  const attestation = body.sworn_attestation !== undefined
+    ? body.sworn_attestation
+    : existing?.sworn_attestation ?? 1;
+  if (![true, false, 0, 1].includes(attestation)) {
+    return { error: 'sworn_attestation must be a boolean or 0/1.' };
+  }
+
+  const optionalStrings = {};
+  for (const field of stringFields) {
+    if (['assessment_id', 'case_id', 'applicant_name', 'province', 'city_municipality', 'barangay', 'status'].includes(field)) {
+      continue;
+    }
+    if (body[field] !== undefined) {
+      optionalStrings[field] = body[field];
+    } else if (existing && field in existing) {
+      optionalStrings[field] = existing[field];
+    }
+  }
+
+  const caseId = body.case_id || body.assessment_id || existing?.case_id || null;
+  if (
+    body.case_id != null
+    && body.assessment_id != null
+    && body.case_id !== body.assessment_id
+  ) {
+    return { error: 'case_id and assessment_id must refer to the same recovery case.' };
+  }
+  if (caseId && !db.prepare(`
+    SELECT 1 FROM recovery_cases WHERE case_id = ? AND user_id = ?
+  `).get(caseId, userId)) {
+    return { error: 'The linked recovery case was not found or is not owned by this user.' };
+  }
+
+  return {
+    value: {
+      ...optionalStrings,
+      applicant_name: body.applicant_name ?? existing?.applicant_name,
+      province: body.province ?? existing?.province,
+      city_municipality: body.city_municipality ?? existing?.city_municipality,
+      barangay: body.barangay ?? existing?.barangay,
+      ...numbers,
+      household_members_detail: householdMembers,
+      applied_subsidies: subsidies,
+      sworn_attestation: attestation ? 1 : 0,
+      status: requestedStatus,
+      case_id: caseId,
+      disaster_type: optionalStrings.disaster_type || 'Typhoon',
+      incident_date: optionalStrings.incident_date || new Date().toISOString().split('T')[0],
+      damage_level: optionalStrings.damage_level || 'Moderate',
+      damage_summary: optionalStrings.damage_summary || 'Disaster damage assessment claim.',
+      civil_status: optionalStrings.civil_status ?? 'Married',
+      contact_number: optionalStrings.contact_number ?? '',
+      valid_id_type: optionalStrings.valid_id_type ?? 'Philippine National ID (PhilSys)',
+      valid_id_number: optionalStrings.valid_id_number ?? '',
+      purok_street: optionalStrings.purok_street ?? '',
+      declared_needs: optionalStrings.declared_needs ?? ''
+    }
+  };
+}
 
 // Helper to generate official Philippine Disaster Intake Reference Number
 function generateReferenceNumber() {
@@ -14,51 +221,18 @@ function generateReferenceNumber() {
 // Create new application
 router.post('/', (req, res) => {
   try {
-    const {
-      assessment_id = null,
-      case_id: requestedCaseId = null,
-      applicant_name,
-      applicant_age = 35,
-      civil_status = 'Married',
-      contact_number = '',
-      valid_id_type = 'Philippine National ID (PhilSys)',
-      valid_id_number = '',
-      province,
-      city_municipality,
-      barangay,
-      purok_street = '',
-      household_members_count = 1,
-      household_members_detail = [],
-      disaster_type,
-      incident_date = new Date().toISOString().split('T')[0],
-      damage_level = 'Moderate',
-      damage_summary,
-      applied_subsidies = [],
-      estimated_damage_php = 0,
-      requested_amount_php = 0,
-      declared_needs = '',
-      sworn_attestation = 1,
-      status = 'DRAFT'
-    } = req.body;
-
-    if (!applicant_name || !province || !city_municipality || !barangay) {
-      return res.status(400).json({
-        success: false,
-        error: 'Applicant name, Province, City/Municipality, and Barangay are required.'
-      });
+    const validated = validateApplicationPayload(req.body, { userId: req.user.user_id });
+    if (validated.error) {
+      return res.status(400).json({ success: false, error: validated.error });
     }
-
-    const caseId = requestedCaseId || assessment_id;
-    if (caseId && !db.prepare('SELECT 1 FROM recovery_cases WHERE case_id = ?').get(caseId)) {
-      return res.status(400).json({ success: false, error: 'The linked recovery case was not found.' });
-    }
+    const application = validated.value;
 
     const id = 'APP-' + crypto.randomUUID().slice(0, 8).toUpperCase();
     const reference_number = generateReferenceNumber();
 
     const insert = db.prepare(`
       INSERT INTO applications (
-        application_id, case_id, reference_number, applicant_name, applicant_age,
+        application_id, case_id, user_id, reference_number, applicant_name, applicant_age,
         civil_status, contact_number, valid_id_type, valid_id_number,
         province, city_municipality, barangay, purok_street,
         household_members_count, household_members_detail,
@@ -66,7 +240,7 @@ router.post('/', (req, res) => {
         applied_subsidies, estimated_damage_php, requested_amount_php,
         declared_needs, sworn_attestation, status
       ) VALUES (
-        @application_id, @case_id, @reference_number, @applicant_name, @applicant_age,
+        @application_id, @case_id, @user_id, @reference_number, @applicant_name, @applicant_age,
         @civil_status, @contact_number, @valid_id_type, @valid_id_number,
         @province, @city_municipality, @barangay, @purok_street,
         @household_members_count, @household_members_detail,
@@ -78,30 +252,12 @@ router.post('/', (req, res) => {
 
     insert.run({
       application_id: id,
-      case_id: caseId,
+      case_id: application.case_id,
+      user_id: req.user.user_id,
       reference_number,
-      applicant_name,
-      applicant_age: Number(applicant_age) || 30,
-      civil_status,
-      contact_number,
-      valid_id_type,
-      valid_id_number,
-      province,
-      city_municipality,
-      barangay,
-      purok_street,
-      household_members_count: Number(household_members_count) || 1,
-      household_members_detail: JSON.stringify(household_members_detail),
-      disaster_type: disaster_type || 'Typhoon',
-      incident_date,
-      damage_level,
-      damage_summary: damage_summary || 'Disaster damage assessment claim.',
-      applied_subsidies: JSON.stringify(applied_subsidies),
-      estimated_damage_php: Number(estimated_damage_php) || 0,
-      requested_amount_php: Number(requested_amount_php) || 0,
-      declared_needs,
-      sworn_attestation: sworn_attestation ? 1 : 0,
-      status
+      ...application,
+      household_members_detail: JSON.stringify(application.household_members_detail),
+      applied_subsidies: JSON.stringify(application.applied_subsidies)
     });
 
     const created = db.prepare('SELECT * FROM applications WHERE application_id = ?').get(id);
@@ -127,38 +283,26 @@ router.post('/', (req, res) => {
 router.put('/:id', (req, res) => {
   try {
     const { id } = req.params;
-    const existing = db.prepare('SELECT * FROM applications WHERE application_id = ?').get(id);
+    const existing = db.prepare(`
+      SELECT * FROM applications
+      WHERE application_id = ? AND user_id = ?
+    `).get(id, req.user.user_id);
     if (!existing) {
       return res.status(404).json({ success: false, error: 'Application not found.' });
     }
 
-    const {
-      applicant_name = existing.applicant_name,
-      applicant_age = existing.applicant_age,
-      civil_status = existing.civil_status,
-      contact_number = existing.contact_number,
-      valid_id_type = existing.valid_id_type,
-      valid_id_number = existing.valid_id_number,
-      province = existing.province,
-      city_municipality = existing.city_municipality,
-      barangay = existing.barangay,
-      purok_street = existing.purok_street,
-      household_members_count = existing.household_members_count,
-      household_members_detail = JSON.parse(existing.household_members_detail || '[]'),
-      disaster_type = existing.disaster_type,
-      incident_date = existing.incident_date,
-      damage_level = existing.damage_level,
-      damage_summary = existing.damage_summary,
-      applied_subsidies = JSON.parse(existing.applied_subsidies || '[]'),
-      estimated_damage_php = existing.estimated_damage_php,
-      requested_amount_php = existing.requested_amount_php,
-      declared_needs = existing.declared_needs,
-      sworn_attestation = existing.sworn_attestation,
-      status = existing.status
-    } = req.body;
+    const validated = validateApplicationPayload(req.body, {
+      existing,
+      userId: req.user.user_id
+    });
+    if (validated.error) {
+      return res.status(400).json({ success: false, error: validated.error });
+    }
+    const application = validated.value;
 
     const update = db.prepare(`
       UPDATE applications SET
+        case_id = @case_id,
         applicant_name = @applicant_name,
         applicant_age = @applicant_age,
         civil_status = @civil_status,
@@ -182,33 +326,15 @@ router.put('/:id', (req, res) => {
         sworn_attestation = @sworn_attestation,
         status = @status,
         updated_at = CURRENT_TIMESTAMP
-      WHERE application_id = @id
+      WHERE application_id = @id AND user_id = @user_id
     `);
 
     update.run({
       id,
-      applicant_name,
-      applicant_age: Number(applicant_age) || 30,
-      civil_status,
-      contact_number,
-      valid_id_type,
-      valid_id_number,
-      province,
-      city_municipality,
-      barangay,
-      purok_street,
-      household_members_count: Number(household_members_count) || 1,
-      household_members_detail: JSON.stringify(household_members_detail),
-      disaster_type,
-      incident_date,
-      damage_level,
-      damage_summary,
-      applied_subsidies: JSON.stringify(applied_subsidies),
-      estimated_damage_php: Number(estimated_damage_php) || 0,
-      requested_amount_php: Number(requested_amount_php) || 0,
-      declared_needs,
-      sworn_attestation: sworn_attestation ? 1 : 0,
-      status
+      user_id: req.user.user_id,
+      ...application,
+      household_members_detail: JSON.stringify(application.household_members_detail),
+      applied_subsidies: JSON.stringify(application.applied_subsidies)
     });
 
     const updated = db.prepare('SELECT * FROM applications WHERE application_id = ?').get(id);
@@ -233,7 +359,12 @@ router.put('/:id', (req, res) => {
 // Get all applications
 router.get('/', (req, res) => {
   try {
-    const rows = db.prepare('SELECT * FROM applications ORDER BY created_at DESC LIMIT 100').all();
+    const rows = db.prepare(`
+      SELECT * FROM applications
+      WHERE user_id = ?
+      ORDER BY created_at DESC
+      LIMIT 100
+    `).all(req.user.user_id);
     const formatted = rows.map(r => ({
       ...r,
       id: r.application_id,
@@ -251,7 +382,10 @@ router.get('/', (req, res) => {
 // Get single application
 router.get('/:id', (req, res) => {
   try {
-    const row = db.prepare('SELECT * FROM applications WHERE application_id = ?').get(req.params.id);
+    const row = db.prepare(`
+      SELECT * FROM applications
+      WHERE application_id = ? AND user_id = ?
+    `).get(req.params.id, req.user.user_id);
     if (!row) {
       return res.status(404).json({ success: false, error: 'Application record not found.' });
     }
@@ -272,7 +406,10 @@ router.get('/:id', (req, res) => {
 // Delete application
 router.delete('/:id', (req, res) => {
   try {
-    const result = db.prepare('DELETE FROM applications WHERE application_id = ?').run(req.params.id);
+    const result = db.prepare(`
+      DELETE FROM applications
+      WHERE application_id = ? AND user_id = ?
+    `).run(req.params.id, req.user.user_id);
     if (result.changes === 0) {
       return res.status(404).json({ success: false, error: 'Application not found.' });
     }

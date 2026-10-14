@@ -10,45 +10,89 @@ import SavedApplicationsList from './components/SavedApplicationsList';
 export default function App() {
   const [activeTab, setActiveTab] = useState('landing');
   const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [user, setUser] = useState(() => {
-    try {
-      const saved = localStorage.getItem('tulong_bayan_user');
-      return saved ? JSON.parse(saved) : { isGuest: true, name: 'Bisita' };
-    } catch {
-      return { isGuest: true, name: 'Bisita' };
-    }
-  });
-
+  const [user, setUser] = useState(null);
+  const [csrfToken, setCsrfToken] = useState('');
+  const [authLoading, setAuthLoading] = useState(true);
+  const [pendingTab, setPendingTab] = useState(null);
   const [selectedApplicationData, setSelectedApplicationData] = useState(null);
 
-  const handleLogin = (userData) => {
-    setUser(userData);
-    try {
-      localStorage.setItem('tulong_bayan_user', JSON.stringify(userData));
-    } catch {}
-  };
-
-  const handleLogout = () => {
-    const guestUser = { isGuest: true, name: 'Bisita' };
-    setUser(guestUser);
+  useEffect(() => {
     try {
       localStorage.removeItem('tulong_bayan_user');
     } catch {}
+    fetch('/api/auth/me', { credentials: 'include' })
+      .then((response) => response.ok ? response.json() : null)
+      .then((result) => {
+        setUser(result?.success ? result.data : null);
+        setCsrfToken(result?.success ? result.csrfToken : '');
+      })
+      .catch(() => {
+        setUser(null);
+        setCsrfToken('');
+      })
+      .finally(() => setAuthLoading(false));
+  }, []);
+
+  const handleLogin = async (mode, credentials) => {
+    const response = await fetch(`/api/auth/${mode === 'register' ? 'register' : 'login'}`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(credentials)
+    });
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+      throw new Error(result.error || 'Hindi makumpleto ang pag-login.');
+    }
+    setUser(result.data);
+    setCsrfToken(result.csrfToken);
+    if (pendingTab) {
+      setActiveTab(pendingTab);
+      setPendingTab(null);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'X-CSRF-Token': csrfToken }
+      });
+      if (!response.ok) throw new Error('Hindi makumpleto ang pag-logout.');
+    } catch (error) {
+      console.error('Failed to log out:', error);
+      return;
+    }
+    setUser(null);
+    setCsrfToken('');
+    setSelectedApplicationData(null);
+    setActiveTab('landing');
   };
 
   const handleContinueAsGuest = () => {
-    const guestUser = { isGuest: true, name: 'Bisita' };
-    setUser(guestUser);
+    setUser(null);
+    setCsrfToken('');
+    setPendingTab(null);
+  };
+
+  const handleNavigate = (tab) => {
+    if (['assessment', 'application', 'saved'].includes(tab) && !user) {
+      setPendingTab(tab);
+      setAuthModalOpen(true);
+      return;
+    }
+    setActiveTab(tab);
   };
 
   // Navigating between flows
   const handleSelectSubsidyForApplication = ({ subsidy, assessment, applicant }) => {
     setSelectedApplicationData({
       subsidy,
-      assessment,
+      assessment: assessment ? { ...assessment, id: assessment.id } : null,
       applicant
     });
-    setActiveTab('application');
+    handleNavigate('application');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -65,6 +109,7 @@ export default function App() {
         damageDescription: savedItem.damage_summary
       },
       assessment: {
+        id: savedItem.case_id,
         severity_level: savedItem.damage_level,
         damage_summary: savedItem.damage_summary,
         estimated_cost_max: savedItem.estimated_damage_php
@@ -83,7 +128,7 @@ export default function App() {
       {/* Responsive Header */}
       <Header
         activeTab={activeTab}
-        onNavigate={setActiveTab}
+        onNavigate={handleNavigate}
         user={user}
         onOpenLogin={() => setAuthModalOpen(true)}
         onLogout={handleLogout}
@@ -95,7 +140,7 @@ export default function App() {
           <LandingPage
             user={user}
             onStartAssessment={() => {
-              setActiveTab('assessment');
+              handleNavigate('assessment');
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
             onOpenLogin={() => setAuthModalOpen(true)}
@@ -107,10 +152,13 @@ export default function App() {
         )}
 
         {activeTab === 'assessment' && (
-          <DamageAssessmentForm
-            user={user}
-            onSelectSubsidyForApplication={handleSelectSubsidyForApplication}
-          />
+          user ? (
+            <DamageAssessmentForm
+              user={user}
+              csrfToken={csrfToken}
+              onSelectSubsidyForApplication={handleSelectSubsidyForApplication}
+            />
+          ) : <p role="status">Mag-login upang magsagawa at mag-save ng damage assessment.</p>
         )}
 
         {activeTab === 'subsidies' && (
@@ -120,23 +168,29 @@ export default function App() {
         )}
 
         {activeTab === 'application' && (
-          <OfficialApplicationView
-            initialData={selectedApplicationData}
-            user={user}
-            onSavedSuccess={() => {}}
-          />
+          user ? (
+            <OfficialApplicationView
+              initialData={selectedApplicationData}
+              user={user}
+              csrfToken={csrfToken}
+              onSavedSuccess={() => {}}
+            />
+          ) : <p role="status">Mag-login upang mag-save ng application.</p>
         )}
 
         {activeTab === 'saved' && (
-          <SavedApplicationsList
-            onSelectApplication={handleSelectSavedApplication}
-          />
+          user ? (
+            <SavedApplicationsList
+              onSelectApplication={handleSelectSavedApplication}
+              csrfToken={csrfToken}
+            />
+          ) : <p role="status">Mag-login upang tingnan ang iyong mga rekord.</p>
         )}
       </main>
 
       {/* Auth / Resident Registration Modal */}
       <AuthModal
-        isOpen={authModalOpen}
+        isOpen={authModalOpen && !authLoading}
         onClose={() => setAuthModalOpen(false)}
         onLogin={handleLogin}
         onContinueAsGuest={handleContinueAsGuest}
