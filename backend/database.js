@@ -251,6 +251,7 @@ export function initDatabase() {
       ['estimated_cost_max', 'REAL DEFAULT 0'],
       ["damage_categories", "TEXT NOT NULL DEFAULT '[]'"],
       ["recommended_subsidies", "TEXT NOT NULL DEFAULT '[]'"],
+      ["eligibility_results", "TEXT"],
       ["safety_precautions", "TEXT NOT NULL DEFAULT '[]'"]
     ];
     for (const [columnName, columnDefinition] of recoveryCaseColumns) {

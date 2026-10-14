@@ -5,6 +5,28 @@ import { analyzeDisasterDamage } from '../services/aiService.js';
 
 const router = express.Router();
 
+function parseEligibilityResults(value) {
+  if (typeof value !== 'string' || !value.trim()) return null;
+
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function parseJsonArray(value) {
+  if (typeof value !== 'string' || !value.trim()) return [];
+
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
 function formatRecoveryCase(row) {
   const lossRecords = db.prepare(`
     SELECT * FROM loss_records WHERE case_id = ? ORDER BY created_at ASC
@@ -25,11 +47,12 @@ function formatRecoveryCase(row) {
     raw_description: [...new Set(lossRecords.map((loss) => loss.description).filter(Boolean))].join('\n'),
     severity_level: row.severity_level,
     severity_score: row.severity_score,
-    damage_categories: JSON.parse(row.damage_categories || '[]'),
+    damage_categories: parseJsonArray(row.damage_categories),
     estimated_cost_min: row.estimated_cost_min,
     estimated_cost_max: row.estimated_cost_max,
-    recommended_subsidies: JSON.parse(row.recommended_subsidies || '[]'),
-    safety_precautions: JSON.parse(row.safety_precautions || '[]'),
+    recommended_subsidies: parseJsonArray(row.recommended_subsidies),
+    eligibility_results: parseEligibilityResults(row.eligibility_results),
+    safety_precautions: parseJsonArray(row.safety_precautions),
     created_at: row.created_at,
     loss_records: lossRecords,
     recovery_plans: recoveryPlans
@@ -127,17 +150,20 @@ router.post('/', async (req, res) => {
     const lossCategories = damageCategories.length ? damageCategories : ['general'];
     const estimatedCostMin = Number(assessmentResult.estimated_cost_min) || 0;
     const estimatedCostMax = Number(assessmentResult.estimated_cost_max) || 0;
+    if (!Array.isArray(assessmentResult.eligibility_results)) {
+      throw new TypeError('Assessment eligibility results are unavailable.');
+    }
     const insertCase = db.prepare(`
       INSERT INTO recovery_cases (
         case_id, user_id, applicant_name, contact_number, disaster_type,
         incident_date, province, city_municipality, barangay, severity_level,
         severity_score, estimated_cost_min, estimated_cost_max,
-        damage_categories, recommended_subsidies, safety_precautions
+        damage_categories, recommended_subsidies, eligibility_results, safety_precautions
       ) VALUES (
         @case_id, @user_id, @applicant_name, @contact_number, @disaster_type,
         @incident_date, @province, @city_municipality, @barangay, @severity_level,
         @severity_score, @estimated_cost_min, @estimated_cost_max,
-        @damage_categories, @recommended_subsidies, @safety_precautions
+        @damage_categories, @recommended_subsidies, @eligibility_results, @safety_precautions
       )
     `);
     const insertLoss = db.prepare(`
@@ -178,6 +204,7 @@ router.post('/', async (req, res) => {
         estimated_cost_max: estimatedCostMax,
         damage_categories: JSON.stringify(damageCategories),
         recommended_subsidies: JSON.stringify(assessmentResult.matched_subsidies || []),
+        eligibility_results: JSON.stringify(assessmentResult.eligibility_results),
         safety_precautions: JSON.stringify(assessmentResult.safety_precautions || [])
       });
 
