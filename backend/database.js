@@ -5,18 +5,143 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const dbPath = path.join(__dirname, 'disaster_relief.db');
+const dbPath = process.env.DISASTER_RELIEF_DB_PATH
+  ? path.resolve(process.env.DISASTER_RELIEF_DB_PATH)
+  : path.join(__dirname, 'disaster_relief.db');
 const db = new Database(dbPath);
 
 // Enable foreign keys and WAL mode for better concurrency
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
 
+function tableExists(tableName) {
+  return Boolean(db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?").get(tableName));
+}
+
+function tableColumns(tableName) {
+  return db.pragma(`table_info(${tableName})`).map((column) => column.name);
+}
+
+function migrateColumnNames() {
+  if (tableExists('subsidies')) {
+    const columns = tableColumns('subsidies');
+    if (columns.includes('id') && !columns.includes('subsidy_id')) {
+      db.exec('ALTER TABLE subsidies RENAME COLUMN id TO subsidy_id');
+    }
+  }
+
+  if (tableExists('applications')) {
+    const columns = tableColumns('applications');
+    if (columns.includes('id') && !columns.includes('application_id')) {
+      db.exec('ALTER TABLE applications RENAME COLUMN id TO application_id');
+    }
+  }
+}
+
+function migrateLegacyAssessments() {
+  if (!tableExists('assessments')) return;
+
+  const rows = db.prepare('SELECT * FROM assessments').all();
+  const insertCase = db.prepare(`
+    INSERT OR IGNORE INTO recovery_cases (
+      case_id, applicant_name, contact_number, disaster_type, incident_date,
+      province, city_municipality, barangay, severity_level, severity_score,
+      estimated_cost_min, estimated_cost_max, damage_categories,
+      recommended_subsidies, safety_precautions
+    ) VALUES (
+      @case_id, @applicant_name, @contact_number, @disaster_type, @incident_date,
+      @province, @city_municipality, @barangay, @severity_level, @severity_score,
+      @estimated_cost_min, @estimated_cost_max, @damage_categories,
+      @recommended_subsidies, @safety_precautions
+    )
+  `);
+  const insertLoss = db.prepare(`
+    INSERT OR IGNORE INTO loss_records (
+      loss_record_id, case_id, item_name, item_category, condition,
+      loss_type, estimated_loss_php, description
+    ) VALUES (
+      @loss_record_id, @case_id, @item_name, @item_category, @condition,
+      @loss_type, @estimated_loss_php, @description
+    )
+  `);
+
+  db.transaction((legacyRows) => {
+    for (const row of legacyRows) {
+      const caseId = row.id;
+      let damageCategories = [];
+      try {
+        damageCategories = JSON.parse(row.damage_categories || '[]');
+      } catch {}
+
+      insertCase.run({
+        case_id: caseId,
+        applicant_name: row.applicant_name,
+        contact_number: row.contact_number,
+        disaster_type: row.disaster_type || 'Typhoon',
+        incident_date: row.incident_date,
+        province: row.province || 'Unspecified',
+        city_municipality: row.city_municipality || 'Unspecified',
+        barangay: row.barangay || 'Unspecified',
+        severity_level: row.severity_level || 'Low',
+        severity_score: row.severity_score || 0,
+        estimated_cost_min: row.estimated_cost_min || 0,
+        estimated_cost_max: row.estimated_cost_max || 0,
+        damage_categories: JSON.stringify(damageCategories),
+        recommended_subsidies: row.recommended_subsidies || '[]',
+        safety_precautions: row.safety_precautions || '[]'
+      });
+
+      insertLoss.run({
+        loss_record_id: `${caseId}-LEGACY-LOSS`,
+        case_id: caseId,
+        item_name: 'Reported disaster damage',
+        item_category: damageCategories.join(', ') || 'general',
+        condition: row.severity_level || 'Low',
+        loss_type: 'general',
+        estimated_loss_php: row.estimated_cost_max || 0,
+        description: row.raw_description || ''
+      });
+    }
+  })(rows);
+
+  if (tableColumns('applications').includes('assessment_id')) {
+    db.prepare(`
+      UPDATE applications
+      SET case_id = assessment_id
+      WHERE case_id IS NULL
+        AND assessment_id IN (SELECT case_id FROM recovery_cases)
+    `).run();
+  }
+}
+
 // Initialize database schema
 export function initDatabase() {
+  migrateColumnNames();
+
   db.exec(`
+    CREATE TABLE IF NOT EXISTS users(
+      user_id TEXT PRIMARY KEY,
+      full_name TEXT NOT NULL,
+      email TEXT UNIQUE NOT NULL,
+      password_hash TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS auth_sessions (
+      token_hash TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      expires_at TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS auth_ownership_migrations (
+      version INTEGER PRIMARY KEY
+    );
+
     CREATE TABLE IF NOT EXISTS subsidies (
-      id TEXT PRIMARY KEY,
+      subsidy_id TEXT PRIMARY KEY,
       agency TEXT NOT NULL,
       title TEXT NOT NULL,
       short_description TEXT NOT NULL,
@@ -31,29 +156,62 @@ export function initDatabase() {
       application_steps TEXT NOT NULL -- JSON array
     );
 
-    CREATE TABLE IF NOT EXISTS assessments (
-      id TEXT PRIMARY KEY,
+    CREATE TABLE IF NOT EXISTS recovery_cases (
+      case_id TEXT PRIMARY KEY,
+      user_id TEXT,
       applicant_name TEXT,
       contact_number TEXT,
-      province TEXT,
-      city_municipality TEXT,
-      barangay TEXT,
       disaster_type TEXT NOT NULL,
       incident_date TEXT,
-      raw_description TEXT NOT NULL,
+      province TEXT NOT NULL,
+      city_municipality TEXT NOT NULL,
+      barangay TEXT NOT NULL,
+      purok_street TEXT,
       severity_level TEXT NOT NULL,
       severity_score INTEGER DEFAULT 0,
-      damage_categories TEXT NOT NULL, -- JSON array
       estimated_cost_min REAL DEFAULT 0,
       estimated_cost_max REAL DEFAULT 0,
-      recommended_subsidies TEXT NOT NULL, -- JSON array
-      safety_precautions TEXT NOT NULL, -- JSON array
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      damage_categories TEXT NOT NULL DEFAULT '[]',
+      recommended_subsidies TEXT NOT NULL DEFAULT '[]',
+      eligibility_results TEXT,
+      safety_precautions TEXT NOT NULL DEFAULT '[]',
+      status TEXT DEFAULT 'OPEN',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      closed_at DATETIME,
+      FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS loss_records (
+      loss_record_id TEXT PRIMARY KEY,
+      case_id TEXT NOT NULL,
+      item_name TEXT NOT NULL,
+      item_category TEXT NOT NULL,
+      condition TEXT NOT NULL,
+      loss_type TEXT NOT NULL,
+      estimated_loss_php REAL NOT NULL DEFAULT 0,
+      description TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (case_id) REFERENCES recovery_cases(case_id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS recovery_plans (
+      plan_id TEXT PRIMARY KEY,
+      case_id TEXT NOT NULL,
+      category TEXT NOT NULL,
+      estimated_cost_php REAL NOT NULL DEFAULT 0,
+      priority_level TEXT NOT NULL,
+      status TEXT DEFAULT 'PENDING',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (case_id) REFERENCES recovery_cases(case_id) ON DELETE CASCADE
     );
 
     CREATE TABLE IF NOT EXISTS applications (
-      id TEXT PRIMARY KEY,
-      assessment_id TEXT,
+      application_id TEXT PRIMARY KEY,
+      case_id TEXT REFERENCES recovery_cases(case_id) ON DELETE SET NULL,
+      user_id TEXT REFERENCES users(user_id) ON DELETE SET NULL,
       reference_number TEXT UNIQUE NOT NULL,
       applicant_name TEXT NOT NULL,
       applicant_age INTEGER,
@@ -80,7 +238,49 @@ export function initDatabase() {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
+
   `);
+
+  if (tableExists('recovery_cases')) {
+    const columns = tableColumns('recovery_cases');
+    const recoveryCaseColumns = [
+      ['applicant_name', 'TEXT'],
+      ['contact_number', 'TEXT'],
+      ['severity_score', 'INTEGER DEFAULT 0'],
+      ['estimated_cost_min', 'REAL DEFAULT 0'],
+      ['estimated_cost_max', 'REAL DEFAULT 0'],
+      ["damage_categories", "TEXT NOT NULL DEFAULT '[]'"],
+      ["recommended_subsidies", "TEXT NOT NULL DEFAULT '[]'"],
+      ["eligibility_results", "TEXT"],
+      ["safety_precautions", "TEXT NOT NULL DEFAULT '[]'"]
+    ];
+    for (const [columnName, columnDefinition] of recoveryCaseColumns) {
+      if (!columns.includes(columnName)) {
+        db.exec(`ALTER TABLE recovery_cases ADD COLUMN ${columnName} ${columnDefinition}`);
+      }
+    }
+  }
+
+  const applicationColumns = tableColumns('applications');
+  if (!applicationColumns.includes('case_id')) {
+    db.exec('ALTER TABLE applications ADD COLUMN case_id TEXT REFERENCES recovery_cases(case_id) ON DELETE SET NULL');
+  }
+  if (!applicationColumns.includes('user_id')) {
+    db.exec('ALTER TABLE applications ADD COLUMN user_id TEXT REFERENCES users(user_id) ON DELETE SET NULL');
+  }
+  db.exec('CREATE INDEX IF NOT EXISTS idx_recovery_cases_user_id ON recovery_cases(user_id)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_applications_user_id ON applications(user_id)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_auth_sessions_user_id ON auth_sessions(user_id)');
+
+  if (!db.prepare('SELECT 1 FROM auth_ownership_migrations WHERE version = 1').get()) {
+    db.transaction(() => {
+      db.prepare('UPDATE recovery_cases SET user_id = NULL').run();
+      db.prepare('UPDATE applications SET user_id = NULL').run();
+      db.prepare('INSERT INTO auth_ownership_migrations (version) VALUES (1)').run();
+    })();
+  }
+
+  migrateLegacyAssessments();
 
   // Seed default Philippine government disaster subsidies if table is empty
   const countRow = db.prepare('SELECT COUNT(*) as count FROM subsidies').get();
@@ -92,7 +292,7 @@ export function initDatabase() {
 function seedSubsidies() {
   const insert = db.prepare(`
     INSERT INTO subsidies (
-      id, agency, title, short_description, details, max_amount_php,
+      subsidy_id, agency, title, short_description, details, max_amount_php,
       amount_display, disaster_categories, damage_types, min_severity,
       requirements, contact_info, application_steps
     ) VALUES (
