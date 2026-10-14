@@ -1,152 +1,95 @@
 import React, { useState } from 'react';
-import { User, Mail, Lock, X, ArrowRight, UserCheck } from 'lucide-react';
+import { User, Phone, MapPin, X, ArrowRight, UserCheck } from 'lucide-react';
 
-export default function AuthModal({ isOpen, onClose, onLogin, onContinueAsGuest }) {
-  const [mode, setMode] = useState('login');
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [busy, setBusy] = useState(false);
+export default function AuthModal({ isOpen, onClose, onLogin, onContinueAsGuest, t = (k) => k }) {
+  const [formData, setFormData] = useState({
+    name: '',
+    mobile: '',
+    province: '',
+    cityMunicipality: '',
+    barangay: '',
+    idNumber: ''
+  });
 
   if (!isOpen) return null;
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    setError('');
-    setBusy(true);
-    try {
-      await onLogin(mode, {
-        ...(mode === 'register' ? { fullName: fullName.trim() } : {}),
-        email: email.trim(),
-        password
-      });
-      setPassword('');
-      onClose();
-    } catch (requestError) {
-      setError(requestError.message || 'Hindi makumpleto ang pag-login.');
-    } finally {
-      setBusy(false);
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!formData.name.trim()) {
+      alert(t('fullName'));
+      return;
     }
+    onLogin({
+      name: formData.name,
+      mobile: formData.mobile,
+      province: formData.province,
+      cityMunicipality: formData.cityMunicipality,
+      barangay: formData.barangay,
+      idNumber: formData.idNumber,
+      isGuest: false
+    });
+    onClose();
   };
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card" onClick={(event) => event.stopPropagation()}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+      <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header-row">
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ backgroundColor: 'var(--primary-light)', padding: 8, borderRadius: 6, color: 'var(--primary)' }}>
-              <UserCheck size={20} />
-            </div>
+            <UserCheck size={22} color="var(--primary)" />
             <div>
-              <h3 style={{ fontSize: 18, fontWeight: 700 }}>
-                {mode === 'register' ? 'Gumawa ng Resident Account' : 'Mag-login bilang Residente'}
-              </h3>
-              <p style={{ fontSize: 13, color: 'var(--slate-500)' }}>
-                Server-verified na account para sa ligtas na pag-save ng mga rekord
-              </p>
+              <h3>{t('authTitle')}</h3>
+              <p style={{ fontSize: 14, color: 'var(--slate-500)' }}>{t('authSubtitle')}</p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Isara"
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--slate-500)' }}
-          >
+          <button type="button" className="icon-btn" onClick={onClose}>
             <X size={20} />
           </button>
         </div>
 
         <form onSubmit={handleSubmit}>
-          {mode === 'register' && (
+          <div className="form-group">
+            <label className="form-label">
+              <User size={15} /> {t('fullName')} *
+            </label>
+            <input type="text" name="name" required value={formData.name} onChange={handleChange} className="form-input form-input-lg" />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">
+              <Phone size={15} /> {t('phone')}
+            </label>
+            <input type="tel" name="mobile" value={formData.mobile} onChange={handleChange} className="form-input" />
+          </div>
+
+          <div className="form-grid">
             <div className="form-group">
-              <label className="form-label" htmlFor="auth-full-name">
-                <User size={15} /> Buong Pangalan *
-              </label>
-              <input
-                id="auth-full-name"
-                type="text"
-                autoComplete="name"
-                required
-                minLength={2}
-                maxLength={120}
-                value={fullName}
-                onChange={(event) => setFullName(event.target.value)}
-                className="form-input"
-              />
+              <input type="text" name="province" placeholder="Province" value={formData.province} onChange={handleChange} className="form-input" />
             </div>
-          )}
-
-          <div className="form-group">
-            <label className="form-label" htmlFor="auth-email">
-              <Mail size={15} /> Email *
-            </label>
-            <input
-              id="auth-email"
-              type="email"
-              autoComplete="email"
-              required
-              maxLength={254}
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              className="form-input"
-            />
+            <div className="form-group">
+              <input type="text" name="cityMunicipality" placeholder="City" value={formData.cityMunicipality} onChange={handleChange} className="form-input" />
+            </div>
           </div>
 
           <div className="form-group">
-            <label className="form-label" htmlFor="auth-password">
-              <Lock size={15} /> Password *
+            <label className="form-label">
+              <MapPin size={15} /> Barangay
             </label>
-            <input
-              id="auth-password"
-              type="password"
-              autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
-              required
-              minLength={mode === 'register' ? 12 : 1}
-              maxLength={128}
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              className="form-input"
-            />
-            {mode === 'register' && (
-              <small style={{ color: 'var(--slate-500)' }}>Gumamit ng hindi bababa sa 12 character.</small>
-            )}
+            <input type="text" name="barangay" value={formData.barangay} onChange={handleChange} className="form-input" />
           </div>
-
-          {error && (
-            <p role="alert" style={{ color: 'var(--rose-700)', marginBottom: 12 }}>
-              {error}
-            </p>
-          )}
 
           <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={busy}>
-              {busy ? 'Sandali...' : mode === 'register' ? 'Gumawa ng Account' : 'Mag-login'}
+            <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%' }}>
+              {t('authSubmit')}
               <ArrowRight size={16} />
             </button>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              style={{ width: '100%' }}
-              onClick={() => {
-                setMode((current) => current === 'login' ? 'register' : 'login');
-                setError('');
-              }}
-              disabled={busy}
-            >
-              {mode === 'register' ? 'May account na? Mag-login' : 'Wala pang account? Mag-rehistro'}
-            </button>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              style={{ width: '100%' }}
-              onClick={() => {
-                onContinueAsGuest();
-                onClose();
-              }}
-              disabled={busy}
-            >
-              Magpatuloy bilang Bisita
+            <button type="button" className="btn btn-secondary btn-lg" style={{ width: '100%' }} onClick={() => { onContinueAsGuest(); onClose(); }}>
+              {t('continueAsGuest')}
             </button>
           </div>
         </form>

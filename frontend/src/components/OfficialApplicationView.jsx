@@ -3,28 +3,31 @@ import {
   Printer,
   Save,
   CheckCircle2,
-  Plus,
-  Trash2,
   FileText,
   Edit3,
   Eye,
+  Download,
   Check,
-  Building,
+  ArrowLeft,
   User,
   MapPin,
-  Calendar
+  Calendar,
+  AlertTriangle
 } from 'lucide-react';
+import { readSavedApplications, writeSavedApplications } from '../utils/mockData';
 
 export default function OfficialApplicationView({
   initialData,
   user,
-  csrfToken,
-  onSavedSuccess
+  onSavedSuccess,
+  onBack,
+  backLabel,
+  t = (k) => k,
+  lang = 'en'
 }) {
   const [activeView, setActiveView] = useState('editor'); // 'editor' | 'preview'
   const [formData, setFormData] = useState({
     id: '',
-    case_id: '',
     reference_number: '',
     applicant_name: '',
     applicant_age: 42,
@@ -36,11 +39,8 @@ export default function OfficialApplicationView({
     city_municipality: '',
     barangay: '',
     purok_street: '',
-    household_members_count: 3,
-    household_members_detail: [
-      { name: '', age: '', relationship: 'Asawa (Spouse)' },
-      { name: '', age: '', relationship: 'Anak (Child)' }
-    ],
+    spouse_name: 'N/A',
+    children_count: '0',
     disaster_type: 'Typhoon',
     incident_date: new Date().toISOString().split('T')[0],
     damage_level: 'Severe',
@@ -65,13 +65,12 @@ export default function OfficialApplicationView({
 
       setFormData((prev) => ({
         ...prev,
-        case_id: assessment.id || prev.case_id,
         applicant_name: applicant.applicantName || user?.name || prev.applicant_name,
         contact_number: applicant.contactNumber || user?.mobile || prev.contact_number,
         province: applicant.province || user?.province || prev.province,
         city_municipality: applicant.cityMunicipality || user?.cityMunicipality || prev.city_municipality,
         barangay: applicant.barangay || user?.barangay || prev.barangay,
-        disaster_type: applicant.disasterType || assessment.disaster_type || prev.disaster_type,
+        disaster_type: applicant.disasterType || applicant.disaster_type || assessment.disaster_type || prev.disaster_type,
         incident_date: applicant.incidentDate || prev.incident_date,
         damage_level: assessment.severity_level || prev.damage_level,
         damage_summary: assessment.damage_summary || applicant.damageDescription || prev.damage_summary,
@@ -95,46 +94,14 @@ export default function OfficialApplicationView({
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === 'checkbox' ? checked : value,
+      ...(name === 'civil_status' && value.includes('Single')
+        ? { spouse_name: 'N/A', children_count: 'N/A' }
+        : {})
     }));
   };
 
-  const handleMemberChange = (index, field, value) => {
-    const updated = [...formData.household_members_detail];
-    updated[index][field] = value;
-    setFormData((prev) => ({
-      ...prev,
-      household_members_detail: updated,
-      household_members_count: updated.length + 1
-    }));
-  };
-
-  const handleAddMember = () => {
-    setFormData((prev) => {
-      const updated = [
-        ...prev.household_members_detail,
-        { name: '', age: '', relationship: 'Anak (Child)' }
-      ];
-      return {
-        ...prev,
-        household_members_detail: updated,
-        household_members_count: updated.length + 1
-      };
-    });
-  };
-
-  const handleRemoveMember = (index) => {
-    setFormData((prev) => {
-      const updated = prev.household_members_detail.filter((_, i) => i !== index);
-      return {
-        ...prev,
-        household_members_detail: updated,
-        household_members_count: updated.length + 1
-      };
-    });
-  };
-
-  const handlePrint = () => {
+  const handleDownloadPdfOrPrint = () => {
     window.print();
   };
 
@@ -142,29 +109,21 @@ export default function OfficialApplicationView({
     setSaving(true);
     setSaveSuccess('');
     try {
-      const res = await fetch('/api/applications', {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Token': csrfToken
-        },
-        body: JSON.stringify(formData)
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Failed to save application.');
-      }
-
-      setFormData((prev) => ({
-        ...prev,
-        id: data.data.id,
-        reference_number: data.data.reference_number,
-        status: data.data.status
-      }));
-
-      setSaveSuccess(`Naitala ang aplikasyon! Reference: ${data.data.reference_number}`);
-      if (onSavedSuccess) onSavedSuccess(data.data);
+      const id = formData.id || `LOCAL-${Date.now().toString(36).toUpperCase()}`;
+      const referenceNumber = formData.reference_number || `AL-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}`;
+      const savedApplication = {
+        ...formData,
+        id,
+        reference_number: referenceNumber,
+        status: 'DRAFT',
+        saved_at: new Date().toISOString(),
+        applicant_name: formData.applicant_name || user?.name || 'Guest'
+      };
+      const existing = readSavedApplications().filter((item) => item.id !== id);
+      writeSavedApplications([savedApplication, ...existing]);
+      setFormData((prev) => ({ ...prev, id, reference_number: referenceNumber, status: 'DRAFT' }));
+      setSaveSuccess(`${t('recordSaved')} ${referenceNumber}`);
+      if (onSavedSuccess) onSavedSuccess(savedApplication);
     } catch (err) {
       console.error(err);
       alert('May aberya sa pag-save: ' + err.message);
@@ -175,28 +134,29 @@ export default function OfficialApplicationView({
 
   return (
     <div>
-      {/* ACTION TOOLBAR (SCREEN ONLY) */}
-      <div className="modern-card no-print" style={{ marginBottom: 16 }}>
+      {/* SCREEN ACTION TOOLBAR */}
+      <div className="flow-card no-print" style={{ marginBottom: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
           <div>
-            <h2 className="card-heading">
+            <h2 className="flow-heading">
               <FileText size={20} color="var(--primary)" />
-              Opisyal na Intake Slip at Dokumento ng Ayuda
+              {t('appTitle')}
             </h2>
-            <p className="card-subheading">
-              I-edit ang anumang bahagi sa editor, o lumipat sa Print Preview upang i-print nang direkta.
-            </p>
+            <p className="flow-subheading">{t('applyingFor')}: <strong>{formData.applied_subsidies[0] || t('generalAssistance')}</strong></p>
           </div>
 
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <div style={{ display: 'inline-flex', backgroundColor: 'var(--slate-100)', padding: 3, borderRadius: 6 }}>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={onBack}>
+              <ArrowLeft size={14} /> {backLabel || t('backToAssessment')}
+            </button>
+            <div style={{ display: 'inline-flex', backgroundColor: 'var(--slate-100)', padding: 3, borderRadius: 9999 }}>
               <button
                 type="button"
                 className={`btn btn-sm ${activeView === 'editor' ? 'btn-primary' : 'btn-secondary'}`}
                 style={{ border: 'none' }}
                 onClick={() => setActiveView('editor')}
               >
-                <Edit3 size={14} /> Form Editor
+                <Edit3 size={14} /> {t('editorTab')}
               </button>
               <button
                 type="button"
@@ -204,33 +164,25 @@ export default function OfficialApplicationView({
                 style={{ border: 'none' }}
                 onClick={() => setActiveView('preview')}
               >
-                <Eye size={14} /> Print Preview
+                <Eye size={14} /> {t('previewTab')}
               </button>
             </div>
 
             <button
               type="button"
-              className="btn btn-secondary btn-sm"
-              disabled={saving}
-              onClick={handleSaveToDatabase}
+              className="btn-pill-dark"
+              style={{ fontSize: 13, padding: '8px 18px' }}
+              onClick={handleDownloadPdfOrPrint}
+              title={t('printBtn')}
             >
-              <Save size={15} />
-              {saving ? 'Isina-save...' : 'I-save sa Rekord'}
-            </button>
-
-            <button
-              type="button"
-              className="btn btn-success btn-sm"
-              onClick={handlePrint}
-            >
-              <Printer size={15} />
-              I-print ang Form
+              <Download size={14} />
+              {t('printBtn')}
             </button>
           </div>
         </div>
 
         {saveSuccess && (
-          <div className="alert alert-success" style={{ marginTop: 14 }}>
+          <div style={{ backgroundColor: '#ecfdf5', border: '1px solid #a7f3d0', color: '#065f46', padding: '10px 14px', borderRadius: 10, marginTop: 14, display: 'flex', alignItems: 'center', gap: 8, fontSize: 14 }}>
             <CheckCircle2 size={16} />
             <strong>{saveSuccess}</strong>
           </div>
@@ -239,14 +191,14 @@ export default function OfficialApplicationView({
 
       {/* VIEW 1: CLEAN RESPONSIVE FORM EDITOR */}
       {activeView === 'editor' && (
-        <div className="modern-card no-print">
-          <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16, color: 'var(--slate-900)' }}>
-            I. Detalye ng Aplikante at Tirahan
+        <div className="flow-card no-print">
+          <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 16, color: 'var(--slate-900)' }}>
+            {t('applicantDetailsSection')}
           </h3>
 
           <div className="form-grid">
             <div className="form-group">
-              <label className="form-label">Buong Pangalan ng Aplikante *</label>
+              <label className="form-label">{t('fullName')} *</label>
               <input
                 type="text"
                 name="applicant_name"
@@ -258,7 +210,7 @@ export default function OfficialApplicationView({
             </div>
 
             <div className="form-group">
-              <label className="form-label">Edad (Age)</label>
+              <label className="form-label">{t('age')}</label>
               <input
                 type="number"
                 name="applicant_age"
@@ -269,7 +221,7 @@ export default function OfficialApplicationView({
             </div>
 
             <div className="form-group">
-              <label className="form-label">Katayuang Sibil</label>
+              <label className="form-label">{t('civilStatus')}</label>
               <select
                 name="civil_status"
                 value={formData.civil_status}
@@ -284,7 +236,7 @@ export default function OfficialApplicationView({
             </div>
 
             <div className="form-group">
-              <label className="form-label">Uri ng Valid ID</label>
+              <label className="form-label">{t('idType')}</label>
               <select
                 name="valid_id_type"
                 value={formData.valid_id_type}
@@ -301,7 +253,7 @@ export default function OfficialApplicationView({
             </div>
 
             <div className="form-group">
-              <label className="form-label">Numero ng ID</label>
+              <label className="form-label">{t('idNumber')}</label>
               <input
                 type="text"
                 name="valid_id_number"
@@ -313,7 +265,7 @@ export default function OfficialApplicationView({
             </div>
 
             <div className="form-group">
-              <label className="form-label">Telepono / Cellphone</label>
+              <label className="form-label">{t('phone')}</label>
               <input
                 type="text"
                 name="contact_number"
@@ -327,7 +279,7 @@ export default function OfficialApplicationView({
 
           <div className="form-grid" style={{ marginTop: 8 }}>
             <div className="form-group">
-              <label className="form-label">Purok / Kalye</label>
+              <label className="form-label">{t('street')}</label>
               <input
                 type="text"
                 name="purok_street"
@@ -339,7 +291,7 @@ export default function OfficialApplicationView({
             </div>
 
             <div className="form-group">
-              <label className="form-label">Barangay *</label>
+              <label className="form-label">{t('barangay')} *</label>
               <input
                 type="text"
                 name="barangay"
@@ -350,7 +302,7 @@ export default function OfficialApplicationView({
             </div>
 
             <div className="form-group">
-              <label className="form-label">Lungsod / Bayan *</label>
+              <label className="form-label">{t('city')} *</label>
               <input
                 type="text"
                 name="city_municipality"
@@ -361,7 +313,7 @@ export default function OfficialApplicationView({
             </div>
 
             <div className="form-group">
-              <label className="form-label">Lalawigan (Province) *</label>
+              <label className="form-label">{t('province')} *</label>
               <input
                 type="text"
                 name="province"
@@ -372,13 +324,13 @@ export default function OfficialApplicationView({
             </div>
           </div>
 
-          <h3 style={{ fontSize: 16, fontWeight: 700, margin: '24px 0 14px 0', color: 'var(--slate-900)' }}>
-            II. Detalye ng Kalamidad at Pinsala
+          <h3 style={{ fontSize: 16, fontWeight: 800, margin: '24px 0 14px 0', color: 'var(--slate-900)' }}>
+            {t('disasterDetailsSection')}
           </h3>
 
           <div className="form-grid">
             <div className="form-group">
-              <label className="form-label">Kalamidad (Disaster Event)</label>
+              <label className="form-label">{t('disasterEvent')}</label>
               <input
                 type="text"
                 name="disaster_type"
@@ -389,7 +341,7 @@ export default function OfficialApplicationView({
             </div>
 
             <div className="form-group">
-              <label className="form-label">Petsa ng Sakuna</label>
+              <label className="form-label">{t('disasterDate')}</label>
               <input
                 type="date"
                 name="incident_date"
@@ -400,7 +352,7 @@ export default function OfficialApplicationView({
             </div>
 
             <div className="form-group">
-              <label className="form-label">Tantiya ng Halaga ng Pinsala (₱)</label>
+              <label className="form-label">{t('estimatedDamage')}</label>
               <input
                 type="number"
                 name="estimated_damage_php"
@@ -411,7 +363,7 @@ export default function OfficialApplicationView({
             </div>
 
             <div className="form-group">
-              <label className="form-label">Hinihiling na Halaga ng Ayuda (₱)</label>
+              <label className="form-label">{t('requestedAmount')}</label>
               <input
                 type="number"
                 name="requested_amount_php"
@@ -423,7 +375,7 @@ export default function OfficialApplicationView({
           </div>
 
           <div className="form-group" style={{ marginTop: 8 }}>
-            <label className="form-label">Opisyal na Buod ng Pinsala</label>
+            <label className="form-label">{t('damageSummary')}</label>
             <textarea
               name="damage_summary"
               rows={3}
@@ -434,7 +386,7 @@ export default function OfficialApplicationView({
           </div>
 
           <div className="form-group">
-            <label className="form-label">Pangangailangan ng Pamilya (Declared Needs)</label>
+            <label className="form-label">{t('declaredNeeds')}</label>
             <input
               type="text"
               name="declared_needs"
@@ -444,241 +396,243 @@ export default function OfficialApplicationView({
             />
           </div>
 
-          {/* Household members list */}
+          {/* Household summary */}
           <div style={{ marginTop: 20 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-              <strong style={{ fontSize: 15 }}>Kasama sa Tirahan (Household Members):</strong>
-              <button
-                type="button"
-                className="btn btn-secondary btn-sm"
-                onClick={handleAddMember}
-              >
-                <Plus size={14} /> Magdagdag
-              </button>
-            </div>
-
-            {formData.household_members_detail.map((m, idx) => (
-              <div key={idx} style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'center' }}>
+            <strong style={{ display: 'block', fontSize: 15, marginBottom: 10 }}>{t('householdMembers')}</strong>
+            <div className="form-grid">
+              <div className="form-group">
+                <label className="form-label">{t('spouseName')}</label>
                 <input
                   type="text"
-                  placeholder="Pangalan"
-                  value={m.name}
-                  onChange={(e) => handleMemberChange(idx, 'name', e.target.value)}
+                  name="spouse_name"
+                  value={formData.spouse_name}
+                  onChange={handleChange}
                   className="form-input"
-                  style={{ flex: 2 }}
+                  placeholder={formData.civil_status.includes('Single') ? 'N/A' : t('spouseName')}
                 />
-                <input
-                  type="number"
-                  placeholder="Edad"
-                  value={m.age}
-                  onChange={(e) => handleMemberChange(idx, 'age', e.target.value)}
-                  className="form-input"
-                  style={{ flex: 1 }}
-                />
-                <input
-                  type="text"
-                  placeholder="Relasyon"
-                  value={m.relationship}
-                  onChange={(e) => handleMemberChange(idx, 'relationship', e.target.value)}
-                  className="form-input"
-                  style={{ flex: 1.5 }}
-                />
-                <button
-                  type="button"
-                  className="btn btn-danger btn-sm"
-                  onClick={() => handleRemoveMember(idx)}
-                >
-                  <Trash2 size={14} />
-                </button>
               </div>
-            ))}
+              <div className="form-group">
+                <label className="form-label">{t('childrenCount')}</label>
+                <input
+                  type="text"
+                  name="children_count"
+                  value={formData.children_count}
+                  onChange={handleChange}
+                  className="form-input"
+                  placeholder={formData.civil_status.includes('Single') ? 'N/A' : '0'}
+                />
+              </div>
+            </div>
           </div>
 
           <div style={{ marginTop: 24, display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
             <button
               type="button"
-              className="btn btn-primary btn-lg"
+              className="btn-pill-primary"
               onClick={() => {
                 setActiveView('preview');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
             >
-              <Eye size={16} /> I-preview at I-print ang Form
+              <Eye size={16} /> I-preview ang A4 Form
+            </button>
+          </div>
+          <div className="form-actions-row application-bottom-actions" style={{ flexDirection: 'column', alignItems: 'flex-end' }}>
+            <button type="button" className="btn btn-primary btn-lg" disabled={saving} onClick={handleSaveToDatabase}>
+              <Save size={16} /> {saving ? '…' : t('saveBtn')}
             </button>
           </div>
         </div>
       )}
 
-      {/* VIEW 2: OFFICIAL PRINTABLE INTAKE SHEET */}
-      {(activeView === 'preview' || window.matchMedia('print').matches) && (
-        <div style={{ overflowX: 'auto' }}>
-          <div className="official-form-container">
-            {/* Header */}
-            <div className="official-header">
-              <div className="official-republic">Republika ng Pilipinas</div>
-              <div className="official-dept">PAMAHALAANG LOKAL AT KAGAWARAN NG KAGALINGANG PANLIPUNAN</div>
-              <div style={{ fontSize: 13, fontWeight: 600 }}>DSWD • NDRRMC • MUNICIPAL DISASTER RISK REDUCTION DESK</div>
-              <div className="official-form-title">
-                DISASTER ASSISTANCE FAMILY INTAKE & SUBSIDY APPLICATION SLIP
+      {/* VIEW 2: OFFICIAL PRINTABLE INTAKE SHEET (STRICT A4 SIZING) — always mounted so print works from editor mode */}
+      <div
+        className={
+          activeView === 'preview'
+            ? 'intake-sheet-print-host intake-sheet-print-host--visible-on-screen'
+            : 'intake-sheet-print-host'
+        }
+      >
+          {activeView === 'preview' && (
+          <div className="no-print" style={{ backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 14, padding: '12px 18px', marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+            <div style={{ fontSize: 13, color: '#1e40af' }}>
+              {t('printGuaranteeNotice')}
+            </div>
+            <button
+              type="button"
+              className="btn-pill-dark"
+              style={{ fontSize: 13, padding: '8px 18px' }}
+              onClick={handleDownloadPdfOrPrint}
+            >
+              <Download size={14} /> {t('printBtn')}
+            </button>
+          </div>
+          )}
+
+          <div className="official-form-wrapper">
+            <div className="official-form-container">
+              {/* Header */}
+              <div className="official-header">
+                <div className="official-republic">DISASTER RELIEF INTAKE SLIP</div>
+                <div className="official-dept" style={{ fontSize: '9pt', fontWeight: 600 }}>
+                  Independent community assistance document
+                </div>
+                <div style={{ fontSize: '7.5pt', fontWeight: 600, marginTop: 4 }}>
+                  Not affiliated with any government agency
+                </div>
+                <div className="official-form-title">
+                  FAMILY CALAMITY ASSISTANCE APPLICATION
+                </div>
+
+                <div className="official-meta-bar">
+                  <span>{t('referenceNumber')}: <strong>{formData.reference_number || t('toBeSaved')}</strong></span>
+                  <span>{t('dateLabel')}: <strong>{new Date().toLocaleDateString(lang === 'tl' ? 'fil-PH' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</strong></span>
+                  <span>{t('statusLabel')}: <strong>{formData.status}</strong></span>
+                </div>
               </div>
 
-              <div className="official-meta-bar">
-                <span>REFERENCE BLG: <strong>{formData.reference_number || 'TBA SA PAG-SAVE'}</strong></span>
-                <span>PETSA: <strong>{new Date().toLocaleDateString('fil-PH', { year: 'numeric', month: 'long', day: 'numeric' })}</strong></span>
-                <span>KATAYUAN: <strong>{formData.status}</strong></span>
+              {/* SECTION 1 */}
+              <div className="official-section-title">
+                I. IMPORMASYON NG APLIKANTE AT TIRAHAN (APPLICANT INFORMATION)
               </div>
-            </div>
-
-            {/* SECTION 1 */}
-            <div className="official-section-title">
-              I. IMPORMASYON NG APLIKANTE AT TIRAHAN (APPLICANT INFORMATION)
-            </div>
-            <table className="official-table">
-              <tbody>
-                <tr>
-                  <th style={{ width: '25%' }}>Pangalan ng Ulo ng Pamilya</th>
-                  <td style={{ width: '45%' }}><strong>{formData.applicant_name || '________________________'}</strong></td>
-                  <th style={{ width: '15%' }}>Edad</th>
-                  <td style={{ width: '15%' }}>{formData.applicant_age || '___'} taong gulang</td>
-                </tr>
-                <tr>
-                  <th>Katayuang Sibil</th>
-                  <td>{formData.civil_status}</td>
-                  <th>Telepono</th>
-                  <td>{formData.contact_number || 'N/A'}</td>
-                </tr>
-                <tr>
-                  <th>Uri ng Valid ID</th>
-                  <td>{formData.valid_id_type}</td>
-                  <th>ID Number</th>
-                  <td><strong>{formData.valid_id_number || '____________________'}</strong></td>
-                </tr>
-                <tr>
-                  <th>Tirahan (Address)</th>
-                  <td colSpan={3}>
-                    {[formData.purok_street, formData.barangay, formData.city_municipality, formData.province]
-                      .filter(Boolean)
-                      .join(', ') || 'Barangay, Munisipyo, Lalawigan'}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-
-            {/* SECTION 2 */}
-            <div className="official-section-title">
-              II. PAGTATAYA NG PINSALA AT KALAMIDAD (DISASTER & DAMAGE PROFILE)
-            </div>
-            <table className="official-table">
-              <tbody>
-                <tr>
-                  <th style={{ width: '25%' }}>Uri ng Kalamidad</th>
-                  <td style={{ width: '40%' }}><strong>{formData.disaster_type}</strong></td>
-                  <th style={{ width: '15%' }}>Petsa ng Sakuna</th>
-                  <td style={{ width: '20%' }}>{formData.incident_date}</td>
-                </tr>
-                <tr>
-                  <th>Antas ng Pinsala</th>
-                  <td>
-                    <strong style={{ textTransform: 'uppercase' }}>{formData.damage_level} DAMAGE</strong>
-                  </td>
-                  <th>Tantiya ng Halaga</th>
-                  <td><strong>₱{Number(formData.estimated_damage_php || 0).toLocaleString()}</strong></td>
-                </tr>
-                <tr>
-                  <th>Opisyal na Buod ng Pinsala</th>
-                  <td colSpan={3} style={{ fontStyle: 'italic', padding: '10px' }}>
-                    "{formData.damage_summary || 'Naisagawa ang pagsusuri batay sa testimonya ng mamamayan.'}"
-                  </td>
-                </tr>
-                <tr>
-                  <th>Hinihiling na Ayuda</th>
-                  <td colSpan={3}>
-                    <strong>
-                      {formData.applied_subsidies && formData.applied_subsidies.length > 0
-                        ? formData.applied_subsidies.join(', ')
-                        : 'DSWD Emergency Shelter Assistance (ESA) / AICS Assistance'}
-                    </strong>
-                    <span style={{ marginLeft: 16 }}>
-                      (Halaga: ₱{Number(formData.requested_amount_php || 0).toLocaleString()})
-                    </span>
-                  </td>
-                </tr>
-                <tr>
-                  <th>Pangangailangan ng Pamilya</th>
-                  <td colSpan={3}>{formData.declared_needs}</td>
-                </tr>
-              </tbody>
-            </table>
-
-            {/* SECTION 3 */}
-            <div className="official-section-title">
-              III. TALAAN NG MGA KASAMBAHAY (LIST OF HOUSEHOLD MEMBERS)
-            </div>
-            <table className="official-table">
-              <thead>
-                <tr>
-                  <th style={{ width: '10%' }}>Blg.</th>
-                  <th style={{ width: '50%' }}>Buong Pangalan</th>
-                  <th style={{ width: '15%' }}>Edad</th>
-                  <th style={{ width: '25%' }}>Relasyon sa Ulo ng Pamilya</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>1</td>
-                  <td><strong>{formData.applicant_name} (Applicant / Ulo ng Pamilya)</strong></td>
-                  <td>{formData.applicant_age}</td>
-                  <td>Head of Household</td>
-                </tr>
-                {formData.household_members_detail.map((member, mIdx) => (
-                  <tr key={mIdx}>
-                    <td>{mIdx + 2}</td>
-                    <td>{member.name || '(Pangalan ng Miyembro)'}</td>
-                    <td>{member.age || '—'}</td>
-                    <td>{member.relationship || 'Kasambahay'}</td>
+              <table className="official-table">
+                <tbody>
+                  <tr>
+                    <th style={{ width: '25%' }}>Pangalan ng Ulo ng Pamilya</th>
+                    <td style={{ width: '45%' }}><strong>{formData.applicant_name || '________________________'}</strong></td>
+                    <th style={{ width: '15%' }}>{t('age')}</th>
+                    <td style={{ width: '15%' }}>{formData.applicant_age || '___'} taong gulang</td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                  <tr>
+                    <th>{t('civilStatus')}</th>
+                    <td>{formData.civil_status}</td>
+                    <th>Telepono</th>
+                    <td>{formData.contact_number || 'N/A'}</td>
+                  </tr>
+                  <tr>
+                    <th>Uri ng Valid ID</th>
+                    <td>{formData.valid_id_type}</td>
+                    <th>ID Number</th>
+                    <td><strong>{formData.valid_id_number || '____________________'}</strong></td>
+                  </tr>
+                  <tr>
+                    <th>Tirahan (Address)</th>
+                    <td colSpan={3}>
+                      {[formData.purok_street, formData.barangay, formData.city_municipality, formData.province]
+                        .filter(Boolean)
+                        .join(', ') || 'Barangay, Munisipyo, Lalawigan'}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
 
-            {/* SECTION 4 */}
-            <div className="official-section-title">
-              IV. MGA KALAKIP NA DOKUMENTO (ATTACHMENT CHECKLIST)
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: 13, margin: '8px 0 16px 0' }}>
-              <div>[✓] Kopya ng Valid Government ID ng Aplikante</div>
-              <div>[✓] Barangay Certificate of Calamity / Indigency</div>
-              <div>[✓] Litrato ng Nasirang Bahay / Pananim / Kabuhayan</div>
-              <div>[✓] Katibayan ng Paninirahan sa Barangay</div>
-            </div>
+              {/* SECTION 2 */}
+              <div className="official-section-title">
+                II. PAGTATAYA NG PINSALA AT KALAMIDAD (DISASTER & DAMAGE PROFILE)
+              </div>
+              <table className="official-table">
+                <tbody>
+                  <tr>
+                    <th style={{ width: '25%' }}>Uri ng Kalamidad</th>
+                    <td style={{ width: '40%' }}><strong>{formData.disaster_type}</strong></td>
+                    <th style={{ width: '15%' }}>{t('disasterDate')}</th>
+                    <td style={{ width: '20%' }}>{formData.incident_date}</td>
+                  </tr>
+                  <tr>
+                    <th>Antas ng Pinsala</th>
+                    <td>
+                      <strong style={{ textTransform: 'uppercase' }}>{formData.damage_level} DAMAGE</strong>
+                    </td>
+                    <th>Tantiya ng Halaga</th>
+                    <td><strong>₱{Number(formData.estimated_damage_php || 0).toLocaleString()}</strong></td>
+                  </tr>
+                  <tr>
+                    <th>{t('damageSummary')}</th>
+                    <td colSpan={3} style={{ fontStyle: 'italic', padding: '6px' }}>
+                      "{formData.damage_summary || 'Naisagawa ang pagsusuri batay sa testimonya ng mamamayan.'}"
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>Hinihiling na Ayuda</th>
+                    <td colSpan={3}>
+                      <strong>
+                        {formData.applied_subsidies && formData.applied_subsidies.length > 0
+                          ? formData.applied_subsidies.join(', ')
+                          : 'Emergency shelter / family relief (local programs)'}
+                      </strong>
+                      <span style={{ marginLeft: 12 }}>
+                        (Halaga: ₱{Number(formData.requested_amount_php || 0).toLocaleString()})
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>{t('declaredNeeds')}</th>
+                    <td colSpan={3}>{formData.declared_needs}</td>
+                  </tr>
+                </tbody>
+              </table>
 
-            {/* SECTION 5 */}
-            <div style={{ border: '1px solid var(--slate-900)', padding: '10px', fontSize: 12, backgroundColor: 'var(--slate-50)', lineHeight: 1.4 }}>
-              <strong>SINUMPAANG SALAYSAY (SWORN ATTESTATION):</strong><br />
-              Ako ay taos-pusong nagpapatunay sa ilalim ng parusa ng batas na ang lahat ng impormasyong nakatala sa dokumentong ito ay totoo at tumpak ayon sa aking pinakamahusay na kaalaman. Ang tulong na aking hihilingin ay gagamitin lamang para sa agarang pagbangon ng aming pamilya mula sa sakunang naganap.
-            </div>
+              {/* SECTION 3 */}
+              <div className="official-section-title">
+                III. ASAWA AT MGA ANAK (SPOUSE AND CHILDREN)
+              </div>
+              <table className="official-table">
+                <thead>
+                  <tr>
+                    <th style={{ width: '8%' }}>Blg.</th>
+                    <th style={{ width: '52%' }}>{t('spouseName')}</th>
+                    <th style={{ width: '15%' }}>{t('childrenCount')}</th>
+                    <th style={{ width: '25%' }}>{t('relation')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>1</td>
+                    <td><strong>{formData.spouse_name || 'N/A'}</strong></td>
+                    <td>{formData.children_count || 'N/A'}</td>
+                    <td>{t('spouseAndChildren')}</td>
+                  </tr>
+                </tbody>
+              </table>
 
-            {/* SIGNATURES BLOCK */}
-            <div className="official-signature-block">
-              <div className="sig-box">
-                <div className="sig-line"></div>
-                <div className="sig-label">{formData.applicant_name || 'LAGDA NG APLIKANTE'}</div>
-                <div className="sig-sub">Lagda sa Ibabaw ng Limbag na Pangalan</div>
+              {/* SECTION 4 */}
+              <div className="official-section-title">
+                IV. MGA KALAKIP NA DOKUMENTO (ATTACHMENT CHECKLIST)
+              </div>
+              <div className="official-checklist-grid">
+                <div>[✓] Kopya ng Valid Government ID ng Aplikante</div>
+                <div>[✓] Barangay Certificate of Calamity / Indigency</div>
+                <div>[✓] Litrato ng Nasirang Bahay / Pananim / Kabuhayan</div>
+                <div>[✓] Katibayan ng Paninirahan sa Barangay</div>
               </div>
 
-              <div className="sig-box">
-                <div className="sig-line"></div>
-                <div className="sig-label">PUNONG BARANGAY / BDRRMC OFFICER</div>
-                <div className="sig-sub">Pangalan, Lagda, at Opisyal na Tatak ng Barangay</div>
+              {/* SECTION 5 */}
+              <div className="official-attestation-box">
+                <strong>SINUMPAANG SALAYSAY (SWORN ATTESTATION):</strong><br />
+                Ako ay taos-pusong nagpapatunay sa ilalim ng parusa ng batas na ang lahat ng impormasyong nakatala sa dokumentong ito ay totoo at tumpak ayon sa aking pinakamahusay na kaalaman. Ang tulong na aking hihilingin ay gagamitin lamang para sa agarang pagbangon ng aming pamilya mula sa sakunang naganap.
               </div>
-            </div>
 
-            <div style={{ marginTop: 24, paddingTop: 14, borderTop: '1px dashed var(--slate-500)', fontSize: 11, textAlign: 'center', color: 'var(--slate-600)' }}>
-              Tulong Bayan Calamity Portal • Libre at Hindi Ipinagbibili • Republic Act 10121 (DRRM Act of 2010)
+              {/* SIGNATURES BLOCK */}
+              <div className="official-signature-block">
+                <div className="sig-box">
+                  <div className="sig-line"></div>
+                  <div className="sig-label">{formData.applicant_name || 'LAGDA NG APLIKANTE'}</div>
+                  <div className="sig-sub">Lagda sa Ibabaw ng Limbag na Pangalan</div>
+                </div>
+
+                <div className="sig-box">
+                  <div className="sig-line"></div>
+                  <div className="sig-label">PUNONG BARANGAY / BDRRMC OFFICER</div>
+                  <div className="sig-sub">Pangalan, Lagda, at Opisyal na Tatak ng Barangay</div>
+                </div>
+              </div>
+
+              <div className="official-footer-note">
+                Alal<span>ai</span> Calamity Portal • Naka-format para sa A4 Paper Size (Fit to 1 Page) • Libre at Hindi Ipinagbibili • Republic Act 10121
+              </div>
             </div>
           </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 }

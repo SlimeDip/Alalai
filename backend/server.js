@@ -1,6 +1,9 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import multer from 'multer';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { initDatabase } from './database.js';
 import authRouter, { requireAuthenticatedUser } from './routes/auth.js';
 import subsidiesRouter from './routes/subsidies.js';
@@ -8,8 +11,10 @@ import assessmentsRouter from './routes/assessments.js';
 import applicationsRouter from './routes/applications.js';
 import { isGeminiConfigured } from './services/aiService.js';
 
-// Load environment variables (.env)
-dotenv.config();
+// Load environment variables from the repository root and backend directory.
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 // Initialize SQLite database and seed initial subsidies if empty
 initDatabase();
@@ -55,6 +60,18 @@ app.get('/api/health', (req, res) => {
 // Root friendly greeting
 app.get('/', (req, res) => {
   res.send('Philippine Disaster Assistance & Damage Assessment API is running.');
+});
+
+// Return upload and other middleware errors as JSON for the frontend.
+app.use((error, req, res, next) => {
+  if (error instanceof multer.MulterError) {
+    return res.status(400).json({ success: false, error: 'Image upload failed: ' + error.message });
+  }
+  if (error) {
+    console.error('Unhandled API error:', error);
+    return res.status(500).json({ success: false, error: 'Internal server error.' });
+  }
+  next();
 });
 
 // Start listening
