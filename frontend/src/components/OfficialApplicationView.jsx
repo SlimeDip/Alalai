@@ -18,11 +18,13 @@ import {
 export default function OfficialApplicationView({
   initialData,
   user,
+  csrfToken,
   onSavedSuccess
 }) {
   const [activeView, setActiveView] = useState('editor'); // 'editor' | 'preview'
   const [formData, setFormData] = useState({
     id: '',
+    case_id: '',
     reference_number: '',
     applicant_name: '',
     applicant_age: 42,
@@ -63,6 +65,7 @@ export default function OfficialApplicationView({
 
       setFormData((prev) => ({
         ...prev,
+        case_id: assessment.id || prev.case_id,
         applicant_name: applicant.applicantName || user?.name || prev.applicant_name,
         contact_number: applicant.contactNumber || user?.mobile || prev.contact_number,
         province: applicant.province || user?.province || prev.province,
@@ -141,7 +144,11 @@ export default function OfficialApplicationView({
     try {
       const res = await fetch('/api/applications', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken
+        },
         body: JSON.stringify(formData)
       });
       const data = await res.json();

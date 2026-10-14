@@ -5,7 +5,9 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const dbPath = path.join(__dirname, 'disaster_relief.db');
+const dbPath = process.env.DISASTER_RELIEF_DB_PATH
+  ? path.resolve(process.env.DISASTER_RELIEF_DB_PATH)
+  : path.join(__dirname, 'disaster_relief.db');
 const db = new Database(dbPath);
 
 // Enable foreign keys and WAL mode for better concurrency
@@ -126,6 +128,18 @@ export function initDatabase() {
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
+    CREATE TABLE IF NOT EXISTS auth_sessions (
+      token_hash TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      expires_at TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS auth_ownership_migrations (
+      version INTEGER PRIMARY KEY
+    );
+
     CREATE TABLE IF NOT EXISTS subsidies (
       subsidy_id TEXT PRIMARY KEY,
       agency TEXT NOT NULL,
@@ -159,6 +173,7 @@ export function initDatabase() {
       estimated_cost_max REAL DEFAULT 0,
       damage_categories TEXT NOT NULL DEFAULT '[]',
       recommended_subsidies TEXT NOT NULL DEFAULT '[]',
+      eligibility_results TEXT,
       safety_precautions TEXT NOT NULL DEFAULT '[]',
       status TEXT DEFAULT 'OPEN',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -196,6 +211,7 @@ export function initDatabase() {
     CREATE TABLE IF NOT EXISTS applications (
       application_id TEXT PRIMARY KEY,
       case_id TEXT REFERENCES recovery_cases(case_id) ON DELETE SET NULL,
+      user_id TEXT REFERENCES users(user_id) ON DELETE SET NULL,
       reference_number TEXT UNIQUE NOT NULL,
       applicant_name TEXT NOT NULL,
       applicant_age INTEGER,
@@ -247,6 +263,20 @@ export function initDatabase() {
   const applicationColumns = tableColumns('applications');
   if (!applicationColumns.includes('case_id')) {
     db.exec('ALTER TABLE applications ADD COLUMN case_id TEXT REFERENCES recovery_cases(case_id) ON DELETE SET NULL');
+  }
+  if (!applicationColumns.includes('user_id')) {
+    db.exec('ALTER TABLE applications ADD COLUMN user_id TEXT REFERENCES users(user_id) ON DELETE SET NULL');
+  }
+  db.exec('CREATE INDEX IF NOT EXISTS idx_recovery_cases_user_id ON recovery_cases(user_id)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_applications_user_id ON applications(user_id)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_auth_sessions_user_id ON auth_sessions(user_id)');
+
+  if (!db.prepare('SELECT 1 FROM auth_ownership_migrations WHERE version = 1').get()) {
+    db.transaction(() => {
+      db.prepare('UPDATE recovery_cases SET user_id = NULL').run();
+      db.prepare('UPDATE applications SET user_id = NULL').run();
+      db.prepare('INSERT INTO auth_ownership_migrations (version) VALUES (1)').run();
+    })();
   }
 
   migrateLegacyAssessments();
