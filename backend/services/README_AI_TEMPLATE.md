@@ -24,6 +24,7 @@ The backend loads its environment before requests are handled, and the client is
 ### 2. Zero-Downtime Heuristic Fallback
 Disaster response systems cannot afford downtime due to expired API keys, rate limits, or network connectivity issues at evacuation centers:
 - If `GEMINI_API_KEY` is configured in `backend/.env`, the system calls `analyzeWithGemini()` using `gemini-2.5-flash`.
+- Image assessments are sent as `multipart/form-data`; supported JPEG, PNG, and WebP images are passed to Gemini as inline multimodal input. Gemini rejects images that cannot be verified as damage related to the selected disaster.
 - If `GEMINI_API_KEY` is not present, or if an API exception occurs, the system automatically falls back to `analyzeWithHeuristic()`.
 - The health endpoint reports whether the Gemini client can be configured locally; it does not report a verified connection to Google's API.
 - The heuristic engine parses Tagalog, Filipino, and English calamity terminology (e.g. *yero*, *bubong*, *guho*, *wasak*, *lubog sa baha*, *sakahan*, *palay*, *bangka*, *tindahan*) to determine severity scores and damage categories.

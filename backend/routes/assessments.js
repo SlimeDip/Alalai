@@ -1,9 +1,18 @@
 import express from 'express';
 import crypto from 'crypto';
+import multer from 'multer';
 import db from '../database.js';
 import { analyzeDisasterDamage } from '../services/aiService.js';
 
 const router = express.Router();
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 8 * 1024 * 1024 },
+  fileFilter: (req, file, callback) => {
+    const allowedTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
+    callback(null, allowedTypes.has(file.mimetype));
+  }
+});
 
 function parseEligibilityResults(value) {
   if (typeof value !== 'string' || !value.trim()) return null;
@@ -63,7 +72,7 @@ function formatRecoveryCase(row) {
 }
 
 // Run damage assessment through AI template + heuristic and save to SQLite
-router.post('/', async (req, res) => {
+router.post('/', upload.single('damageImage'), async (req, res) => {
   try {
     if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
       return res.status(400).json({
@@ -144,7 +153,8 @@ router.post('/', async (req, res) => {
       disasterType,
       damageDescription,
       location,
-      householdSize: Number(householdSize) || 1
+      householdSize: Number(householdSize) || 1,
+      image: req.file
     });
 
     // Generate unique ID
@@ -259,6 +269,13 @@ router.post('/', async (req, res) => {
       }
     });
   } catch (error) {
+    if (error.code === 'IRRELEVANT_IMAGE') {
+      return res.status(422).json({
+        success: false,
+        code: error.code,
+        error: error.message
+      });
+    }
     console.error('Error conducting assessment:', error);
     res.status(500).json({ success: false, error: 'Internal assessment error.' });
   }
