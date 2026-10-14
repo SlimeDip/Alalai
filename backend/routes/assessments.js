@@ -53,6 +53,9 @@ function formatRecoveryCase(row) {
     recommended_subsidies: parseJsonArray(row.recommended_subsidies),
     eligibility_results: parseEligibilityResults(row.eligibility_results),
     safety_precautions: parseJsonArray(row.safety_precautions),
+    damage_summary: row.damage_summary ?? '',
+    urgency: row.urgency ?? '',
+    suggested_actions: parseJsonArray(row.suggested_actions),
     created_at: row.created_at,
     loss_records: lossRecords,
     recovery_plans: recoveryPlans
@@ -145,7 +148,7 @@ router.post('/', async (req, res) => {
     });
 
     // Generate unique ID
-    const assessmentId = 'CASE-' + crypto.randomUUID().slice(0, 8).toUpperCase();
+    const assessmentId = 'CASE-' + crypto.randomUUID();
     const damageCategories = assessmentResult.damage_categories || [];
     const lossCategories = damageCategories.length ? damageCategories : ['general'];
     const estimatedCostMin = Number(assessmentResult.estimated_cost_min) || 0;
@@ -158,12 +161,14 @@ router.post('/', async (req, res) => {
         case_id, user_id, applicant_name, contact_number, disaster_type,
         incident_date, province, city_municipality, barangay, severity_level,
         severity_score, estimated_cost_min, estimated_cost_max,
-        damage_categories, recommended_subsidies, eligibility_results, safety_precautions
+        damage_categories, recommended_subsidies, eligibility_results, safety_precautions,
+        damage_summary, urgency, suggested_actions
       ) VALUES (
         @case_id, @user_id, @applicant_name, @contact_number, @disaster_type,
         @incident_date, @province, @city_municipality, @barangay, @severity_level,
         @severity_score, @estimated_cost_min, @estimated_cost_max,
-        @damage_categories, @recommended_subsidies, @eligibility_results, @safety_precautions
+        @damage_categories, @recommended_subsidies, @eligibility_results, @safety_precautions,
+        @damage_summary, @urgency, @suggested_actions
       )
     `);
     const insertLoss = db.prepare(`
@@ -205,7 +210,12 @@ router.post('/', async (req, res) => {
         damage_categories: JSON.stringify(damageCategories),
         recommended_subsidies: JSON.stringify(assessmentResult.matched_subsidies || []),
         eligibility_results: JSON.stringify(assessmentResult.eligibility_results),
-        safety_precautions: JSON.stringify(assessmentResult.safety_precautions || [])
+        safety_precautions: JSON.stringify(assessmentResult.safety_precautions || []),
+        damage_summary: assessmentResult.damage_summary || '',
+        urgency: assessmentResult.urgency || '',
+        suggested_actions: Array.isArray(assessmentResult.suggested_actions)
+          ? JSON.stringify(assessmentResult.suggested_actions)
+          : (typeof assessmentResult.suggested_actions === 'string' ? assessmentResult.suggested_actions : '[]')
       });
 
       for (const category of lossCategories) {
@@ -215,7 +225,7 @@ router.post('/', async (req, res) => {
           .find((type) => loweredCategory.includes(type)) || 'general';
 
         insertLoss.run({
-          loss_record_id: 'LOSS-' + crypto.randomUUID().slice(0, 8).toUpperCase(),
+          loss_record_id: 'LOSS-' + crypto.randomUUID(),
           case_id: assessmentId,
           item_name: normalizedCategory,
           item_category: normalizedCategory,
@@ -226,7 +236,7 @@ router.post('/', async (req, res) => {
         });
 
         insertRecoveryPlan.run({
-          plan_id: 'PLAN-' + crypto.randomUUID().slice(0, 8).toUpperCase(),
+          plan_id: 'PLAN-' + crypto.randomUUID(),
           case_id: assessmentId,
           category: normalizedCategory,
           estimated_cost_php: estimatedCostMax / lossCategories.length,
@@ -256,14 +266,34 @@ router.post('/', async (req, res) => {
 
 router.get('/', (req, res) => {
   try {
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+    const offset = (page - 1) * limit;
+
+    const countRow = db.prepare(`
+      SELECT COUNT(*) as total FROM recovery_cases WHERE user_id = ?
+    `).get(req.user.user_id);
+    const total = countRow ? countRow.total : 0;
+
     const rows = db.prepare(`
       SELECT * FROM recovery_cases
       WHERE user_id = ?
       ORDER BY created_at DESC
-      LIMIT 50
-    `).all(req.user.user_id);
+      LIMIT ? OFFSET ?
+    `).all(req.user.user_id, limit, offset);
+
     const formatted = rows.map(formatRecoveryCase);
-    res.json({ success: true, count: formatted.length, data: formatted });
+    res.json({
+      success: true,
+      count: formatted.length,
+      data: formatted,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
   } catch (error) {
     console.error('Error fetching assessments:', error);
     res.status(500).json({ success: false, error: 'Database error fetching assessments.' });

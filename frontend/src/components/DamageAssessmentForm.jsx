@@ -18,6 +18,7 @@ import {
   Tornado,
   Waves,
   Sun,
+  Snowflake,
   ImagePlus,
   X,
 } from 'lucide-react';
@@ -33,6 +34,7 @@ const DISASTERS = [
   { value: 'Tornado', icon: Tornado, titleKey: 'disasterTornado', descKey: 'disasterTornadoDesc' },
   { value: 'Storm Surge', icon: Waves, titleKey: 'disasterStormSurge', descKey: 'disasterStormSurgeDesc' },
   { value: 'Drought', icon: Sun, titleKey: 'disasterDrought', descKey: 'disasterDroughtDesc' },
+  { value: 'Extreme Cold', icon: Snowflake, titleKey: 'disasterCold', descKey: 'disasterColdDesc' },
 ];
 
 const MANUAL_CHECK_KEYS = [
@@ -88,6 +90,12 @@ export default function DamageAssessmentForm({ user, t, lang = 'en', onSelectSub
     }
   }, [user]);
 
+  useEffect(() => {
+    return () => {
+      if (imagePreview) URL.revokeObjectURL(imagePreview);
+    };
+  }, [imagePreview]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -112,6 +120,7 @@ export default function DamageAssessmentForm({ user, t, lang = 'en', onSelectSub
       e.target.value = '';
       return;
     }
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
     setDamageImage(file);
     setImagePreview(URL.createObjectURL(file));
     setErrorMsg('');
@@ -153,7 +162,6 @@ export default function DamageAssessmentForm({ user, t, lang = 'en', onSelectSub
     setLoading(true);
     setErrorMsg('');
     try {
-      const tierLabel = COST_TIERS.find((c) => c.value === costTier);
       const assessmentPayload = {
         disasterType: formData.disasterType,
         damageDescription: formData.damageDescription,
@@ -161,16 +169,27 @@ export default function DamageAssessmentForm({ user, t, lang = 'en', onSelectSub
         manualChecks: Object.fromEntries(
           MANUAL_CHECK_KEYS.filter((k) => manualChecks[k.id]).map((k) => [t(k.labelKey), true])
         ),
-        costTier: tierLabel ? t(tierLabel.labelKey) : ''
+        costTier: inputMethod === 'manual' ? costTier : ''
       };
-      const assessment = damageImage
-        ? await runImageDamageAssessment({
+      let assessment;
+      if (damageImage) {
+        try {
+          assessment = await runImageDamageAssessment({
             ...formData,
             ...assessmentPayload,
             incidentDate: formData.incidentDate,
             damageImage
-          })
-        : await runLocalDamageAssessment(assessmentPayload);
+          });
+        } catch (error) {
+          if (error.code === 'IRRELEVANT_IMAGE') {
+            throw error;
+          }
+          console.warn('AI assessment service unreachable, falling back to local assessment:', error.message);
+          assessment = await runLocalDamageAssessment(assessmentPayload);
+        }
+      } else {
+        assessment = await runLocalDamageAssessment(assessmentPayload);
+      }
       setResult(assessment);
       goStep(3);
     } catch (err) {

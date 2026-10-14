@@ -4,11 +4,16 @@
  */
 import { mockSubsidies } from './mockData';
 
+function hasKeyword(str, kw) {
+  const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`\\b${escaped}\\b`, 'i').test(str);
+}
+
 function analyzeText({ disasterType, damageDescription, householdSize = 3 }) {
   const text = (damageDescription || '').toLowerCase();
   const severeKeywords = ['total', 'gumuho', 'collapsed', 'washed away', 'natanggal', 'destroyed', 'wasak', 'tornado'];
   const moderateKeywords = ['crack', 'bitak', 'leak', 'tumagas', 'partial', 'bahagyang', 'damage', 'nasira'];
-  const totalKeywords = ['uninhabitable', 'hindi na matirhan', 'total loss', 'lubog', 'submerged', 'washed out'];
+  const totalKeywords = ['uninhabitable', 'hindi na matirhan', 'total loss', 'lubog', 'completely submerged', 'totally submerged', 'washed out'];
   const agriKeywords = ['palay', 'rice', 'crop', 'farm', 'pananim', 'sakahan', 'fish', 'isda', 'livestock', 'manok'];
   const livelihoodKeywords = ['tindahan', 'sari-sari', 'paninda', 'store', 'livelihood', 'kabuhayan'];
   const structuralKeywords = ['bubong', 'yero', 'roof', 'pader', 'wall', 'kisame', 'ceiling'];
@@ -18,15 +23,15 @@ function analyzeText({ disasterType, damageDescription, householdSize = 3 }) {
   let severityLevel = 'Moderate';
   let urgency = 'Standard Relief';
 
-  if (totalKeywords.some((kw) => text.includes(kw))) {
+  if (totalKeywords.some((kw) => hasKeyword(text, kw))) {
     severityScore = 90;
     severityLevel = 'Catastrophic';
     urgency = 'Immediate — shelter & food priority';
-  } else if (severeKeywords.some((kw) => text.includes(kw))) {
+  } else if (severeKeywords.some((kw) => hasKeyword(text, kw))) {
     severityScore = 75;
     severityLevel = 'Severe';
     urgency = 'High — repairs needed soon';
-  } else if (moderateKeywords.some((kw) => text.includes(kw))) {
+  } else if (moderateKeywords.some((kw) => hasKeyword(text, kw))) {
     severityScore = 45;
     severityLevel = 'Moderate';
   } else {
@@ -37,18 +42,18 @@ function analyzeText({ disasterType, damageDescription, householdSize = 3 }) {
   const categories = [];
   const recommendedAid = ['general', 'food'];
 
-  if (structuralKeywords.some((kw) => text.includes(kw)) || severityScore >= 50) {
+  if (structuralKeywords.some((kw) => hasKeyword(text, kw)) || severityScore >= 50) {
     categories.push('Structural & Roofing');
     recommendedAid.push('structural');
   }
-  if (waterKeywords.some((kw) => text.includes(kw)) || disasterType.toLowerCase().includes('flood')) {
+  if (waterKeywords.some((kw) => hasKeyword(text, kw)) || disasterType.toLowerCase().includes('flood')) {
     categories.push('Water & Flooding');
   }
-  if (agriKeywords.some((kw) => text.includes(kw))) {
+  if (agriKeywords.some((kw) => hasKeyword(text, kw))) {
     categories.push('Agriculture & Fisheries');
     recommendedAid.push('agricultural');
   }
-  if (livelihoodKeywords.some((kw) => text.includes(kw))) {
+  if (livelihoodKeywords.some((kw) => hasKeyword(text, kw))) {
     categories.push('Small Business & Livelihood');
     recommendedAid.push('livelihood');
   }
@@ -171,19 +176,34 @@ export async function runLocalDamageAssessment(formPayload) {
     householdSize: Number(householdSize) || 3
   });
 
-  if (costTier.includes('100')) {
-    core.severity_level = 'Catastrophic';
-    core.severity_score = Math.max(core.severity_score, 85);
-    core.estimated_cost_min = 80000;
-    core.estimated_cost_max = 250000;
-  } else if (costTier.includes('40')) {
-    core.severity_level = 'Severe';
-    core.severity_score = Math.max(core.severity_score, 70);
-    core.estimated_cost_min = 40000;
-    core.estimated_cost_max = 100000;
-  } else if (costTier.includes('15')) {
-    core.estimated_cost_min = 15000;
-    core.estimated_cost_max = 40000;
+  if (costTier) {
+    switch (costTier) {
+      case 'over100':
+        core.severity_level = 'Catastrophic';
+        core.severity_score = Math.max(core.severity_score, 85);
+        core.estimated_cost_min = 80000;
+        core.estimated_cost_max = 250000;
+        break;
+      case '40to100':
+        core.severity_level = 'Severe';
+        core.severity_score = Math.max(core.severity_score, 70);
+        core.estimated_cost_min = 40000;
+        core.estimated_cost_max = 100000;
+        break;
+      case '15to40':
+        core.severity_level = 'Moderate';
+        core.severity_score = Math.max(core.severity_score, 45);
+        core.estimated_cost_min = 15000;
+        core.estimated_cost_max = 40000;
+        break;
+      case 'under15':
+      default:
+        core.severity_level = 'Low';
+        core.severity_score = Math.min(core.severity_score, 35);
+        core.estimated_cost_min = 5000;
+        core.estimated_cost_max = 15000;
+        break;
+    }
   }
 
   const id = 'LOCAL-' + Date.now().toString(36).toUpperCase();

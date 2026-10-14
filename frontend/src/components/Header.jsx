@@ -29,7 +29,18 @@ export default function Header({
   return (
     <header className="no-print">
       <nav className="modern-navbar">
-        <div className="brand-block" onClick={() => handleNavClick('landing')} role="button" tabIndex={0}>
+        <div
+          className="brand-block"
+          onClick={() => handleNavClick('landing')}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              handleNavClick('landing');
+            }
+          }}
+          role="button"
+          tabIndex={0}
+        >
           <div className="brand-logo">
             {t('appName')}
           </div>
@@ -70,7 +81,7 @@ export default function Header({
             <div className="nav-user-cluster">
               <button type="button" className="btn-pill-dark" onClick={() => handleNavClick('application')}>
                 <User size={14} />
-                <span>{user.name.split(' ')[0]}</span>
+                <span>{(user?.name || '').split(' ')[0] || t('guest')}</span>
               </button>
               <button type="button" className="btn btn-secondary btn-sm" onClick={onLogout} title={t('logout')}>
                 <LogOut size={13} />

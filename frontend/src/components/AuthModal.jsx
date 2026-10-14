@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, Phone, MapPin, X, ArrowRight, UserCheck } from 'lucide-react';
+import { User, Phone, MapPin, X, ArrowRight, UserCheck, FileText } from 'lucide-react';
 
 export default function AuthModal({ isOpen, onClose, onLogin, onContinueAsGuest, t = (k) => k }) {
   const [formData, setFormData] = useState({
@@ -21,7 +21,7 @@ export default function AuthModal({ isOpen, onClose, onLogin, onContinueAsGuest,
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.name.trim()) {
-      alert(t('fullName'));
+      alert(t('pleaseEnterName') && t('pleaseEnterName') !== 'pleaseEnterName' ? t('pleaseEnterName') : 'Please enter your full name.');
       return;
     }
     onLogin({
@@ -67,20 +67,58 @@ export default function AuthModal({ isOpen, onClose, onLogin, onContinueAsGuest,
             <input type="tel" name="mobile" value={formData.mobile} onChange={handleChange} className="form-input" />
           </div>
 
+          <div className="form-group">
+            <label className="form-label">
+              <FileText size={15} /> {t('idNumber')}
+            </label>
+            <input
+              type="text"
+              name="idNumber"
+              placeholder={t('idNumber')}
+              aria-label={t('idNumber')}
+              value={formData.idNumber}
+              onChange={handleChange}
+              className="form-input"
+            />
+          </div>
+
           <div className="form-grid">
             <div className="form-group">
-              <input type="text" name="province" placeholder="Province" value={formData.province} onChange={handleChange} className="form-input" />
+              <input
+                type="text"
+                name="province"
+                placeholder={t('province') !== 'province' ? t('province') : 'Province'}
+                aria-label={t('province') !== 'province' ? t('province') : 'Province'}
+                value={formData.province}
+                onChange={handleChange}
+                className="form-input"
+              />
             </div>
             <div className="form-group">
-              <input type="text" name="cityMunicipality" placeholder="City" value={formData.cityMunicipality} onChange={handleChange} className="form-input" />
+              <input
+                type="text"
+                name="cityMunicipality"
+                placeholder={t('city') !== 'city' ? t('city') : 'City / Municipality'}
+                aria-label={t('city') !== 'city' ? t('city') : 'City or Municipality'}
+                value={formData.cityMunicipality}
+                onChange={handleChange}
+                className="form-input"
+              />
             </div>
           </div>
 
           <div className="form-group">
             <label className="form-label">
-              <MapPin size={15} /> Barangay
+              <MapPin size={15} /> {t('barangay') !== 'barangay' ? t('barangay') : 'Barangay'}
             </label>
-            <input type="text" name="barangay" value={formData.barangay} onChange={handleChange} className="form-input" />
+            <input
+              type="text"
+              name="barangay"
+              aria-label={t('barangay') !== 'barangay' ? t('barangay') : 'Barangay'}
+              value={formData.barangay}
+              onChange={handleChange}
+              className="form-input"
+            />
           </div>
 
           <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>

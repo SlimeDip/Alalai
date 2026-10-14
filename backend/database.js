@@ -171,7 +171,10 @@ export function initDatabase() {
       severity_score INTEGER DEFAULT 0,
       estimated_cost_min REAL DEFAULT 0,
       estimated_cost_max REAL DEFAULT 0,
+      damage_summary TEXT DEFAULT '',
       damage_categories TEXT NOT NULL DEFAULT '[]',
+      urgency TEXT DEFAULT 'standard',
+      suggested_actions TEXT DEFAULT '[]',
       recommended_subsidies TEXT NOT NULL DEFAULT '[]',
       eligibility_results TEXT,
       safety_precautions TEXT NOT NULL DEFAULT '[]',
@@ -239,6 +242,9 @@ export function initDatabase() {
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
+    CREATE INDEX IF NOT EXISTS idx_loss_records_case_id ON loss_records(case_id);
+    CREATE INDEX IF NOT EXISTS idx_recovery_plans_case_id ON recovery_plans(case_id);
+
   `);
 
   if (tableExists('recovery_cases')) {
@@ -249,7 +255,10 @@ export function initDatabase() {
       ['severity_score', 'INTEGER DEFAULT 0'],
       ['estimated_cost_min', 'REAL DEFAULT 0'],
       ['estimated_cost_max', 'REAL DEFAULT 0'],
+      ["damage_summary", "TEXT DEFAULT ''"],
       ["damage_categories", "TEXT NOT NULL DEFAULT '[]'"],
+      ["urgency", "TEXT DEFAULT 'standard'"],
+      ["suggested_actions", "TEXT DEFAULT '[]'"],
       ["recommended_subsidies", "TEXT NOT NULL DEFAULT '[]'"],
       ["eligibility_results", "TEXT"],
       ["safety_precautions", "TEXT NOT NULL DEFAULT '[]'"]
@@ -271,6 +280,8 @@ export function initDatabase() {
   db.exec('CREATE INDEX IF NOT EXISTS idx_recovery_cases_user_id ON recovery_cases(user_id)');
   db.exec('CREATE INDEX IF NOT EXISTS idx_applications_user_id ON applications(user_id)');
   db.exec('CREATE INDEX IF NOT EXISTS idx_auth_sessions_user_id ON auth_sessions(user_id)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_loss_records_case_id ON loss_records(case_id)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_recovery_plans_case_id ON recovery_plans(case_id)');
 
   if (!db.prepare('SELECT 1 FROM auth_ownership_migrations WHERE version = 1').get()) {
     db.transaction(() => {

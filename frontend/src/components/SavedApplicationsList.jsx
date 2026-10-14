@@ -27,11 +27,11 @@ export default function SavedApplicationsList({ onSelectApplication, t = (key) =
   const filtered = applications.filter((app) => {
     const q = searchTerm.toLowerCase();
     return (
-      app.applicant_name.toLowerCase().includes(q) ||
-      app.reference_number.toLowerCase().includes(q) ||
-      app.city_municipality.toLowerCase().includes(q) ||
-      app.province.toLowerCase().includes(q) ||
-      app.disaster_type.toLowerCase().includes(q)
+      (app.applicant_name || '').toLowerCase().includes(q) ||
+      (app.reference_number || '').toLowerCase().includes(q) ||
+      (app.city_municipality || '').toLowerCase().includes(q) ||
+      (app.province || '').toLowerCase().includes(q) ||
+      (app.disaster_type || '').toLowerCase().includes(q)
     );
   });
 

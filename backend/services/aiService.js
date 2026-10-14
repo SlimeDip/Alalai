@@ -164,6 +164,8 @@ DO NOT include markdown fences, code blocks, or extraneous text. Return ONLY the
   return parsed;
 }
 
+const hasKeyword = (text, kw) => new RegExp(`(?:^|[^a-zA-ZáéíóúñÑ])${kw}(?:$|[^a-zA-ZáéíóúñÑ])`, 'i').test(text);
+
 /**
  * Heuristic Fallback Analysis Engine
  * Evaluates Tagalog and English disaster keywords, damage patterns, and scales.
@@ -188,15 +190,15 @@ function analyzeWithHeuristic({ disasterType, damageDescription, householdSize }
   let severityLevel = 'Moderate';
   let urgency = 'Standard';
 
-  if (totalKeywords.some(kw => text.includes(kw))) {
+  if (totalKeywords.some(kw => hasKeyword(text, kw))) {
     severityScore = 90;
     severityLevel = 'Catastrophic';
     urgency = 'Immediate Evacuation / Lifeline Need';
-  } else if (severeKeywords.some(kw => text.includes(kw))) {
+  } else if (severeKeywords.some(kw => hasKeyword(text, kw))) {
     severityScore = 75;
     severityLevel = 'Severe';
     urgency = 'High';
-  } else if (moderateKeywords.some(kw => text.includes(kw))) {
+  } else if (moderateKeywords.some(kw => hasKeyword(text, kw))) {
     severityScore = 45;
     severityLevel = 'Moderate';
     urgency = 'Standard';
@@ -210,22 +212,22 @@ function analyzeWithHeuristic({ disasterType, damageDescription, householdSize }
   const categories = [];
   const recommendedAid = [];
 
-  if (structuralKeywords.some(kw => text.includes(kw))) {
+  if (structuralKeywords.some(kw => hasKeyword(text, kw))) {
     categories.push('Structural & Roofing');
     recommendedAid.push('structural');
   }
 
-  if (waterKeywords.some(kw => text.includes(kw)) || disasterType.toLowerCase().includes('flood')) {
+  if (waterKeywords.some(kw => hasKeyword(text, kw)) || disasterType.toLowerCase().includes('flood')) {
     categories.push('Water Ingress & Flooding');
     recommendedAid.push('general');
   }
 
-  if (agriKeywords.some(kw => text.includes(kw))) {
+  if (agriKeywords.some(kw => hasKeyword(text, kw))) {
     categories.push('Agriculture & Fisheries');
     recommendedAid.push('agricultural');
   }
 
-  if (livelihoodKeywords.some(kw => text.includes(kw))) {
+  if (livelihoodKeywords.some(kw => hasKeyword(text, kw))) {
     categories.push('Small Business & Livelihood');
     recommendedAid.push('livelihood');
   }
