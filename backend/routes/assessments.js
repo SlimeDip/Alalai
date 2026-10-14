@@ -39,6 +39,53 @@ function formatRecoveryCase(row) {
 // Run damage assessment through AI template + heuristic and save to SQLite
 router.post('/', async (req, res) => {
   try {
+    if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Request body must be a JSON object.'
+      });
+    }
+
+    const body = req.body;
+    if (body.userId !== undefined || body.user_id !== undefined) {
+      return res.status(400).json({
+        success: false,
+        error: 'User identity is derived from the authenticated session.'
+      });
+    }
+    const textFields = [
+      'disasterType',
+      'damageDescription',
+      'applicantName',
+      'contactNumber',
+      'province',
+      'cityMunicipality',
+      'barangay',
+      'incidentDate',
+    ];
+    for (const field of textFields) {
+      if (body[field] != null && typeof body[field] !== 'string') {
+        return res.status(400).json({
+          success: false,
+          error: `${field} must be a string.`
+        });
+      }
+    }
+
+    if (body.householdSize != null) {
+      const householdSize = typeof body.householdSize === 'number'
+        ? body.householdSize
+        : typeof body.householdSize === 'string' && body.householdSize.trim()
+          ? Number(body.householdSize)
+          : NaN;
+      if (!Number.isFinite(householdSize) || householdSize < 1) {
+        return res.status(400).json({
+          success: false,
+          error: 'householdSize must be a positive number.'
+        });
+      }
+    }
+
     const {
       disasterType = 'Typhoon',
       damageDescription,
@@ -49,18 +96,19 @@ router.post('/', async (req, res) => {
       barangay = '',
       householdSize = 1,
       incidentDate = new Date().toISOString().split('T')[0],
-      userId = req.body.user_id || null
     } = req.body;
 
-    if (!damageDescription || damageDescription.trim().length === 0) {
+    if (typeof damageDescription !== 'string' || damageDescription.trim().length === 0) {
       return res.status(400).json({
         success: false,
         error: 'Damage description is required for assessment.'
       });
     }
-
-    if (userId && !db.prepare('SELECT 1 FROM users WHERE user_id = ?').get(userId)) {
-      return res.status(400).json({ success: false, error: 'The supplied user does not exist.' });
+    if (typeof disasterType !== 'string' || disasterType.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Disaster type must be a non-empty string.'
+      });
     }
 
     const location = [barangay, cityMunicipality, province].filter(Boolean).join(', ') || 'Philippines';
@@ -116,7 +164,7 @@ router.post('/', async (req, res) => {
     const saveAssessment = db.transaction(() => {
       insertCase.run({
         case_id: assessmentId,
-        user_id: userId,
+        user_id: req.user.user_id,
         applicant_name: applicantName,
         contact_number: contactNumber,
         disaster_type: disasterType,
@@ -175,13 +223,18 @@ router.post('/', async (req, res) => {
     });
   } catch (error) {
     console.error('Error conducting assessment:', error);
-    res.status(500).json({ success: false, error: 'Internal assessment error: ' + error.message });
+    res.status(500).json({ success: false, error: 'Internal assessment error.' });
   }
 });
 
 router.get('/', (req, res) => {
   try {
-    const rows = db.prepare('SELECT * FROM recovery_cases ORDER BY created_at DESC LIMIT 50').all();
+    const rows = db.prepare(`
+      SELECT * FROM recovery_cases
+      WHERE user_id = ?
+      ORDER BY created_at DESC
+      LIMIT 50
+    `).all(req.user.user_id);
     const formatted = rows.map(formatRecoveryCase);
     res.json({ success: true, count: formatted.length, data: formatted });
   } catch (error) {
@@ -193,7 +246,10 @@ router.get('/', (req, res) => {
 // Get single assessment
 router.get('/:id', (req, res) => {
   try {
-    const row = db.prepare('SELECT * FROM recovery_cases WHERE case_id = ?').get(req.params.id);
+    const row = db.prepare(`
+      SELECT * FROM recovery_cases
+      WHERE case_id = ? AND user_id = ?
+    `).get(req.params.id, req.user.user_id);
     if (!row) {
       return res.status(404).json({ success: false, error: 'Assessment record not found.' });
     }
