@@ -308,8 +308,6 @@ export function initDatabase() {
 function importVerifiedSubsidies() {
   const dataPath = path.join(__dirname, 'data', 'subsidies.json');
   if (!fs.existsSync(dataPath)) return;
-  if (db.prepare('SELECT 1 FROM subsidies LIMIT 1').get()) return;
-
   let records;
   try {
     records = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
@@ -334,6 +332,7 @@ function importVerifiedSubsidies() {
     )
   `);
   const importRecords = db.transaction((items) => {
+    db.prepare('DELETE FROM subsidies').run();
     for (const item of items) {
       if (
         !item.id
@@ -349,6 +348,9 @@ function importVerifiedSubsidies() {
       }
       insert.run({
         ...item,
+        // SQLite uses zero only for sorting/filtering when the official source
+        // does not publish a universal amount. The UI shows amount_display.
+        max_amount_php: item.max_amount_php == null ? 0 : item.max_amount_php,
         disaster_categories: JSON.stringify(item.disaster_categories || []),
         damage_types: JSON.stringify(item.damage_types || []),
         requirements: JSON.stringify(item.requirements || []),
@@ -358,6 +360,7 @@ function importVerifiedSubsidies() {
   });
   try {
     importRecords(records);
+    console.log(`Imported ${records.length} verified subsidy program(s) from backend/data/subsidies.json.`);
   } catch (error) {
     console.error('Unable to import verified subsidies:', error.message);
   }

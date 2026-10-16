@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Layers, ArrowRight, SlidersHorizontal, X } from 'lucide-react';
+import { Layers, ArrowRight, Search, SlidersHorizontal, X } from 'lucide-react';
 
 export default function SubsidyCatalog({ onSelectSubsidyForApplication, t, lang = 'en' }) {
   const [subsidies, setSubsidies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
   const [selectedModalSubsidy, setSelectedModalSubsidy] = useState(null);
 
   useEffect(() => {
@@ -25,11 +26,32 @@ export default function SubsidyCatalog({ onSelectSubsidyForApplication, t, lang 
     return () => { cancelled = true; };
   }, []);
 
-  const filtered = subsidies.filter((sub) => (
-    categoryFilter === 'all' || (Array.isArray(sub.damage_types)
+  const filtered = subsidies.filter((sub) => {
+    const types = Array.isArray(sub.damage_types)
       ? sub.damage_types
-      : String(sub.damage_types || '').split(',')).map((type) => type.trim()).includes(categoryFilter)
-  ));
+      : String(sub.damage_types || '').split(',');
+    const normalizedTypes = types.map((type) => type.trim().toLowerCase());
+    const categoryAliases = {
+      structural: ['structural', 'roof', 'wall', 'house', 'housing'],
+      agricultural: ['agricultural', 'crop', 'livestock', 'fisher'],
+      livelihood: ['livelihood', 'business'],
+      food: ['food'],
+      general: ['general', 'community', 'infrastructure', 'medical']
+    };
+    const categoryMatches = categoryFilter === 'all'
+      || normalizedTypes.some((type) => (categoryAliases[categoryFilter] || [categoryFilter])
+        .some((alias) => type.includes(alias)));
+    const query = searchTerm.trim().toLowerCase();
+    const searchable = [
+      sub.title,
+      sub.agency,
+      sub.short_description,
+      sub.details,
+      ...(sub.damage_types || []),
+      ...(sub.disaster_categories || [])
+    ].join(' ').toLowerCase();
+    return categoryMatches && (!query || searchable.includes(query));
+  });
 
   return (
     <div>
@@ -39,6 +61,16 @@ export default function SubsidyCatalog({ onSelectSubsidyForApplication, t, lang 
           {t('subsidiesTitle')}
         </h2>
         <p className="card-subheading-lg">{t('subsidiesSubtitle')}</p>
+        <div className="form-group" style={{ marginTop: 20, maxWidth: 480 }}>
+          <label className="form-label"><Search size={15} /> {lang === 'tl' ? 'Maghanap ng ayuda' : 'Search relief programs'}</label>
+          <input
+            type="search"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder={lang === 'tl' ? 'Pangalan, ahensya, o sakuna' : 'Program, agency, or disaster'}
+            className="form-input form-input-lg"
+          />
+        </div>
         <div className="form-group" style={{ marginTop: 20, maxWidth: 480 }}>
           <label className="form-label">
             <SlidersHorizontal size={15} /> {lang === 'tl' ? 'Uri ng ayuda' : 'Filter by aid type'}

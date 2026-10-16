@@ -36,24 +36,28 @@ function formatSubsidy(row) {
 // Get all subsidies
 router.get('/', (req, res) => {
   try {
-    const { category, agency } = req.query;
-    let query = 'SELECT subsidy_id AS id, * FROM subsidies WHERE 1=1';
-    const params = [];
-
-    if (category) {
-      query += ' AND damage_types LIKE ?';
-      params.push(`%${category}%`);
-    }
-
-    if (agency) {
-      query += ' AND agency LIKE ?';
-      params.push(`%${agency}%`);
-    }
-
-    query += ' ORDER BY max_amount_php DESC';
-    const rows = db.prepare(query).all(...params);
-
-    const formatted = rows.map(formatSubsidy);
+    const { category, agency, q } = req.query;
+    const rows = db.prepare('SELECT subsidy_id AS id, * FROM subsidies ORDER BY max_amount_php DESC').all();
+    const normalizedCategory = String(category || '').trim().toLowerCase();
+    const normalizedAgency = String(agency || '').trim().toLowerCase();
+    const normalizedQuery = String(q || '').trim().toLowerCase();
+    const formatted = rows.map(formatSubsidy).filter((subsidy) => {
+      const searchableText = [
+        subsidy.title,
+        subsidy.agency,
+        subsidy.short_description,
+        subsidy.details,
+        subsidy.contact_info,
+        ...subsidy.damage_types,
+        ...subsidy.disaster_categories
+      ].join(' ').toLowerCase();
+      const categoryMatches = !normalizedCategory
+        || subsidy.damage_types.some((type) => type.toLowerCase() === normalizedCategory)
+        || subsidy.damage_types.some((type) => type.toLowerCase().includes(normalizedCategory));
+      const agencyMatches = !normalizedAgency || subsidy.agency.toLowerCase().includes(normalizedAgency);
+      const queryMatches = !normalizedQuery || searchableText.includes(normalizedQuery);
+      return categoryMatches && agencyMatches && queryMatches;
+    });
 
     res.json({ success: true, count: formatted.length, data: formatted });
   } catch (error) {
