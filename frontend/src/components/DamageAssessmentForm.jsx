@@ -178,24 +178,12 @@ export default function DamageAssessmentForm({ user, t, lang = 'en', onSelectSub
       };
       let assessment;
       if (inputMethod === 'ai') {
-        try {
-          assessment = await runImageDamageAssessment({
-            ...formData,
-            ...assessmentPayload,
-            incidentDate: formData.incidentDate,
-            damageImage
-          });
-        } catch (error) {
-          if (
-            error.code === 'IRRELEVANT_IMAGE'
-            || error.code === 'NO_DAMAGE_DETECTED'
-            || error.code === 'AI_UNAVAILABLE'
-          ) {
-            throw error;
-          }
-          console.warn('AI assessment service unreachable, falling back to local assessment:', error.message);
-          assessment = await runLocalDamageAssessment(assessmentPayload);
-        }
+        assessment = await runImageDamageAssessment({
+          ...formData,
+          ...assessmentPayload,
+          incidentDate: formData.incidentDate,
+          damageImage
+        });
       } else {
         assessment = await runLocalDamageAssessment(assessmentPayload);
       }
@@ -212,6 +200,10 @@ export default function DamageAssessmentForm({ user, t, lang = 'en', onSelectSub
         setErrorMsg(lang === 'tl'
           ? 'Hindi available ang AI analyzer ngayon. Pakisubukan muli pagkalipas ng ilang sandali.'
           : 'The AI analyzer is temporarily unavailable. Please try again shortly.');
+      } else if (err.code === 'MISSING_ANALYSIS_INPUT') {
+        setErrorMsg(lang === 'tl'
+          ? 'Magbigay ng paglalarawan, litrato, o pareho para sa pagsusuri.'
+          : 'Provide a damage description, a photo, or both for analysis.');
       } else {
         setErrorMsg(
           lang === 'tl'

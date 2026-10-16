@@ -229,7 +229,13 @@ export async function runLocalDamageAssessment(formPayload) {
 
 export async function runImageDamageAssessment(formPayload) {
   const imageFile = formPayload.damageImage;
-  const description = (formPayload.damageDescription || '').trim().toLowerCase();
+  const rawDescription = formPayload.damageDescription || '';
+  const description = rawDescription.trim().toLowerCase();
+  if (!description && !imageFile) {
+    const error = new Error('Provide a damage description, a photo, or both.');
+    error.code = 'MISSING_ANALYSIS_INPUT';
+    throw error;
+  }
   const fileName = (imageFile?.name || '').toLowerCase();
 
   const containsUnrelatedText = UNRELATED_KEYWORDS.some((kw) => description.includes(kw));
@@ -295,7 +301,13 @@ export async function runImageDamageAssessment(formPayload) {
       throw error;
     }
   } catch (err) {
-    if (err.code === 'IRRELEVANT_IMAGE' || err.isRelevanceError) {
+    if (
+      err.code === 'IRRELEVANT_IMAGE'
+      || err.code === 'NO_DAMAGE_DETECTED'
+      || err.code === 'AI_UNAVAILABLE'
+      || err.code === 'MISSING_ANALYSIS_INPUT'
+      || err.isRelevanceError
+    ) {
       throw err;
     }
     const error = new Error(responseError || 'The AI analysis service is unavailable. Please try again.');
