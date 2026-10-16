@@ -150,10 +150,15 @@ export default function DamageAssessmentForm({ user, t, lang = 'en', onSelectSub
   const handleAnalyze = async (e) => {
     e.preventDefault();
 
-    if (inputMethod === 'ai' && !formData.damageDescription.trim()) {
-      setErrorMsg(t('aiInputLabel'));
+    if (inputMethod === 'ai' && !formData.damageDescription.trim() && !damageImage) {
+      setErrorMsg(
+        lang === 'tl'
+          ? 'Magbigay ng kahit isa: paglalarawan ng pinsala O mag-upload ng litrato.'
+          : 'Please provide at least one input: a damage description OR a photo.'
+      );
       return;
     }
+
     if (inputMethod === 'manual' && !Object.values(manualChecks).some(Boolean)) {
       setErrorMsg(t('manualChecklistTitle'));
       return;
@@ -194,11 +199,16 @@ export default function DamageAssessmentForm({ user, t, lang = 'en', onSelectSub
       goStep(3);
     } catch (err) {
       console.error(err);
-      setErrorMsg(
-        err.code === 'IRRELEVANT_IMAGE'
-          ? t('imageRelevanceError')
-          : err.message || 'Unable to complete assessment. Please try again.'
-      );
+      // ALWAYS use t('imageRelevanceError') for relevance guardrail errors to respect active language
+      if (err.code === 'IRRELEVANT_IMAGE' || err.isRelevanceError) {
+        setErrorMsg(t('imageRelevanceError'));
+      } else {
+        setErrorMsg(
+          lang === 'tl'
+            ? 'Hindi maiproseso ang pagsusuri. Paki-check ang iyong ibinigay na detalye.'
+            : 'Unable to analyze the input. Please check your uploaded details.'
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -233,6 +243,71 @@ export default function DamageAssessmentForm({ user, t, lang = 'en', onSelectSub
 
   return (
     <div>
+      {/* DYNAMIC TRANSLATED POPUP MODAL */}
+      {errorMsg && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.65)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: '1rem'
+          }}
+          onClick={() => setErrorMsg('')}
+        >
+          <div
+            style={{
+              backgroundColor: '#ffffff',
+              borderRadius: '16px',
+              maxWidth: '440px',
+              width: '100%',
+              padding: '24px',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+              textAlign: 'center',
+              position: 'relative'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                width: '56px',
+                height: '56px',
+                borderRadius: '50%',
+                backgroundColor: '#fef2f2',
+                color: '#dc2626',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 16px'
+              }}
+            >
+              <AlertTriangle size={28} />
+            </div>
+            <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#0f172a', marginBottom: '8px' }}>
+              {lang === 'tl' ? 'Pansin sa Pagsusuri' : 'Assessment Alert'}
+            </h3>
+            <p style={{ fontSize: '14px', color: '#475569', lineHeight: '1.5', marginBottom: '20px' }}>
+              {errorMsg}
+            </p>
+            <button
+              type="button"
+              className="btn btn-primary"
+              style={{ width: '100%', padding: '10px 16px', fontWeight: '600', borderRadius: '8px' }}
+              onClick={() => setErrorMsg('')}
+            >
+              {lang === 'tl' ? 'Naintindihan Ko' : 'Got It'}
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="wizard-stepper no-print">
         <div className={`step-node ${currentStep === 1 ? 'active' : ''} ${currentStep > 1 ? 'completed' : ''}`}>
           <div className="step-number">{currentStep > 1 ? <Check size={16} /> : '1'}</div>
@@ -249,13 +324,6 @@ export default function DamageAssessmentForm({ user, t, lang = 'en', onSelectSub
           <span className="step-label">{t('stepResults')}</span>
         </div>
       </div>
-
-      {errorMsg && (
-        <div className="alert alert-warning" style={{ marginBottom: 16 }}>
-          <AlertTriangle size={18} />
-          <span>{errorMsg}</span>
-        </div>
-      )}
 
       {currentStep === 1 && (
         <div className="modern-card">
@@ -335,7 +403,7 @@ export default function DamageAssessmentForm({ user, t, lang = 'en', onSelectSub
               {inputMethod === 'ai' && (
                 <>
                   <div className="form-group">
-                    <label className="form-label">{t('aiInputLabel')} *</label>
+                    <label className="form-label">{t('aiInputLabel')}</label>
                     <textarea
                       name="damageDescription"
                       value={formData.damageDescription}

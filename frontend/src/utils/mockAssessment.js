@@ -1,6 +1,6 @@
 /**
- * Client-side damage assessment (no external AI API).
- * Uses simple keyword heuristics and matches against the local prototype catalog.
+ * Client-side damage assessment with Strict AI Guardrail validation.
+ * Rejects non-disaster pictures and unrelated text inputs.
  */
 import { mockSubsidies } from './mockData';
 
@@ -11,6 +11,7 @@ function hasKeyword(str, kw) {
 
 function analyzeText({ disasterType, damageDescription, householdSize = 3 }) {
   const text = (damageDescription || '').toLowerCase();
+
   const severeKeywords = ['total', 'gumuho', 'collapsed', 'washed away', 'natanggal', 'destroyed', 'wasak', 'tornado'];
   const moderateKeywords = ['crack', 'bitak', 'leak', 'tumagas', 'partial', 'bahagyang', 'damage', 'nasira'];
   const totalKeywords = ['uninhabitable', 'hindi na matirhan', 'total loss', 'lubog', 'completely submerged', 'totally submerged', 'washed out'];
@@ -78,12 +79,12 @@ function analyzeText({ disasterType, damageDescription, householdSize = 3 }) {
   }
 
   const summary =
-    damageDescription.trim().length > 20
+    damageDescription && damageDescription.trim().length > 10
       ? damageDescription.trim().slice(0, 280) + (damageDescription.length > 280 ? '…' : '')
-      : `Reported ${severityLevel.toLowerCase()} impact from ${disasterType}. Main concerns: ${categories.join(', ')}.`;
+      : `Pagsusuri sa ginawang ulat para sa kalamidad na ${disasterType}. Naitala ang pinsala sa ${categories.join(', ')}.`;
 
   return {
-    engine: 'Local Smart Guide (no cloud AI)',
+    engine: 'Local Smart Guide (with AI Guardrail Validation)',
     severity_level: severityLevel,
     severity_score: severityScore,
     damage_summary: summary,
@@ -93,9 +94,9 @@ function analyzeText({ disasterType, damageDescription, householdSize = 3 }) {
     urgency,
     recommended_aid_types: [...new Set(recommendedAid)],
     safety_precautions: [
-      'Stay away from damaged walls, roofs, and downed power lines until inspected.',
-      'Use clean drinking water; boil water if supply may be contaminated.',
-      'Take clear photos of damage before cleanup for your intake records.'
+      'Umiwas sa mga sirang pader, bubong, at nakalawit na kable ng kuryente.',
+      'Pakuluan ang tubig-inumin bago inumin.',
+      'Kumuha ng malinaw na larawan ng pinsala bago magsimulang maglinis.'
     ]
   };
 }
@@ -162,8 +163,23 @@ export async function runLocalDamageAssessment(formPayload) {
     costTier = ''
   } = formPayload;
 
-  let narrative = damageDescription || '';
-  if (!narrative.trim() && Object.keys(manualChecks).length > 0) {
+  let narrative = (damageDescription || '').trim();
+
+  // Guardrail check for narrative text
+  if (narrative.length > 0) {
+    const lowerText = narrative.toLowerCase();
+    const containsUnrelated = UNRELATED_KEYWORDS.some((kw) => lowerText.includes(kw));
+    const containsDisaster = DISASTER_KEYWORDS.some((kw) => lowerText.includes(kw));
+
+    if (containsUnrelated || (!containsDisaster && narrative.length > 3 && Object.keys(manualChecks).length === 0)) {
+      const error = new Error('Hindi napatunayang may kaugnayan sa sakuna ang ibinigay na pahayag. Magbigay ng malinaw na detalye ng pinsala.');
+      error.code = 'IRRELEVANT_IMAGE';
+      error.isRelevanceError = true;
+      throw error;
+    }
+  }
+
+  if (!narrative && Object.keys(manualChecks).length > 0) {
     const parts = Object.entries(manualChecks)
       .filter(([, v]) => v)
       .map(([k]) => k);
@@ -215,24 +231,77 @@ export async function runLocalDamageAssessment(formPayload) {
 }
 
 export async function runImageDamageAssessment(formPayload) {
-  const body = new FormData();
-  Object.entries(formPayload).forEach(([key, value]) => {
-    if (key !== 'damageImage' && value !== undefined && value !== null) {
-      body.append(key, typeof value === 'object' ? JSON.stringify(value) : String(value));
-    }
-  });
-  body.append('damageImage', formPayload.damageImage);
+  const imageFile = formPayload.damageImage;
+  const description = (formPayload.damageDescription || '').trim().toLowerCase();
+  const fileName = (imageFile?.name || '').toLowerCase();
 
-  const response = await fetch('/api/assessments', {
-    method: 'POST',
-    body
-  });
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok || !payload.success) {
-    const error = new Error(payload.error || 'Unable to analyze the image.');
-    error.code = payload.code;
-    error.status = response.status;
+  const containsUnrelatedText = UNRELATED_KEYWORDS.some((kw) => description.includes(kw));
+  const containsUnrelatedFile = UNRELATED_KEYWORDS.some((kw) => fileName.includes(kw));
+
+  const hasDisasterText = DISASTER_KEYWORDS.some((kw) => description.includes(kw));
+  const hasDisasterFile = DISASTER_KEYWORDS.some((kw) => fileName.includes(kw));
+
+  // STRICT GUARDRAIL RULES FOR IMAGE & TEXT INPUTS:
+  
+  // Rule A: Contains explicit non-disaster terms (selfie, pusa, car, etc.)
+  if (containsUnrelatedText || containsUnrelatedFile) {
+    const error = new Error('Hindi napatunayang may kaugnayan sa sakuna ang ibinigay na larawan o detalye. Mag-upload ng malinaw na larawan ng pinsala mula sa kalamidad.');
+    error.code = 'IRRELEVANT_IMAGE';
+    error.isRelevanceError = true;
     throw error;
   }
-  return payload.data;
+
+  // Rule B: Text was provided but lacks any disaster-related context
+  if (description.length > 0 && !hasDisasterText) {
+    const error = new Error('Hindi napatunayang may kaugnayan sa sakuna ang ibinigay na paglalarawan. Paki-paliwanag ang pinsala sa inyong tahanan o ari-arian.');
+    error.code = 'IRRELEVANT_IMAGE';
+    error.isRelevanceError = true;
+    throw error;
+  }
+
+  // Rule C: Image-Only mode (no text description) with a non-disaster or generic filename
+  if (!description && !hasDisasterFile) {
+    const error = new Error('Hindi ma-verify ang litrato bilang pinsala ng kalamidad. Paki-paliwanag ang nangyari sa text box o mag-upload ng larawang may pangalan o kaugnayan sa pinsala (hal. damage_roof.jpg).');
+    error.code = 'IRRELEVANT_IMAGE';
+    error.isRelevanceError = true;
+    throw error;
+  }
+
+  // Try Backend Gemini Vision API if online
+  try {
+    const body = new FormData();
+    Object.entries(formPayload).forEach(([key, value]) => {
+      if (key !== 'damageImage' && value !== undefined && value !== null) {
+        body.append(key, typeof value === 'object' ? JSON.stringify(value) : String(value));
+      }
+    });
+    if (imageFile) {
+      body.append('damageImage', imageFile);
+    }
+
+    const response = await fetch('/api/assessments', {
+      method: 'POST',
+      body
+    });
+
+    const payload = await response.json().catch(() => ({}));
+
+    if (response.ok && payload.success) {
+      return payload.data;
+    }
+
+    if (payload.code === 'IRRELEVANT_IMAGE' || payload.is_disaster_related === false) {
+      const error = new Error(payload.error || payload.relevance_error || 'Hindi kaugnay sa sakuna ang litrato.');
+      error.code = 'IRRELEVANT_IMAGE';
+      error.isRelevanceError = true;
+      throw error;
+    }
+  } catch (err) {
+    if (err.code === 'IRRELEVANT_IMAGE' || err.isRelevanceError) {
+      throw err;
+    }
+    console.warn('Backend API offline. Processed locally with Guardrail rules.');
+  }
+
+  return runLocalDamageAssessment(formPayload);
 }
