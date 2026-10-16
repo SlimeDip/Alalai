@@ -26,6 +26,8 @@ const parseArrayOrCsv = (val) => {
 function formatSubsidy(row) {
   return {
     ...row,
+    amount_display: Number(row.amount_display) || 0,
+    max_amount_php: Number(row.max_amount_php) || 0,
     requirements: safeParse(row.requirements),
     application_steps: safeParse(row.application_steps),
     disaster_categories: parseArrayOrCsv(row.disaster_categories),

@@ -6,7 +6,7 @@
     "short_description": "Short description copied or summarized from the official source.",
     "details": "Eligibility and coverage, written only from the official source.",
     "max_amount_php": 0,
-    "amount_display": "Exact amount or formula from the official source",
+    "amount_display": 0,
     "disaster_categories": ["Typhoon"],
     "damage_types": ["general"],
     "min_severity": "Low",

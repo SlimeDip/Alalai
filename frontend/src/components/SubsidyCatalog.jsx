@@ -99,7 +99,9 @@ export default function SubsidyCatalog({ onSelectSubsidyForApplication, t, lang 
                 <div>
                   <h3 style={{ fontSize: 17, fontWeight: 700, marginBottom: 6 }}>{sub.title}</h3>
                   <p style={{ fontSize: 14, color: 'var(--slate-600)', marginBottom: 10 }}>{sub.short_description}</p>
-                  <div className="subsidy-amount">{sub.amount_display}</div>
+                  <div className="subsidy-amount">
+                    {Number(sub.amount_display) > 0 ? `₱${Number(sub.amount_display).toLocaleString()}` : 'Amount varies'}
+                  </div>
                 </div>
                 <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
                   <button type="button" className="btn btn-secondary btn-sm" style={{ flex: 1 }} onClick={() => setSelectedModalSubsidy(sub)}>
@@ -129,7 +131,11 @@ export default function SubsidyCatalog({ onSelectSubsidyForApplication, t, lang 
                 <X size={20} />
               </button>
             </div>
-            <div className="subsidy-amount">{selectedModalSubsidy.amount_display}</div>
+            <div className="subsidy-amount">
+              {Number(selectedModalSubsidy.amount_display) > 0
+                ? `₱${Number(selectedModalSubsidy.amount_display).toLocaleString()}`
+                : 'Amount varies'}
+            </div>
             <p style={{ fontSize: 15, marginTop: 10 }}>{selectedModalSubsidy.details}</p>
             <div style={{ marginTop: 20, display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
               <button type="button" className="btn btn-secondary" onClick={() => setSelectedModalSubsidy(null)}>

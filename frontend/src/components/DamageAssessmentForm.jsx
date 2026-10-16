@@ -593,7 +593,9 @@ export default function DamageAssessmentForm({ user, t, lang = 'en', onSelectSub
                     {sub.is_top_match && <span className="top-match-tag">{lang === 'tl' ? 'Inirerekomenda' : 'Recommended'}</span>}
                     <h4 style={{ fontSize: 17, fontWeight: 700, margin: '8px 0 6px' }}>{sub.title}</h4>
                     <p style={{ fontSize: 14, color: 'var(--slate-600)', marginBottom: 10 }}>{sub.short_description}</p>
-                    <div className="subsidy-amount">{sub.amount_display}</div>
+                    <div className="subsidy-amount">
+                      {Number(sub.amount_display) > 0 ? `₱${Number(sub.amount_display).toLocaleString()}` : 'Amount varies'}
+                    </div>
                   </div>
                   <button
                     type="button"
