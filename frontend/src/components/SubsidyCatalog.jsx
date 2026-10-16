@@ -1,14 +1,34 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Layers, ArrowRight, SlidersHorizontal, X } from 'lucide-react';
-import { mockSubsidies } from '../utils/mockData';
 
 export default function SubsidyCatalog({ onSelectSubsidyForApplication, t, lang = 'en' }) {
-  const [subsidies] = useState(mockSubsidies);
+  const [subsidies, setSubsidies] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [selectedModalSubsidy, setSelectedModalSubsidy] = useState(null);
 
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/subsidies')
+      .then(async (response) => {
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok || !payload.success) throw new Error(payload.error || 'Unable to load relief programs.');
+        if (!cancelled) setSubsidies(payload.data || []);
+      })
+      .catch((error) => {
+        if (!cancelled) setLoadError(error.message);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, []);
+
   const filtered = subsidies.filter((sub) => (
-    categoryFilter === 'all' || sub.damage_types.split(',').map((type) => type.trim()).includes(categoryFilter)
+    categoryFilter === 'all' || (Array.isArray(sub.damage_types)
+      ? sub.damage_types
+      : String(sub.damage_types || '').split(',')).map((type) => type.trim()).includes(categoryFilter)
   ));
 
   return (
@@ -33,6 +53,14 @@ export default function SubsidyCatalog({ onSelectSubsidyForApplication, t, lang 
           </select>
         </div>
 
+        {loading && <p className="field-help">Loading verified relief programs…</p>}
+        {!loading && loadError && <p className="field-help">{loadError}</p>}
+        {!loading && !loadError && subsidies.length === 0 && (
+          <p className="field-help">
+            No verified relief programs have been loaded yet. Administrators can add programs using
+            <code>backend/data/subsidies.template.json</code> after checking each program on its official website.
+          </p>
+        )}
         <div className="subsidy-grid" style={{ marginTop: 20 }}>
             {filtered.map((sub) => (
               <div key={sub.id} className="subsidy-card">

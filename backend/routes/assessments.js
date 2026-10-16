@@ -273,10 +273,11 @@ router.post('/', upload.single('damageImage'), async (req, res) => {
       }
     });
   } catch (error) {
-    if (error.code === 'IRRELEVANT_IMAGE') {
+    if (error.code === 'IRRELEVANT_IMAGE' || error.code === 'NO_DAMAGE_DETECTED') {
       return res.status(422).json({
         success: false,
         code: error.code,
+        reason: error.reason,
         error: error.message
       });
     }

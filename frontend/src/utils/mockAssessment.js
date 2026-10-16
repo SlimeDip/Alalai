@@ -2,8 +2,6 @@
  * Client-side damage assessment with Strict AI Guardrail validation.
  * Rejects non-disaster pictures and unrelated text inputs.
  */
-import { mockSubsidies } from './mockData';
-
 const UNRELATED_KEYWORDS = [
   'selfie',
   'portrait',
@@ -153,59 +151,6 @@ function analyzeText({ disasterType, damageDescription, householdSize = 3 }) {
   };
 }
 
-function matchSubsidies(analysis, allSubsidies) {
-  const matched = allSubsidies.map((sub) => {
-    let score = 0;
-    const subDamageTypes = (sub.damage_types || '')
-      .split(',')
-      .map((s) => s.trim().toLowerCase());
-    for (const aidType of analysis.recommended_aid_types) {
-      if (subDamageTypes.includes(aidType.toLowerCase())) {
-        score += 35;
-      }
-    }
-    if (analysis.severity_level === 'Catastrophic' && sub.id === 'dswd-esa-total') score += 50;
-    else if (analysis.severity_level === 'Severe' && (sub.id === 'dswd-esa-total' || sub.id === 'dswd-esa-partial')) score += 40;
-    else if (analysis.severity_level === 'Moderate' && sub.id === 'dswd-esa-partial') score += 45;
-    if (sub.id === 'dswd-aics' || sub.id === 'lgu-barangay-relief') score += 25;
-    if (analysis.damage_categories.some((c) => c.toLowerCase().includes('agri')) && sub.id === 'da-sure-aid') score += 55;
-    if (
-      analysis.damage_categories.some((c) => c.toLowerCase().includes('livelihood') || c.toLowerCase().includes('business')) &&
-      sub.id === 'ndrrmc-livelihood-grant'
-    ) {
-      score += 55;
-    }
-
-    let requirements = sub.requirements;
-    let application_steps = sub.application_steps;
-    if (typeof requirements === 'string') {
-      try {
-        requirements = JSON.parse(requirements);
-      } catch {
-        requirements = [];
-      }
-    }
-    if (typeof application_steps === 'string') {
-      try {
-        application_steps = JSON.parse(application_steps);
-      } catch {
-        application_steps = [];
-      }
-    }
-
-    return {
-      ...sub,
-      requirements,
-      application_steps,
-      match_score: score,
-      is_top_match: score >= 50
-    };
-  });
-
-  matched.sort((a, b) => b.match_score - a.match_score);
-  return matched;
-}
-
 export async function runLocalDamageAssessment(formPayload) {
   const {
     disasterType,
@@ -278,7 +223,7 @@ export async function runLocalDamageAssessment(formPayload) {
   return {
     id,
     ...core,
-    matched_subsidies: matchSubsidies(core, mockSubsidies)
+    matched_subsidies: []
   };
 }
 
@@ -335,9 +280,10 @@ export async function runImageDamageAssessment(formPayload) {
 
     console.warn('Image assessment request failed:', response.status, payload.error || 'Unknown API error');
 
-    if (payload.code === 'IRRELEVANT_IMAGE' || payload.is_disaster_related === false) {
+    if (payload.code === 'IRRELEVANT_IMAGE' || payload.code === 'NO_DAMAGE_DETECTED' || payload.is_disaster_related === false) {
       const error = new Error(payload.error || payload.relevance_error || 'Hindi kaugnay sa sakuna ang litrato.');
       error.code = 'IRRELEVANT_IMAGE';
+      if (payload.code === 'NO_DAMAGE_DETECTED') error.code = 'NO_DAMAGE_DETECTED';
       error.isRelevanceError = true;
       throw error;
     }

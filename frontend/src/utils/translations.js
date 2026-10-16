@@ -114,6 +114,7 @@ export const translations = {
     imageTypeError: 'Please choose a JPG, PNG, or WebP image.',
     imageSizeError: 'The image must be 8 MB or smaller.',
     imageRelevanceError: 'This photo could not be verified as damage from the selected disaster. Upload a clear, relevant damage photo and try again.',
+    noDamageDetectedError: 'The analyzer detects no visible problem with your house. For more specific details, please write down your concern.',
     aiSample1: 'Typhoon: Blown off roof & water leak',
     aiSample2: 'Flood: Submerged crops & rice field',
     aiSample3: 'Earthquake: Cracked concrete wall & store damage',

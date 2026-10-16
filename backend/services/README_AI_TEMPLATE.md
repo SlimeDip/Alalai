@@ -24,7 +24,7 @@ The backend loads its environment before requests are handled, and the client is
 ### 2. Zero-Downtime Heuristic Fallback
 Disaster response systems cannot afford downtime due to expired API keys, rate limits, or network connectivity issues at evacuation centers:
 - If `GEMINI_API_KEY` is configured in `backend/.env`, the system calls `analyzeWithGemini()` using the currently supported `gemini-3.1-flash-lite` model.
-- Image assessments are sent as `multipart/form-data`; supported JPEG, PNG, and WebP images are passed to Gemini as inline multimodal input. Gemini rejects images that cannot be verified as damage related to the selected disaster.
+- Image assessments are sent as `multipart/form-data`; supported JPEG, PNG, and WebP images are passed to Gemini as inline multimodal input. Gemini rejects unrelated images and returns a separate no-visible-damage message when a healthy property is shown.
 - If `GEMINI_API_KEY` is not present, or if an API exception occurs, the system automatically falls back to `analyzeWithHeuristic()`.
 - The health endpoint reports whether the Gemini client can be configured locally; it does not report a verified connection to Google's API.
 - The heuristic engine parses Tagalog, Filipino, and English calamity terminology (e.g. *yero*, *bubong*, *guho*, *wasak*, *lubog sa baha*, *sakahan*, *palay*, *bangka*, *tindahan*) to determine severity scores and damage categories.
@@ -94,3 +94,11 @@ The AI is instructed with an expert role prompt tailored to Philippine Disaster 
 - A missing or malformed disaster, damage, or minimum-severity rule is unknown—not unrestricted. The explicit `*` value means unrestricted. Assessment severity is ordered Low < Moderate < Severe < Catastrophic.
 - `match_score` is compatibility points from matched disaster (35), damage (45), and severity (20) rules. It is not a probability of approval; `is_top_match` is only a ranking flag and cannot override a confirmed conflict. Textual requirements are not machine-evaluated, and neither field establishes official eligibility or guarantees approval.
 - The complete `eligibility_results` snapshot is stored with each new recovery case and returned unchanged when retrieved. Older cases without a snapshot return `eligibility_results: null`; stored snapshots are never reconstructed by rerunning the matcher.
+
+## Verified subsidy data
+
+No subsidy programs are bundled or invented by the application. To populate the catalog,
+copy `backend/data/subsidies.template.json` to `backend/data/subsidies.json`, verify each
+entry against its official government source, and include `source_url` and
+`last_verified_on`. The backend imports that file only when the database has no verified
+subsidies.

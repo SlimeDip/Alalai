@@ -9,7 +9,7 @@ import assessmentsRouter from './routes/assessments.js';
 import applicationsRouter from './routes/applications.js';
 import { isGeminiConfigured } from './services/aiService.js';
 
-// Initialize SQLite database and seed initial subsidies if empty
+// Initialize SQLite database and import only verified subsidies if configured
 initDatabase();
 
 const app = express();

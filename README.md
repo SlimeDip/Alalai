@@ -11,16 +11,11 @@ A disaster risk reduction and social welfare web application built with **React*
    - Powered by Google Gemini (`@google/genai`) with an **intelligent rule-based heuristic fallback**, ensuring the system functions reliably with or without an active API key.
    - Outputs severity level (Low, Moderate, Severe, Catastrophic), numeric severity scores (1-100), damage categorization, estimated repair costs in Philippine Pesos (₱), and urgent safety precautions.
 
-2. **Philippine Government Subsidy Matching (Mockup & Real Data)**
-   - Pre-seeded SQLite database with major Philippine calamity relief programs:
-     - **DSWD Emergency Shelter Assistance (ESA) - Totally Damaged** (₱30,000 grant)
-     - **DSWD Emergency Shelter Assistance (ESA) - Partially Damaged** (₱10,000 repair assistance)
-     - **DSWD Assistance to Individuals in Crisis Situations (AICS)** (₱3,000 - ₱10,000 emergency cash aid)
-     - **Department of Agriculture (DA) SURE Calamity Aid & Loan** (₱25,000 zero-interest recovery loan/grant)
-     - **Pag-IBIG Calamity Loan Program** (Up to 80% accumulated savings at 5.95% interest)
-     - **Social Security System (SSS) Calamity Loan Assistance Program (CLAP)** (1-month salary equivalent)
-     - **Barangay & LGU Quick Response Relief & Vouchers** (₱2,000 - ₱5,000 groceries and building materials)
-     - **NDRRMC / DTI Pangkabuhayan sa Pagbangon at Ginhawa (PPG)** (₱8,000 - ₱15,000 micro-enterprise seed kit)
+2. **Verified Philippine Government Subsidy Matching**
+   - No subsidy claims are bundled, mocked, or seeded by default.
+   - Administrators can copy `backend/data/subsidies.template.json` to
+     `backend/data/subsidies.json`, verify every record on its official source,
+     and restart the backend to import it. See `backend/data/README.md`.
 
 3. **Editable Official Intake Slip & Direct Print (`window.print()`)**
    - Formatted in accordance with standard Philippine disaster intake sheets (DSWD Family Access Card / NDRRMC Relief Intake Sheet).

@@ -130,14 +130,18 @@ Analyze the following calamity damage report submitted by a resident in the Phil
 - Household Size: ${householdSize}
 - Resident's Damage Narrative: "${damageDescription}"
 ${image ? `
-An image is attached. First determine whether it clearly shows physical damage or loss related to the selected calamity. If it is unrelated, not a damage photo, or too unclear to verify, return:
-{"image_relevant": false}
-and no other fields. Otherwise return the complete schema below with "image_relevant": true.
+An image is attached. First determine whether it shows physical damage or loss related to the selected calamity.
+If it is unrelated (for example a person, pet, food, vehicle, landscape, or another non-property image), return:
+{"image_relevant": false, "image_issue": "unrelated"}
+If it shows a home/property clearly but you detect no visible damage, return:
+{"image_relevant": true, "damage_detected": false, "image_issue": "no_damage"}
+Otherwise return the complete schema below with "image_relevant": true and "damage_detected": true.
 ` : ''}
 
 Analyze the report thoroughly and return STRICTLY a valid JSON object matching the following schema:
 {
   "image_relevant": true,
+  "damage_detected": true,
   "severity_level": "Low" | "Moderate" | "Severe" | "Catastrophic",
   "severity_score": <number between 1 and 100>,
   "damage_summary": "<clear 2-3 sentence professional summary suitable for an official government intake slip>",
@@ -204,14 +208,23 @@ DO NOT include markdown fences, code blocks, or extraneous text. Return ONLY the
   const cleanedText = responseText.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
   const parsed = JSON.parse(cleanedText);
   if (image && parsed.image_relevant === false) {
-    const error = new Error('The uploaded image is not relevant to the selected disaster.');
+    const error = new Error('The uploaded image is unrelated to the selected disaster damage assessment.');
     error.code = 'IRRELEVANT_IMAGE';
+    error.reason = parsed.image_issue || 'unrelated';
+    throw error;
+  }
+  if (image && parsed.damage_detected === false) {
+    const error = new Error('The analyzer detects no visible problem with your house. For more specific details, please write down your concern.');
+    error.code = 'NO_DAMAGE_DETECTED';
+    error.reason = 'no_damage';
     throw error;
   }
   if (image && parsed.image_relevant !== true) {
     throw new TypeError('Gemini did not verify the uploaded image.');
   }
   delete parsed.image_relevant;
+  delete parsed.damage_detected;
+  delete parsed.image_issue;
   validateGeminiAnalysisResult(parsed);
   parsed.engine = 'Gemini 2.5 Flash';
   return parsed;

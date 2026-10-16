@@ -177,7 +177,7 @@ export default function DamageAssessmentForm({ user, t, lang = 'en', onSelectSub
         costTier: inputMethod === 'manual' ? costTier : ''
       };
       let assessment;
-      if (damageImage) {
+      if (inputMethod === 'ai') {
         try {
           assessment = await runImageDamageAssessment({
             ...formData,
@@ -186,7 +186,7 @@ export default function DamageAssessmentForm({ user, t, lang = 'en', onSelectSub
             damageImage
           });
         } catch (error) {
-          if (error.code === 'IRRELEVANT_IMAGE') {
+          if (error.code === 'IRRELEVANT_IMAGE' || error.code === 'NO_DAMAGE_DETECTED') {
             throw error;
           }
           console.warn('AI assessment service unreachable, falling back to local assessment:', error.message);
@@ -200,9 +200,10 @@ export default function DamageAssessmentForm({ user, t, lang = 'en', onSelectSub
       goStep(3);
     } catch (err) {
       console.error(err);
-      // ALWAYS use t('imageRelevanceError') for relevance guardrail errors to respect active language
-      if (err.code === 'IRRELEVANT_IMAGE' || err.isRelevanceError) {
-        setErrorMsg(t('imageRelevanceError'));
+      if (err.code === 'NO_DAMAGE_DETECTED') {
+        setErrorMsg(t('noDamageDetectedError'));
+      } else if (err.code === 'IRRELEVANT_IMAGE' || err.isRelevanceError) {
+        setErrorMsg(err.message || t('imageRelevanceError'));
       } else {
         setErrorMsg(
           lang === 'tl'
