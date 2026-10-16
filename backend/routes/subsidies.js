@@ -3,6 +3,36 @@ import db from '../database.js';
 
 const router = express.Router();
 
+const safeParse = (str) => {
+  try {
+    return JSON.parse(str);
+  } catch {
+    return [];
+  }
+};
+
+const parseArrayOrCsv = (val) => {
+  if (!val) return [];
+  const parsed = safeParse(val);
+  if (Array.isArray(parsed) && parsed.length > 0) {
+    return parsed;
+  }
+  if (typeof val === 'string') {
+    return val.split(',').map((item) => item.trim()).filter(Boolean);
+  }
+  return [];
+};
+
+function formatSubsidy(row) {
+  return {
+    ...row,
+    requirements: safeParse(row.requirements),
+    application_steps: safeParse(row.application_steps),
+    disaster_categories: parseArrayOrCsv(row.disaster_categories),
+    damage_types: parseArrayOrCsv(row.damage_types),
+  };
+}
+
 // Get all subsidies
 router.get('/', (req, res) => {
   try {
@@ -23,11 +53,7 @@ router.get('/', (req, res) => {
     query += ' ORDER BY max_amount_php DESC';
     const rows = db.prepare(query).all(...params);
 
-    const formatted = rows.map(r => ({
-      ...r,
-      requirements: JSON.parse(r.requirements || '[]'),
-      application_steps: JSON.parse(r.application_steps || '[]')
-    }));
+    const formatted = rows.map(formatSubsidy);
 
     res.json({ success: true, count: formatted.length, data: formatted });
   } catch (error) {
@@ -44,11 +70,7 @@ router.get('/:id', (req, res) => {
       return res.status(404).json({ success: false, error: 'Subsidy program not found.' });
     }
 
-    const formatted = {
-      ...row,
-      requirements: JSON.parse(row.requirements || '[]'),
-      application_steps: JSON.parse(row.application_steps || '[]')
-    };
+    const formatted = formatSubsidy(row);
 
     res.json({ success: true, data: formatted });
   } catch (error) {

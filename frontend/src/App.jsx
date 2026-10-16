@@ -76,25 +76,8 @@ export default function App() {
 
   const handleSelectSavedApplication = (savedItem) => {
     setSelectedApplicationData({
-      applicant: {
-        applicantName: savedItem.applicant_name,
-        contactNumber: savedItem.contact_number,
-        province: savedItem.province,
-        cityMunicipality: savedItem.city_municipality,
-        barangay: savedItem.barangay,
-        disasterType: savedItem.disaster_type,
-        incidentDate: savedItem.incident_date,
-        damageDescription: savedItem.damage_summary
-      },
-      assessment: {
-        severity_level: savedItem.damage_level,
-        damage_summary: savedItem.damage_summary,
-        estimated_cost_max: savedItem.estimated_damage_php
-      },
-      subsidy: {
-        title: savedItem.applied_subsidies?.[0] || 'Calamity Relief Program',
-        max_amount_php: savedItem.requested_amount_php
-      }
+      fullRecord: savedItem,
+      returnTab: 'saved'
     });
     setActiveTab('application');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -144,17 +127,23 @@ export default function App() {
             />
           </div>
 
-          {activeTab === 'application' && (
+          <div style={{ display: activeTab === 'application' ? 'block' : 'none' }}>
             <OfficialApplicationView
               initialData={selectedApplicationData}
               user={user}
               t={t}
               lang={lang}
               onBack={() => setActiveTab(selectedApplicationData?.returnTab || 'subsidies')}
-              backLabel={selectedApplicationData?.returnTab === 'assessment' ? t('backToAssessment') : t('backToSubsidies')}
+              backLabel={
+                selectedApplicationData?.returnTab === 'assessment'
+                  ? t('backToAssessment')
+                  : selectedApplicationData?.returnTab === 'saved'
+                  ? (t('backToSaved') || 'Back to Saved Applications')
+                  : t('backToSubsidies')
+              }
               onSavedSuccess={() => {}}
             />
-          )}
+          </div>
 
           {activeTab === 'saved' && (
             <SavedApplicationsList onSelectApplication={handleSelectSavedApplication} t={t} lang={lang} />

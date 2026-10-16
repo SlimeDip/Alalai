@@ -80,7 +80,8 @@ export async function analyzeDisasterDamage({
   disasterType,
   damageDescription,
   location = 'Philippines',
-  householdSize = 1
+  householdSize = 1,
+  image = null
 }) {
   // If Gemini API key is configured, use Gemini model
   const geminiClient = getGeminiClient();
@@ -90,12 +91,16 @@ export async function analyzeDisasterDamage({
         disasterType,
         damageDescription,
         location,
-        householdSize
+        householdSize,
+        image
       });
       if (geminiResult) {
         return attachDatabaseSubsidies(geminiResult, disasterType);
       }
     } catch (err) {
+      if (err.code === 'IRRELEVANT_IMAGE') {
+        throw err;
+      }
       console.warn('Gemini API call failed or timed out. Falling back to heuristic engine:', err.message);
     }
   }
@@ -115,18 +120,24 @@ export async function analyzeDisasterDamage({
  * Gemini API Analysis Implementation
  * (Template for Google Gen AI integration)
  */
-async function analyzeWithGemini({ disasterType, damageDescription, location, householdSize }) {
+async function analyzeWithGemini({ disasterType, damageDescription, location, householdSize, image }) {
   const prompt = `
 You are an expert disaster risk reduction, damage assessment, and social welfare specialist working with the Philippine National Disaster Risk Reduction and Management Council (NDRRMC) and the Department of Social Welfare and Development (DSWD).
 
-Analyze the following calamity damage report submitted by a resident in the Philippines:
+Analyze the following calamity damage report submitted by a resident in the Philippines.
 - Calamity / Disaster Event: ${disasterType}
 - Resident Location: ${location}
 - Household Size: ${householdSize}
 - Resident's Damage Narrative: "${damageDescription}"
+${image ? `
+An image is attached. First determine whether it clearly shows physical damage or loss related to the selected calamity. If it is unrelated, not a damage photo, or too unclear to verify, return:
+{"image_relevant": false}
+and no other fields. Otherwise return the complete schema below with "image_relevant": true.
+` : ''}
 
 Analyze the report thoroughly and return STRICTLY a valid JSON object matching the following schema:
 {
+  "image_relevant": true,
   "severity_level": "Low" | "Moderate" | "Severe" | "Catastrophic",
   "severity_score": <number between 1 and 100>,
   "damage_summary": "<clear 2-3 sentence professional summary suitable for an official government intake slip>",
@@ -146,23 +157,67 @@ Analyze the report thoroughly and return STRICTLY a valid JSON object matching t
 DO NOT include markdown fences, code blocks, or extraneous text. Return ONLY the raw JSON string.
 `;
 
-  // Model choice: 'gemini-2.5-flash' provides fast, structured responses
-  const response = await getGeminiClient().models.generateContent({
-    model: 'gemini-2.5-flash',
-    contents: prompt,
-    config: {
-      temperature: 0.2,
-      responseMimeType: 'application/json'
+  // Gemini's currently supported, responsive fast multimodal model.
+  const contents = image
+    ? [{
+        role: 'user',
+        parts: [
+          { text: prompt },
+          {
+            inlineData: {
+              mimeType: image.mimetype,
+              data: image.buffer.toString('base64')
+            }
+          }
+        ]
+      }]
+    : prompt;
+
+  let response;
+  let lastError;
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      response = await getGeminiClient().models.generateContent({
+        model: 'gemini-3.1-flash-lite',
+        contents,
+        config: {
+          temperature: 0.2,
+          responseMimeType: 'application/json'
+        }
+      });
+      break;
+    } catch (error) {
+      lastError = error;
+      const status = Number(error.status || error.code);
+      if (attempt === 3 || ![429, 500, 502, 503, 504].includes(status)) {
+        throw error;
+      }
+      await new Promise((resolve) => setTimeout(resolve, attempt * 1000));
     }
-  });
+  }
+  if (!response) {
+    throw lastError || new Error('Gemini returned no response.');
+  }
 
   const responseText = response.text?.trim() || '';
   // Clean potential backticks if returned
   const cleanedText = responseText.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
-  const parsed = validateGeminiAnalysisResult(JSON.parse(cleanedText));
+  const parsed = JSON.parse(cleanedText);
+  if (image && parsed.image_relevant === false) {
+    const error = new Error('The uploaded image is not relevant to the selected disaster.');
+    error.code = 'IRRELEVANT_IMAGE';
+    throw error;
+  }
+  if (image && parsed.image_relevant !== true) {
+    throw new TypeError('Gemini did not verify the uploaded image.');
+  }
+  delete parsed.image_relevant;
+  validateGeminiAnalysisResult(parsed);
   parsed.engine = 'Gemini 2.5 Flash';
   return parsed;
 }
+
+const hasKeyword = (text, kw) => new RegExp(`(?:^|[^a-zA-ZáéíóúñÑ])${kw}(?:$|[^a-zA-ZáéíóúñÑ])`, 'i').test(text);
 
 /**
  * Heuristic Fallback Analysis Engine
@@ -188,15 +243,15 @@ function analyzeWithHeuristic({ disasterType, damageDescription, householdSize }
   let severityLevel = 'Moderate';
   let urgency = 'Standard';
 
-  if (totalKeywords.some(kw => text.includes(kw))) {
+  if (totalKeywords.some(kw => hasKeyword(text, kw))) {
     severityScore = 90;
     severityLevel = 'Catastrophic';
     urgency = 'Immediate Evacuation / Lifeline Need';
-  } else if (severeKeywords.some(kw => text.includes(kw))) {
+  } else if (severeKeywords.some(kw => hasKeyword(text, kw))) {
     severityScore = 75;
     severityLevel = 'Severe';
     urgency = 'High';
-  } else if (moderateKeywords.some(kw => text.includes(kw))) {
+  } else if (moderateKeywords.some(kw => hasKeyword(text, kw))) {
     severityScore = 45;
     severityLevel = 'Moderate';
     urgency = 'Standard';
@@ -210,22 +265,22 @@ function analyzeWithHeuristic({ disasterType, damageDescription, householdSize }
   const categories = [];
   const recommendedAid = [];
 
-  if (structuralKeywords.some(kw => text.includes(kw))) {
+  if (structuralKeywords.some(kw => hasKeyword(text, kw))) {
     categories.push('Structural & Roofing');
     recommendedAid.push('structural');
   }
 
-  if (waterKeywords.some(kw => text.includes(kw)) || disasterType.toLowerCase().includes('flood')) {
+  if (waterKeywords.some(kw => hasKeyword(text, kw)) || disasterType.toLowerCase().includes('flood')) {
     categories.push('Water Ingress & Flooding');
     recommendedAid.push('general');
   }
 
-  if (agriKeywords.some(kw => text.includes(kw))) {
+  if (agriKeywords.some(kw => hasKeyword(text, kw))) {
     categories.push('Agriculture & Fisheries');
     recommendedAid.push('agricultural');
   }
 
-  if (livelihoodKeywords.some(kw => text.includes(kw))) {
+  if (livelihoodKeywords.some(kw => hasKeyword(text, kw))) {
     categories.push('Small Business & Livelihood');
     recommendedAid.push('livelihood');
   }

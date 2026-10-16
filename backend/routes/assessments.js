@@ -1,9 +1,19 @@
 import express from 'express';
 import crypto from 'crypto';
+import multer from 'multer';
 import db from '../database.js';
 import { analyzeDisasterDamage } from '../services/aiService.js';
+import { requireAuthenticatedUser } from './auth.js';
 
 const router = express.Router();
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 8 * 1024 * 1024 },
+  fileFilter: (req, file, callback) => {
+    const allowedTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
+    callback(null, allowedTypes.has(file.mimetype));
+  }
+});
 
 function parseEligibilityResults(value) {
   if (typeof value !== 'string' || !value.trim()) return null;
@@ -53,6 +63,9 @@ function formatRecoveryCase(row) {
     recommended_subsidies: parseJsonArray(row.recommended_subsidies),
     eligibility_results: parseEligibilityResults(row.eligibility_results),
     safety_precautions: parseJsonArray(row.safety_precautions),
+    damage_summary: row.damage_summary ?? '',
+    urgency: row.urgency ?? '',
+    suggested_actions: parseJsonArray(row.suggested_actions),
     created_at: row.created_at,
     loss_records: lossRecords,
     recovery_plans: recoveryPlans
@@ -60,7 +73,7 @@ function formatRecoveryCase(row) {
 }
 
 // Run damage assessment through AI template + heuristic and save to SQLite
-router.post('/', async (req, res) => {
+router.post('/', upload.single('damageImage'), async (req, res) => {
   try {
     if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
       return res.status(400).json({
@@ -141,11 +154,12 @@ router.post('/', async (req, res) => {
       disasterType,
       damageDescription,
       location,
-      householdSize: Number(householdSize) || 1
+      householdSize: Number(householdSize) || 1,
+      image: req.file
     });
 
     // Generate unique ID
-    const assessmentId = 'CASE-' + crypto.randomUUID().slice(0, 8).toUpperCase();
+    const assessmentId = 'CASE-' + crypto.randomUUID();
     const damageCategories = assessmentResult.damage_categories || [];
     const lossCategories = damageCategories.length ? damageCategories : ['general'];
     const estimatedCostMin = Number(assessmentResult.estimated_cost_min) || 0;
@@ -158,12 +172,14 @@ router.post('/', async (req, res) => {
         case_id, user_id, applicant_name, contact_number, disaster_type,
         incident_date, province, city_municipality, barangay, severity_level,
         severity_score, estimated_cost_min, estimated_cost_max,
-        damage_categories, recommended_subsidies, eligibility_results, safety_precautions
+        damage_categories, recommended_subsidies, eligibility_results, safety_precautions,
+        damage_summary, urgency, suggested_actions
       ) VALUES (
         @case_id, @user_id, @applicant_name, @contact_number, @disaster_type,
         @incident_date, @province, @city_municipality, @barangay, @severity_level,
         @severity_score, @estimated_cost_min, @estimated_cost_max,
-        @damage_categories, @recommended_subsidies, @eligibility_results, @safety_precautions
+        @damage_categories, @recommended_subsidies, @eligibility_results, @safety_precautions,
+        @damage_summary, @urgency, @suggested_actions
       )
     `);
     const insertLoss = db.prepare(`
@@ -190,7 +206,7 @@ router.post('/', async (req, res) => {
     const saveAssessment = db.transaction(() => {
       insertCase.run({
         case_id: assessmentId,
-        user_id: req.user.user_id,
+        user_id: req.user?.user_id ?? null,
         applicant_name: applicantName,
         contact_number: contactNumber,
         disaster_type: disasterType,
@@ -205,7 +221,12 @@ router.post('/', async (req, res) => {
         damage_categories: JSON.stringify(damageCategories),
         recommended_subsidies: JSON.stringify(assessmentResult.matched_subsidies || []),
         eligibility_results: JSON.stringify(assessmentResult.eligibility_results),
-        safety_precautions: JSON.stringify(assessmentResult.safety_precautions || [])
+        safety_precautions: JSON.stringify(assessmentResult.safety_precautions || []),
+        damage_summary: assessmentResult.damage_summary || '',
+        urgency: assessmentResult.urgency || '',
+        suggested_actions: Array.isArray(assessmentResult.suggested_actions)
+          ? JSON.stringify(assessmentResult.suggested_actions)
+          : (typeof assessmentResult.suggested_actions === 'string' ? assessmentResult.suggested_actions : '[]')
       });
 
       for (const category of lossCategories) {
@@ -215,7 +236,7 @@ router.post('/', async (req, res) => {
           .find((type) => loweredCategory.includes(type)) || 'general';
 
         insertLoss.run({
-          loss_record_id: 'LOSS-' + crypto.randomUUID().slice(0, 8).toUpperCase(),
+          loss_record_id: 'LOSS-' + crypto.randomUUID(),
           case_id: assessmentId,
           item_name: normalizedCategory,
           item_category: normalizedCategory,
@@ -226,7 +247,7 @@ router.post('/', async (req, res) => {
         });
 
         insertRecoveryPlan.run({
-          plan_id: 'PLAN-' + crypto.randomUUID().slice(0, 8).toUpperCase(),
+          plan_id: 'PLAN-' + crypto.randomUUID(),
           case_id: assessmentId,
           category: normalizedCategory,
           estimated_cost_php: estimatedCostMax / lossCategories.length,
@@ -249,21 +270,48 @@ router.post('/', async (req, res) => {
       }
     });
   } catch (error) {
+    if (error.code === 'IRRELEVANT_IMAGE') {
+      return res.status(422).json({
+        success: false,
+        code: error.code,
+        error: error.message
+      });
+    }
     console.error('Error conducting assessment:', error);
     res.status(500).json({ success: false, error: 'Internal assessment error.' });
   }
 });
 
-router.get('/', (req, res) => {
+router.get('/', requireAuthenticatedUser, (req, res) => {
   try {
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+    const offset = (page - 1) * limit;
+
+    const countRow = db.prepare(`
+      SELECT COUNT(*) as total FROM recovery_cases WHERE user_id = ?
+    `).get(req.user.user_id);
+    const total = countRow ? countRow.total : 0;
+
     const rows = db.prepare(`
       SELECT * FROM recovery_cases
       WHERE user_id = ?
       ORDER BY created_at DESC
-      LIMIT 50
-    `).all(req.user.user_id);
+      LIMIT ? OFFSET ?
+    `).all(req.user.user_id, limit, offset);
+
     const formatted = rows.map(formatRecoveryCase);
-    res.json({ success: true, count: formatted.length, data: formatted });
+    res.json({
+      success: true,
+      count: formatted.length,
+      data: formatted,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
   } catch (error) {
     console.error('Error fetching assessments:', error);
     res.status(500).json({ success: false, error: 'Database error fetching assessments.' });
@@ -271,7 +319,7 @@ router.get('/', (req, res) => {
 });
 
 // Get single assessment
-router.get('/:id', (req, res) => {
+router.get('/:id', requireAuthenticatedUser, (req, res) => {
   try {
     const row = db.prepare(`
       SELECT * FROM recovery_cases

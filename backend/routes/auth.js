@@ -1,7 +1,24 @@
 import express from 'express';
 import crypto from 'node:crypto';
 import { promisify } from 'node:util';
+import rateLimit from 'express-rate-limit';
 import db from '../database.js';
+
+const loginLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 5,
+  message: { success: false, error: 'Too many login attempts. Please try again after 1 minute.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const registerLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 10,
+  message: { success: false, error: 'Too many registration attempts. Please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 const router = express.Router();
 const scrypt = promisify(crypto.scrypt);
@@ -102,7 +119,7 @@ export function requireAuthenticatedUser(req, res, next) {
     }
 
     const session = db.prepare(`
-      SELECT users.user_id, users.full_name, users.email
+      SELECT users.user_id, users.full_name, users.email, auth_sessions.created_at
       FROM auth_sessions
       JOIN users ON users.user_id = auth_sessions.user_id
       WHERE auth_sessions.token_hash = ?
@@ -110,6 +127,23 @@ export function requireAuthenticatedUser(req, res, next) {
     `).get(hashToken(token));
     if (!session) {
       return res.status(401).json({ success: false, error: 'Authentication is required.' });
+    }
+
+    // Sliding session renewal - refresh if past half TTL
+    const halfTTL = SESSION_TTL_MS / 2;
+    const sessionAge = Date.now() - new Date(session.created_at).getTime();
+    if (sessionAge > halfTTL) {
+      const newExpiry = new Date(Date.now() + SESSION_TTL_MS).toISOString();
+      try {
+        db.prepare('UPDATE auth_sessions SET expires_at = ? WHERE token_hash = ?').run(
+          newExpiry.replace('T', ' ').slice(0, 19),
+          hashToken(token)
+        );
+      } catch {}
+      try {
+        db.prepare('UPDATE sessions SET expires_at = ? WHERE token = ?').run(newExpiry, token);
+      } catch {}
+      setSessionCookie(res, token);
     }
 
     req.user = {
@@ -129,7 +163,7 @@ export function requireAuthenticatedUser(req, res, next) {
   }
 }
 
-router.post('/register', async (req, res) => {
+router.post('/register', registerLimiter, async (req, res) => {
   try {
     const { fullName, email, password } = req.body || {};
     if (
@@ -178,7 +212,7 @@ router.post('/register', async (req, res) => {
   }
 });
 
-router.post('/login', async (req, res) => {
+router.post('/login', loginLimiter, async (req, res) => {
   try {
     const { email, password } = req.body || {};
     if (typeof email !== 'string' || typeof password !== 'string') {

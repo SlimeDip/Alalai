@@ -170,7 +170,9 @@ function validateApplicationPayload(body, { existing = null, userId } = {}) {
     }
   }
 
-  const caseId = body.case_id || body.assessment_id || existing?.case_id || null;
+  const caseId = (body.case_id !== undefined || body.assessment_id !== undefined)
+    ? (body.case_id || body.assessment_id || null)
+    : existing?.case_id ?? null;
   if (
     body.case_id != null
     && body.assessment_id != null
@@ -214,7 +216,7 @@ function validateApplicationPayload(body, { existing = null, userId } = {}) {
 // Helper to generate official Philippine Disaster Intake Reference Number
 function generateReferenceNumber() {
   const year = new Date().getFullYear();
-  const randomHex = crypto.randomBytes(3).toString('hex').toUpperCase();
+  const randomHex = crypto.randomBytes(6).toString('hex').toUpperCase();
   return `NDRRMC-PH-${year}-${randomHex}`;
 }
 
@@ -227,7 +229,7 @@ router.post('/', (req, res) => {
     }
     const application = validated.value;
 
-    const id = 'APP-' + crypto.randomUUID().slice(0, 8).toUpperCase();
+    const id = 'APP-' + crypto.randomUUID();
     const reference_number = generateReferenceNumber();
 
     const insert = db.prepare(`
@@ -289,6 +291,11 @@ router.put('/:id', (req, res) => {
     `).get(id, req.user.user_id);
     if (!existing) {
       return res.status(404).json({ success: false, error: 'Application not found.' });
+    }
+
+    const userEditableStatuses = new Set(['DRAFT', 'SUBMITTED']);
+    if (!userEditableStatuses.has(existing.status)) {
+      return res.status(403).json({ success: false, error: 'Applications under review or approved cannot be modified.' });
     }
 
     const validated = validateApplicationPayload(req.body, {
@@ -359,12 +366,22 @@ router.put('/:id', (req, res) => {
 // Get all applications
 router.get('/', (req, res) => {
   try {
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+    const offset = (page - 1) * limit;
+
+    const countRow = db.prepare(`
+      SELECT COUNT(*) as total FROM applications WHERE user_id = ?
+    `).get(req.user.user_id);
+    const total = countRow ? countRow.total : 0;
+
     const rows = db.prepare(`
       SELECT * FROM applications
       WHERE user_id = ?
       ORDER BY created_at DESC
-      LIMIT 100
-    `).all(req.user.user_id);
+      LIMIT ? OFFSET ?
+    `).all(req.user.user_id, limit, offset);
+
     const formatted = rows.map(r => ({
       ...r,
       id: r.application_id,
@@ -372,7 +389,18 @@ router.get('/', (req, res) => {
       household_members_detail: JSON.parse(r.household_members_detail || '[]'),
       applied_subsidies: JSON.parse(r.applied_subsidies || '[]')
     }));
-    res.json({ success: true, count: formatted.length, data: formatted });
+
+    res.json({
+      success: true,
+      count: formatted.length,
+      data: formatted,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
   } catch (error) {
     console.error('Error fetching applications:', error);
     res.status(500).json({ success: false, error: 'Database error fetching applications.' });

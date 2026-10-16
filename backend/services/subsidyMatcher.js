@@ -8,7 +8,25 @@ const SEVERITY_RANK = Object.freeze({
 const DISASTER_ALIASES = Object.freeze({
   flooding: 'flood',
   flash_flood: 'flood',
+  baha: 'flood',
   volcano: 'volcanic_eruption',
+  bagyo: 'typhoon',
+  cyclone: 'typhoon',
+  lindol: 'earthquake',
+  pagguho: 'landslide',
+  sunog: 'fire',
+  storm_surge: 'storm_surge',
+  tropical_storm: 'tropical_storm',
+  tropical_depression: 'tropical_storm',
+  habagat: 'monsoon',
+  amihan: 'monsoon',
+  monsoon: 'monsoon',
+  heavy_rain: 'heavy_rainfall',
+  heavy_rainfall: 'heavy_rainfall',
+  tsunami: 'tsunami',
+  drought: 'drought',
+  tagtuyot: 'drought',
+  hailstorm: 'hailstorm',
 });
 
 const RECOGNIZED_DISASTER_TYPES = new Set([
@@ -19,6 +37,12 @@ const RECOGNIZED_DISASTER_TYPES = new Set([
   'fire',
   'volcanic_eruption',
   'drought',
+  'storm_surge',
+  'tropical_storm',
+  'tsunami',
+  'monsoon',
+  'heavy_rainfall',
+  'hailstorm',
 ]);
 
 const TYPE_ALIASES = Object.freeze({
@@ -333,7 +357,7 @@ function evaluateProgram(analysis, disasterType, program) {
         );
       }
       if (matchedTypes.includes('general')) {
-        missingInformation.push('The program uses broad general-damage coverage; verify that it applies to this specific loss.');
+        restrictions.push('The program uses broad general-damage coverage; verify that it applies to this specific loss.');
       }
     } else if (
       damageTypes.unknownValues.size === 0

@@ -149,7 +149,9 @@ export const translations = {
     appSubtitle: 'Review or edit your details below. Download as PDF or print on A4 paper.',
     editorTab: 'Edit Details',
     previewTab: 'A4 Print Preview',
+    previewA4Form: 'Preview A4 Form',
     saveBtn: 'Save Record',
+    saveError: 'There was an error saving: ',
     printBtn: 'Download PDF / Print (A4)',
     printGuaranteeNotice: 'A4 Size Guarantee: This document is formatted to fit on exactly 1 page of standard A4 paper (210mm x 297mm).',
 
@@ -353,7 +355,9 @@ export const translations = {
     appSubtitle: 'Suriin o baguhin ang detalye. I-download bilang PDF o i-print sa A4 paper.',
     editorTab: 'I-edit ang Detalye',
     previewTab: 'A4 Print Preview',
+    previewA4Form: 'I-preview ang A4 Form',
     saveBtn: 'I-save sa Rekord',
+    saveError: 'May aberya sa pag-save: ',
     printBtn: 'I-download PDF / Print (A4)',
     printGuaranteeNotice: 'A4 Format Guarantee: Ang dokumentong ito ay sadyang naka-format para kumasya sa eksaktong 1 pahina ng A4 paper.',
 
