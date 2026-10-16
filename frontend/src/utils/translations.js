@@ -2,7 +2,7 @@
 export const translations = {
   en: {
     // Header & Global
-    appName: 'Tulong Bayan',
+    appName: 'Alalai',
     appSubtitle: 'Disaster Aid Intake & Relief Navigator',
     home: 'Home',
     dashboard: 'Recovery Dashboard',
@@ -206,7 +206,7 @@ export const translations = {
 
   tl: {
     // Header & Global - Standardized UI terms based on user preference
-    appName: 'Tulong Bayan',
+    appName: 'Alalai',
     appSubtitle: 'Portal sa Paghahanda ng Intake at Ayuda sa Kalamidad',
     home: 'Tahanan',
     dashboard: 'Dashboard ng Pagbangon',

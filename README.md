@@ -1,4 +1,4 @@
-# Tulong Bayan: Philippine Calamity Damage Assessment & Disaster Relief Portal
+# Alalai: Philippine Calamity Damage Assessment & Disaster Relief Portal
 
 A disaster risk reduction and social welfare web application built with **React**, **Node.js**, **Express**, and **SQLite**. Designed specifically for adult Filipino citizens and local disaster enumerators to analyze calamity damage from natural hazards (typhoons, floods, earthquakes, landslides, fires), match appropriate government subsidies, and generate editable, directly printable official disaster assistance intake sheets.
 
