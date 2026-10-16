@@ -98,10 +98,13 @@ export async function analyzeDisasterDamage({
         return attachDatabaseSubsidies(geminiResult, disasterType);
       }
     } catch (err) {
-      if (err.code === 'IRRELEVANT_IMAGE') {
+      if (err.code === 'IRRELEVANT_IMAGE' || err.code === 'NO_DAMAGE_DETECTED') {
         throw err;
       }
-      console.warn('Gemini API call failed or timed out. Falling back to heuristic engine:', err.message);
+      const unavailable = new Error('The configured AI analysis service is temporarily unavailable. Please try again shortly.');
+      unavailable.code = 'AI_UNAVAILABLE';
+      unavailable.cause = err;
+      throw unavailable;
     }
   }
 
@@ -177,57 +180,55 @@ DO NOT include markdown fences, code blocks, or extraneous text. Return ONLY the
       }]
     : prompt;
 
-  let response;
   let lastError;
-  for (let attempt = 1; attempt <= 3; attempt += 1) {
-    try {
-      response = await getGeminiClient().models.generateContent({
-        model: 'gemini-3.1-flash-lite',
-        contents,
-        config: {
-          temperature: 0.2,
-          responseMimeType: 'application/json'
+  const configuredModel = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
+  const models = [...new Set([configuredModel, 'gemini-3.1-flash-lite'])];
+  for (const model of models) {
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+      try {
+        const response = await getGeminiClient().models.generateContent({
+          model,
+          contents,
+          config: {
+            temperature: 0.2,
+            responseMimeType: 'application/json'
+          }
+        });
+        if (!response) throw new Error('Gemini returned no response.');
+        const responseText = response.text?.trim() || '';
+        const cleanedText = responseText.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
+        const parsed = JSON.parse(cleanedText);
+        if (image && parsed.image_relevant === false) {
+          const error = new Error('The uploaded image is unrelated to the selected disaster damage assessment.');
+          error.code = 'IRRELEVANT_IMAGE';
+          error.reason = parsed.image_issue || 'unrelated';
+          throw error;
         }
-      });
-      break;
-    } catch (error) {
-      lastError = error;
-      const status = Number(error.status || error.code);
-      if (attempt === 3 || ![429, 500, 502, 503, 504].includes(status)) {
-        throw error;
+        if (image && parsed.damage_detected === false) {
+          const error = new Error('The analyzer detects no visible problem with your house. For more specific details, please write down your concern.');
+          error.code = 'NO_DAMAGE_DETECTED';
+          error.reason = 'no_damage';
+          throw error;
+        }
+        if (image && parsed.image_relevant !== true) {
+          throw new TypeError('Gemini did not verify the uploaded image.');
+        }
+        delete parsed.image_relevant;
+        delete parsed.damage_detected;
+        delete parsed.image_issue;
+        validateGeminiAnalysisResult(parsed);
+        parsed.engine = `Gemini (${model})`;
+        return parsed;
+      } catch (error) {
+        lastError = error;
+        if (error.code === 'IRRELEVANT_IMAGE' || error.code === 'NO_DAMAGE_DETECTED') throw error;
+        const status = Number(error.status || error.code || error.error?.code);
+        if (attempt === 3 || ![429, 500, 502, 503, 504].includes(status)) break;
+        await new Promise((resolve) => setTimeout(resolve, attempt * 1000));
       }
-      await new Promise((resolve) => setTimeout(resolve, attempt * 1000));
     }
   }
-  if (!response) {
-    throw lastError || new Error('Gemini returned no response.');
-  }
-
-  const responseText = response.text?.trim() || '';
-  // Clean potential backticks if returned
-  const cleanedText = responseText.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
-  const parsed = JSON.parse(cleanedText);
-  if (image && parsed.image_relevant === false) {
-    const error = new Error('The uploaded image is unrelated to the selected disaster damage assessment.');
-    error.code = 'IRRELEVANT_IMAGE';
-    error.reason = parsed.image_issue || 'unrelated';
-    throw error;
-  }
-  if (image && parsed.damage_detected === false) {
-    const error = new Error('The analyzer detects no visible problem with your house. For more specific details, please write down your concern.');
-    error.code = 'NO_DAMAGE_DETECTED';
-    error.reason = 'no_damage';
-    throw error;
-  }
-  if (image && parsed.image_relevant !== true) {
-    throw new TypeError('Gemini did not verify the uploaded image.');
-  }
-  delete parsed.image_relevant;
-  delete parsed.damage_detected;
-  delete parsed.image_issue;
-  validateGeminiAnalysisResult(parsed);
-  parsed.engine = 'Gemini 2.5 Flash';
-  return parsed;
+  throw lastError || new Error('Gemini returned no response.');
 }
 
 const hasKeyword = (text, kw) => new RegExp(`(?:^|[^a-zA-ZáéíóúñÑ])${kw}(?:$|[^a-zA-ZáéíóúñÑ])`, 'i').test(text);

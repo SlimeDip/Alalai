@@ -186,7 +186,11 @@ export default function DamageAssessmentForm({ user, t, lang = 'en', onSelectSub
             damageImage
           });
         } catch (error) {
-          if (error.code === 'IRRELEVANT_IMAGE' || error.code === 'NO_DAMAGE_DETECTED') {
+          if (
+            error.code === 'IRRELEVANT_IMAGE'
+            || error.code === 'NO_DAMAGE_DETECTED'
+            || error.code === 'AI_UNAVAILABLE'
+          ) {
             throw error;
           }
           console.warn('AI assessment service unreachable, falling back to local assessment:', error.message);
@@ -204,6 +208,10 @@ export default function DamageAssessmentForm({ user, t, lang = 'en', onSelectSub
         setErrorMsg(t('noDamageDetectedError'));
       } else if (err.code === 'IRRELEVANT_IMAGE' || err.isRelevanceError) {
         setErrorMsg(err.message || t('imageRelevanceError'));
+      } else if (err.code === 'AI_UNAVAILABLE') {
+        setErrorMsg(lang === 'tl'
+          ? 'Hindi available ang AI analyzer ngayon. Pakisubukan muli pagkalipas ng ilang sandali.'
+          : 'The AI analyzer is temporarily unavailable. Please try again shortly.');
       } else {
         setErrorMsg(
           lang === 'tl'

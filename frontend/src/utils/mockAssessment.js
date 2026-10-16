@@ -256,6 +256,7 @@ export async function runImageDamageAssessment(formPayload) {
   }
 
   // Try Backend Gemini Vision API if online
+  let responseError = '';
   try {
     const body = new FormData();
     Object.entries(formPayload).forEach(([key, value]) => {
@@ -275,10 +276,16 @@ export async function runImageDamageAssessment(formPayload) {
     const payload = await response.json().catch(() => ({}));
 
     if (response.ok && payload.success) {
+      if (payload.data?.engine?.startsWith('Heuristic')) {
+        const error = new Error('The AI service is unavailable, so this result was not presented as an AI analysis.');
+        error.code = 'AI_UNAVAILABLE';
+        throw error;
+      }
       return payload.data;
     }
 
     console.warn('Image assessment request failed:', response.status, payload.error || 'Unknown API error');
+    responseError = payload.error || '';
 
     if (payload.code === 'IRRELEVANT_IMAGE' || payload.code === 'NO_DAMAGE_DETECTED' || payload.is_disaster_related === false) {
       const error = new Error(payload.error || payload.relevance_error || 'Hindi kaugnay sa sakuna ang litrato.');
@@ -291,8 +298,8 @@ export async function runImageDamageAssessment(formPayload) {
     if (err.code === 'IRRELEVANT_IMAGE' || err.isRelevanceError) {
       throw err;
     }
-    console.warn('Backend API offline. Processed locally with Guardrail rules.');
+    const error = new Error(responseError || 'The AI analysis service is unavailable. Please try again.');
+    error.code = 'AI_UNAVAILABLE';
+    throw error;
   }
-
-  return runLocalDamageAssessment(formPayload);
 }
