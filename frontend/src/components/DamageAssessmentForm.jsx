@@ -195,6 +195,7 @@ export default function DamageAssessmentForm({ user, t, lang = 'en', onSelectSub
       } else {
         assessment = await runLocalDamageAssessment(assessmentPayload);
       }
+      console.log('AI assessment response:\n' + JSON.stringify(assessment, null, 2));
       setResult(assessment);
       goStep(3);
     } catch (err) {

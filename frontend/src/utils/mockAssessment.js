@@ -4,6 +4,58 @@
  */
 import { mockSubsidies } from './mockData';
 
+const UNRELATED_KEYWORDS = [
+  'selfie',
+  'portrait',
+  'pusa',
+  'aso',
+  'cat',
+  'dog',
+  'car',
+  'kotse',
+  'pagkain',
+  'food',
+  'landscape',
+  'sunset'
+];
+
+const DISASTER_KEYWORDS = [
+  'damage',
+  'damaged',
+  'disaster',
+  'calamity',
+  'typhoon',
+  'bagyo',
+  'flood',
+  'baha',
+  'earthquake',
+  'lindol',
+  'landslide',
+  'pagguho',
+  'fire',
+  'sunog',
+  'volcanic',
+  'bulkan',
+  'tornado',
+  'storm surge',
+  'drought',
+  'tagtuyot',
+  'cold',
+  'roof',
+  'bubong',
+  'wall',
+  'pader',
+  'house',
+  'bahay',
+  'property',
+  'ari-arian',
+  'submerged',
+  'nalubog',
+  'washed away',
+  'gumuho',
+  'nasira'
+];
+
 function hasKeyword(str, kw) {
   const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   return new RegExp(`\\b${escaped}\\b`, 'i').test(str);
@@ -239,7 +291,6 @@ export async function runImageDamageAssessment(formPayload) {
   const containsUnrelatedFile = UNRELATED_KEYWORDS.some((kw) => fileName.includes(kw));
 
   const hasDisasterText = DISASTER_KEYWORDS.some((kw) => description.includes(kw));
-  const hasDisasterFile = DISASTER_KEYWORDS.some((kw) => fileName.includes(kw));
 
   // STRICT GUARDRAIL RULES FOR IMAGE & TEXT INPUTS:
   
@@ -254,14 +305,6 @@ export async function runImageDamageAssessment(formPayload) {
   // Rule B: Text was provided but lacks any disaster-related context
   if (description.length > 0 && !hasDisasterText) {
     const error = new Error('Hindi napatunayang may kaugnayan sa sakuna ang ibinigay na paglalarawan. Paki-paliwanag ang pinsala sa inyong tahanan o ari-arian.');
-    error.code = 'IRRELEVANT_IMAGE';
-    error.isRelevanceError = true;
-    throw error;
-  }
-
-  // Rule C: Image-Only mode (no text description) with a non-disaster or generic filename
-  if (!description && !hasDisasterFile) {
-    const error = new Error('Hindi ma-verify ang litrato bilang pinsala ng kalamidad. Paki-paliwanag ang nangyari sa text box o mag-upload ng larawang may pangalan o kaugnayan sa pinsala (hal. damage_roof.jpg).');
     error.code = 'IRRELEVANT_IMAGE';
     error.isRelevanceError = true;
     throw error;
@@ -289,6 +332,8 @@ export async function runImageDamageAssessment(formPayload) {
     if (response.ok && payload.success) {
       return payload.data;
     }
+
+    console.warn('Image assessment request failed:', response.status, payload.error || 'Unknown API error');
 
     if (payload.code === 'IRRELEVANT_IMAGE' || payload.is_disaster_related === false) {
       const error = new Error(payload.error || payload.relevance_error || 'Hindi kaugnay sa sakuna ang litrato.');

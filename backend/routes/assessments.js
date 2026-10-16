@@ -134,10 +134,13 @@ router.post('/', upload.single('damageImage'), async (req, res) => {
       incidentDate = new Date().toISOString().split('T')[0],
     } = req.body;
 
-    if (typeof damageDescription !== 'string' || damageDescription.trim().length === 0) {
+    if (
+      (typeof damageDescription !== 'string' || damageDescription.trim().length === 0)
+      && !req.file
+    ) {
       return res.status(400).json({
         success: false,
-        error: 'Damage description is required for assessment.'
+        error: 'Damage description or a damage image is required for assessment.'
       });
     }
     if (typeof disasterType !== 'string' || disasterType.trim().length === 0) {

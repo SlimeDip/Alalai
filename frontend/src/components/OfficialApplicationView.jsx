@@ -60,7 +60,7 @@ export default function OfficialApplicationView({
   useEffect(() => {
     if (initialData) {
       const applicant = initialData.applicant || {};
-      const assessment = initialData.assessment || {};
+      const assessment = initialData.assessment || initialData.fullRecord?.ai_response || {};
       const subsidy = initialData.subsidy || {};
 
       setFormData((prev) => ({
