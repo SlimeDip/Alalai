@@ -2,7 +2,7 @@
 export const translations = {
   en: {
     // Header & Global
-    appName: 'Alalai',
+    appName: 'Tulong Bayan',
     appSubtitle: 'Disaster Aid Intake & Relief Navigator',
     home: 'Home',
     dashboard: 'Recovery Dashboard',
@@ -205,8 +205,8 @@ export const translations = {
   },
 
   tl: {
-    // Header & Global
-    appName: 'Alalai',
+    // Header & Global - Standardized UI terms based on user preference
+    appName: 'Tulong Bayan',
     appSubtitle: 'Portal sa Paghahanda ng Intake at Ayuda sa Kalamidad',
     home: 'Tahanan',
     dashboard: 'Dashboard ng Pagbangon',
@@ -214,15 +214,15 @@ export const translations = {
     subsidies: 'Talaan ng Ayuda',
     application: 'Intake Slip',
     records: 'Mga Rekord',
-    login: 'Mag-login',
-    logout: 'Mag-logout',
+    login: 'Pumasok',
+    logout: 'Logout',
     guest: 'Bisita',
     loggedInAs: 'Naka-login bilang',
     disclaimerNav: 'Independyenteng Tulong sa Komunidad • Hindi Ahensya ng Pamahalaan',
     startNewCase: 'Magsimula ng Bagong Kaso',
     recoveryDashboardEyebrow: 'Lugar ng pagbangon',
     recoveryDashboardTitle: 'Planuhin ang inyong pagbangon',
-    recoveryDashboardSubtitle: 'Sundin ang bawat hakbang mula sa detalye ng sakuna hanggang sa pagsubaybay ng ayuda. Naka-save ang prototype na ito sa browser na gamit ninyo.',
+    recoveryDashboardSubtitle: 'Sundin ang bawat hakbang mula sa detalye ng sakuna hanggang sa pagsubaybay ng ayuda.',
     initialRecoveryPlan: 'Unang Plano ng Pagbangon',
     initialRecoveryPlanDesc: 'Magsimula ng kaso kasama ang detalye ng sakuna, pagsusuri ng pinsala, at unang plano.',
     eligibilityCheck: 'Pagsusuri ng Kwalipikasyon',
@@ -238,9 +238,9 @@ export const translations = {
     continueAsGuest: 'Magpatuloy bilang Bisita',
     startAssessment: 'Simulan — Sabihin ang Nangyari',
     exploreSubsidies: 'Tingnan ang Lahat ng Ayuda',
-    loginAsResident: 'Mag-login bilang Residente',
+    loginAsResident: 'Resident Login',
     authTitle: 'I-save ang Profile (Opsyonal)',
-    authSubtitle: 'Mas mabilis ang pagpunas ng form kung naka-save ang datos.',
+    authSubtitle: 'Mas mabilis ang pagpuno ng form kung naka-save ang datos.',
     authSubmit: 'I-save at Magpatuloy',
     languageEn: 'English',
     languageTl: 'Tagalog',
@@ -249,7 +249,7 @@ export const translations = {
     stepResults: 'Mga Ayuda',
     notAffiliated: 'Independyenteng tulong — hindi konektado sa anumang ahensya ng gobyerno.',
     faq6Q: 'Saan dadalhin ang na-print na form?',
-    faq6A: 'Dalhin sa Barangay disaster desk o opisina ng lokal na ayuda, kasama ang valid ID. Mag-iba-iba ang programa ayon sa lugar.',
+    faq6A: 'Dalhin sa Barangay disaster desk o opisina ng lokal na ayuda, kasama ang valid ID.',
 
     // Landing Page Trust & Facts
     statFreeTitle: '100% Libreng Serbisyo',
@@ -263,17 +263,17 @@ export const translations = {
     faqTitle: 'Mga Madalas Itanong (FAQ)',
     faqSubtitle: 'Simpleng sagot para sa mga nakatatanda at apektadong pamilya',
     faq1Q: 'Opisyal bang website ito ng gobyerno?',
-    faq1A: 'Hindi po. Kami ay isang independyente at libreng pampublikong gabay. HINDI kami ahensya ng gobyerno. Tinutulungan namin kayong kwentahin ang pinsala at ihanda ang malinis at maayos na intake form na maaari ninyong dalhin sa inyong Barangay o relief desk.',
+    faq1A: 'Hindi po. Kami ay isang independyente at libreng pampublikong gabay. HINDI kami ahensya ng gobyerno.',
     faq2Q: 'Kailangan bang magbayad o gumawa ng account?',
-    faq2A: 'Hindi po. 100% libre ang serbisyong ito. Maaari kayong magpatuloy bilang Bisita (Guest) nang hindi kailangang mag-rehistro.',
+    faq2A: 'Hindi po. 100% libre ang serbisyong ito. Maaari kayong magpatuloy bilang Bisita (Guest).',
     faq3Q: 'Kasya ba ang na-print na dokumento sa isang pahina ng A4?',
-    faq3A: 'Opo. Ang ating intake slip ay sadyang naka-calibrate upang magkasya sa eksaktong 1 pahina ng A4 paper (210mm x 297mm) nang walang labis na pahina.',
+    faq3A: 'Opo. Ang ating intake slip ay sadyang naka-calibrate para sa 1 pahina ng A4 paper.',
     faq4Q: 'Paano gumagana ang pagsusuri ng pinsala?',
-    faq4A: 'Maaari kayong pumili sa AI Smart Assistant (i-type sa sariling salita ang nasira) o sa Mano-manong Checklist (pindutin lamang ang mga kahon ng nasirang gamit).',
+    faq4A: 'Maaari kayong pumili sa AI Smart Assistant o sa Mano-manong Checklist.',
     faq5Q: 'Maaari ko ba itong gamitin sa aking cellphone?',
-    faq5A: 'Opo. Malalaki ang mga letra at buton upang maging madaling gamitin ng mga nakatatanda sa cellphone, tablet, o computer.',
+    faq5A: 'Opo. Malalaki ang mga letra at buton para madaling gamitin sa cellphone o tablet.',
 
-    // Step 1: Disaster Selection
+    // Step 3: Disaster Selection
     step1Title: 'Piliin ang Kalamidad na Inyong Naranasan',
     step1Subtitle: 'Pindutin ang sakunang tumama sa inyong tahanan o hanapbuhay.',
     disasterTyphoon: 'Bagyo / Malakas na Hangin',
@@ -297,27 +297,27 @@ export const translations = {
     disasterCold: 'Matinding Lamig',
     disasterColdDesc: 'Hindi pangkaraniwang lamig na nakaapekto sa bahay o kabuhayan',
 
-    // Step 2: Assessment Method Choice
+    // Assessment Method Choice
     step2Title: 'Paano Ninyo Nais Ilarawan ang Pinsala?',
     step2Subtitle: 'Piliin ang paraang pinaka-komportable para sa inyo.',
     methodAiTitle: 'AI Smart Assistant',
-    methodAiDesc: 'Ilarawan sa simpleng pananalita ang nangyari. Awtomatikong kukuwentahin ang halaga ng pinsala at itutugma sa ayuda.',
+    methodAiDesc: 'Ilarawan sa simpleng pananalita ang nangyari.',
     methodAiAction: 'Gamitin ang Smart Assistant',
     methodManualTitle: 'Mano-manong Checklist',
-    methodManualDesc: 'Ayaw mag-type? Pindutin lamang ang mga tsek sa listahan ng mga nasirang bahagi ng bahay o kabuhayan.',
+    methodManualDesc: 'Pindutin lamang ang mga tsek sa listahan ng mga nasirang bahagi ng bahay o kabuhayan.',
     methodManualAction: 'Gamitin ang Checklist',
 
     // AI Assist Input
     aiInputLabel: 'Ilarawan kung ano ang nasira sa inyong bahay o gamit',
-    aiInputPlaceholder: 'Halimbawa: Tinangay ng bagyo ang 10 pirasong yero sa bubong. Pinasok ng tubig ang kwarto at nabasa ang kutson at bigas...',
+    aiInputPlaceholder: 'Halimbawa: Tinangay ng bagyo ang 10 pirasong yero sa bubong. Pinasok ng tubig ang kwarto...',
     aiQuickExamples: 'O pumili ng mabilis na halimbawa:',
     damageImageLabel: 'Magdagdag ng litrato ng pinsala (opsyonal)',
-    damageImageHelp: 'Mag-upload ng malinaw na litrato ng nasirang ari-arian o kabuhayan. JPG, PNG, o WebP hanggang 8 MB. Dapat tugma ang litrato sa napiling kalamidad; tatanggihan ang hindi kaugnay na larawan.',
+    damageImageHelp: 'Mag-upload ng malinaw na litrato ng nasirang ari-arian o kabuhayan (JPG, PNG, WebP hanggang 8 MB).',
     damageImagePreviewAlt: 'Preview ng napiling litrato ng pinsala',
     removeImage: 'Alisin ang litrato',
     imageTypeError: 'Pumili ng JPG, PNG, o WebP na larawan.',
     imageSizeError: 'Dapat 8 MB o mas maliit ang larawan.',
-    imageRelevanceError: 'Hindi napatunayang pinsala mula sa napiling kalamidad ang litrato. Mag-upload ng malinaw at kaugnay na larawan ng pinsala at subukan muli.',
+    imageRelevanceError: 'Hindi napatunayang pinsala mula sa napiling kalamidad ang litrato.',
     aiSample1: 'Bagyo: Wasak na bubong at nabasang gamit',
     aiSample2: 'Baha: Lubog na pananim at sakahan',
     aiSample3: 'Lindol: Bitak na pader at sirang tindahan',
@@ -337,7 +337,7 @@ export const translations = {
     est40kTo100k: 'Malaking Pinsala (₱40,000 hanggang ₱100,000)',
     estOver100k: 'Kabuuang Pagkawasak (Higit sa ₱100,000)',
 
-    // Step 3: Analysis Results & Subsidies
+    // Step 2: Analysis Results & Subsidies
     resultsTitle: 'Buod ng Pagsusuri ng Pinsala',
     severityLabel: 'Antas ng Pinsala',
     estCostLabel: 'Tinatayang Halaga ng Kumpuni',
@@ -348,14 +348,14 @@ export const translations = {
     backBtn: 'Bumalik',
     nextBtn: 'Susunod',
 
-    // Application & Print View
+    // Step 3: Application & Print View
     appTitle: 'Disaster Assistance Intake Slip',
     appSubtitle: 'Suriin o baguhin ang detalye. I-download bilang PDF o i-print sa A4 paper.',
     editorTab: 'I-edit ang Detalye',
     previewTab: 'A4 Print Preview',
     saveBtn: 'I-save sa Rekord',
     printBtn: 'I-download PDF / Print (A4)',
-    printGuaranteeNotice: 'A4 Format Guarantee: Ang dokumentong ito ay sadyang naka-format para kumasya sa eksaktong 1 pahina ng A4 paper (210mm x 297mm).',
+    printGuaranteeNotice: 'A4 Format Guarantee: Ang dokumentong ito ay sadyang naka-format para kumasya sa eksaktong 1 pahina ng A4 paper.',
 
     // Form fields
     fullName: 'Buong Pangalan ng Aplikante',
@@ -395,14 +395,14 @@ export const translations = {
     statusLabel: 'KATAYUAN',
 
     // Footer
-    footerDisclaimer: 'Ang Alalai ay isang independyenteng tulong sa komunidad at hindi ahensya ng pamahalaan. Tumutulong ito sa mga mamamayan na mag-organisa at maghanda ng intake documents para sa lokal na ayuda.',
+    footerDisclaimer: 'Ang Alalai ay isang independyenteng tulong sa komunidad at hindi ahensya ng pamahalaan.',
     recordsTitle: 'Mga Naka-save na Aplikasyon',
-    recordsSubtitle: 'Mga intake record na naka-save sa browser. Walang server o API na ginagamit sa prototype na ito.',
+    recordsSubtitle: 'Mga intake record na naka-save sa browser.',
     recordsSearch: 'Maghanap ayon sa pangalan, reference number, o bayan/lungsod...',
-    recordsEmpty: 'Wala pang naka-save na aplikasyon. I-save ang inihandang aplikasyon upang makita ito rito.',
-    refresh: 'I-refresh',
+    recordsEmpty: 'Wala pang naka-save na aplikasyon.',
+    refresh: 'Refresh',
     openPrint: 'Buksan / I-print',
-    delete: 'Burahin',
+    delete: 'Delete',
     deleteRecordConfirm: 'Burahin ang rekord',
     draft: 'Draft',
     recordSaved: 'Naka-save sa browser ang aplikasyon. Reference:'
