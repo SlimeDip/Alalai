@@ -62,35 +62,36 @@ export default function SubsidyCatalog({ onSelectSubsidyForApplication, t, lang 
         </h2>
         <p className="card-subheading-lg">{t('subsidiesSubtitle')}</p>
         <div className="form-group" style={{ marginTop: 20, maxWidth: 480 }}>
-          <label className="form-label"><Search size={15} /> {lang === 'tl' ? 'Maghanap ng ayuda' : 'Search relief programs'}</label>
+          <label className="form-label"><Search size={15} /> {t('searchReliefPrograms')}</label>
           <input
             type="search"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder={lang === 'tl' ? 'Pangalan, ahensya, o sakuna' : 'Program, agency, or disaster'}
+            placeholder={t('searchReliefPlaceholder')}
             className="form-input form-input-lg"
           />
         </div>
         <div className="form-group" style={{ marginTop: 20, maxWidth: 480 }}>
           <label className="form-label">
-            <SlidersHorizontal size={15} /> {lang === 'tl' ? 'Uri ng ayuda' : 'Filter by aid type'}
+            <SlidersHorizontal size={15} /> {t('filterAidType')}
           </label>
           <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="form-select form-input-lg">
-            <option value="all">{lang === 'tl' ? 'Lahat ng ayuda' : 'All aid types'}</option>
-            <option value="general">{lang === 'tl' ? 'Pangkalahatang tulong' : 'General relief'}</option>
-            <option value="food">{lang === 'tl' ? 'Pagkain at pangunahing pangangailangan' : 'Food and essentials'}</option>
-            <option value="structural">{lang === 'tl' ? 'Pabahay at istruktura' : 'Shelter and structural'}</option>
-            <option value="agricultural">{lang === 'tl' ? 'Agrikultura' : 'Agriculture'}</option>
-            <option value="livelihood">{lang === 'tl' ? 'Kabuhayan' : 'Livelihood'}</option>
+            <option value="all">{t('allAidTypes')}</option>
+            <option value="general">{t('generalRelief')}</option>
+            <option value="food">{t('foodEssentials')}</option>
+            <option value="structural">{t('shelterStructural')}</option>
+            <option value="agricultural">{t('agriculture')}</option>
+            <option value="livelihood">{t('livelihood')}</option>
           </select>
         </div>
 
-        {loading && <p className="field-help">Loading verified relief programs…</p>}
+        {loading && <p className="field-help">{t('loadingPrograms')}</p>}
         {!loading && loadError && <p className="field-help">{loadError}</p>}
         {!loading && !loadError && subsidies.length === 0 && (
           <p className="field-help">
-            No verified relief programs have been loaded yet. Administrators can add programs using
-            <code>backend/data/subsidies.template.json</code> after checking each program on its official website.
+            {t('noProgramsLoaded')} {t('adminProgramNote')}
+            {' '}
+            <code>backend/data/subsidies.template.json</code>
           </p>
         )}
         <div className="subsidy-grid" style={{ marginTop: 20 }}>
@@ -100,12 +101,12 @@ export default function SubsidyCatalog({ onSelectSubsidyForApplication, t, lang 
                   <h3 style={{ fontSize: 17, fontWeight: 700, marginBottom: 6 }}>{sub.title}</h3>
                   <p style={{ fontSize: 14, color: 'var(--slate-600)', marginBottom: 10 }}>{sub.short_description}</p>
                   <div className="subsidy-amount">
-                    {Number(sub.amount_display) > 0 ? `₱${Number(sub.amount_display).toLocaleString()}` : 'Amount varies'}
+                    {Number(sub.amount_display) > 0 ? `₱${Number(sub.amount_display).toLocaleString()}` : t('amountVaries')}
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
                   <button type="button" className="btn btn-secondary btn-sm" style={{ flex: 1 }} onClick={() => setSelectedModalSubsidy(sub)}>
-                    {lang === 'tl' ? 'Detalye' : 'Details'}
+                    {t('details')}
                   </button>
                   <button
                     type="button"
@@ -134,12 +135,12 @@ export default function SubsidyCatalog({ onSelectSubsidyForApplication, t, lang 
             <div className="subsidy-amount">
               {Number(selectedModalSubsidy.amount_display) > 0
                 ? `₱${Number(selectedModalSubsidy.amount_display).toLocaleString()}`
-                : 'Amount varies'}
+                : t('amountVaries')}
             </div>
             <p style={{ fontSize: 15, marginTop: 10 }}>{selectedModalSubsidy.details}</p>
             <div style={{ marginTop: 20, display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
               <button type="button" className="btn btn-secondary" onClick={() => setSelectedModalSubsidy(null)}>
-                {lang === 'tl' ? 'Isara' : 'Close'}
+                {t('close')}
               </button>
               <button
                 type="button"
