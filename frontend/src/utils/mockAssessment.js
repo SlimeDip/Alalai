@@ -169,7 +169,7 @@ export async function runLocalDamageAssessment(formPayload) {
     const containsDisaster = DISASTER_KEYWORDS.some((kw) => lowerText.includes(kw));
 
     if (containsUnrelated || (!containsDisaster && narrative.length > 3 && Object.keys(manualChecks).length === 0)) {
-      const error = new Error('Hindi napatunayang may kaugnayan sa sakuna ang ibinigay na pahayag. Magbigay ng malinaw na detalye ng pinsala.');
+      const error = new Error('IRRELEVANT_TEXT');
       error.code = 'IRRELEVANT_IMAGE';
       error.isRelevanceError = true;
       throw error;
@@ -247,7 +247,7 @@ export async function runImageDamageAssessment(formPayload) {
   
   // Rule A: Contains explicit non-disaster terms (selfie, pusa, car, etc.)
   if (containsUnrelatedText || containsUnrelatedFile) {
-    const error = new Error('Hindi napatunayang may kaugnayan sa sakuna ang ibinigay na larawan o detalye. Mag-upload ng malinaw na larawan ng pinsala mula sa kalamidad.');
+    const error = new Error('IRRELEVANT_CONTENT');
     error.code = 'IRRELEVANT_IMAGE';
     error.isRelevanceError = true;
     throw error;
@@ -255,7 +255,7 @@ export async function runImageDamageAssessment(formPayload) {
 
   // Rule B: Text was provided but lacks any disaster-related context
   if (description.length > 0 && !hasDisasterText) {
-    const error = new Error('Hindi napatunayang may kaugnayan sa sakuna ang ibinigay na paglalarawan. Paki-paliwanag ang pinsala sa inyong tahanan o ari-arian.');
+    const error = new Error('IRRELEVANT_TEXT');
     error.code = 'IRRELEVANT_IMAGE';
     error.isRelevanceError = true;
     throw error;

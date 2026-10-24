@@ -191,7 +191,7 @@ export default function DamageAssessmentForm({ user, t, lang = 'en', onSelectSub
       if (err.code === 'NO_DAMAGE_DETECTED') {
         setErrorMsg(t('noDamageDetectedError'));
       } else if (err.code === 'IRRELEVANT_IMAGE' || err.isRelevanceError) {
-        setErrorMsg(err.message || t('imageRelevanceError'));
+        setErrorMsg(t('imageRelevanceError'));
       } else if (err.code === 'AI_UNAVAILABLE') {
         setErrorMsg(t('aiUnavailableError'));
       } else if (err.code === 'MISSING_ANALYSIS_INPUT') {

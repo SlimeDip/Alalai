@@ -101,7 +101,7 @@ export async function analyzeDisasterDamage({
       if (err.code === 'IRRELEVANT_IMAGE' || err.code === 'NO_DAMAGE_DETECTED') {
         throw err;
       }
-      const unavailable = new Error('The configured AI analysis service is temporarily unavailable. Please try again shortly.');
+      const unavailable = new Error('The AI damage analysis service is temporarily unavailable. Please try again in a few moments, or use the Manual Checklist method instead.');
       unavailable.code = 'AI_UNAVAILABLE';
       unavailable.cause = err;
       throw unavailable;
@@ -199,13 +199,13 @@ DO NOT include markdown fences, code blocks, or extraneous text. Return ONLY the
         const cleanedText = responseText.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
         const parsed = JSON.parse(cleanedText);
         if (image && parsed.image_relevant === false) {
-          const error = new Error('The uploaded image is unrelated to the selected disaster damage assessment.');
+          const error = new Error('The uploaded image does not appear to show disaster-related damage. Please upload a clear photo of the affected property or area.');
           error.code = 'IRRELEVANT_IMAGE';
           error.reason = parsed.image_issue || 'unrelated';
           throw error;
         }
         if (image && parsed.damage_detected === false) {
-          const error = new Error('The analyzer detects no visible problem with your house. For more specific details, please write down your concern.');
+          const error = new Error('No visible damage was detected in the uploaded photo. Please describe the specific damage in the text box so we can assess it accurately.');
           error.code = 'NO_DAMAGE_DETECTED';
           error.reason = 'no_damage';
           throw error;

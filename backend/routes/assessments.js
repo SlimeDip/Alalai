@@ -286,7 +286,7 @@ router.post('/', upload.single('damageImage'), async (req, res) => {
       });
     }
     console.error('Error conducting assessment:', error);
-    res.status(500).json({ success: false, error: 'Internal assessment error.' });
+    res.status(500).json({ success: false, code: 'SERVER_ERROR', error: 'An unexpected error occurred while processing your damage assessment. Please try again.' });
   }
 });
 
