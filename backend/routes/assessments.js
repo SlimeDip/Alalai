@@ -72,7 +72,7 @@ function formatRecoveryCase(row) {
   };
 }
 
-// Run damage assessment through AI template + heuristic and save to SQLite
+// Run damage assessment through Gemini and save the verified result to SQLite
 router.post('/', upload.single('damageImage'), async (req, res) => {
   try {
     if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {

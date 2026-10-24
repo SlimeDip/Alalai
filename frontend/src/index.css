@@ -693,32 +693,6 @@ body {
   border-radius: 8px;
 }
 
-.preset-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 10px 0;
-}
-
-.preset-chip {
-  background-color: var(--slate-100);
-  border: 1px solid var(--slate-200);
-  padding: 8px 14px;
-  border-radius: var(--radius-pill);
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--slate-800);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.preset-chip:hover {
-  background-color: var(--slate-200);
-  border-color: var(--slate-700);
-}
-
 /* BADGES */
 .badge {
   display: inline-flex;
@@ -1072,7 +1046,6 @@ body {
   .btn-pill-primary,
   .btn-pill-secondary,
   .wizard-stepper,
-  .preset-chips,
   .navbar-links {
     display: none !important;
   }

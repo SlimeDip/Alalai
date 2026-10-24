@@ -14,7 +14,7 @@ import {
   Calendar,
   AlertTriangle
 } from 'lucide-react';
-import { readSavedApplications, writeSavedApplications } from '../utils/mockData';
+import { readSavedApplications, writeSavedApplications } from '../utils/applicationStorage';
 
 export default function OfficialApplicationView({
   initialData,

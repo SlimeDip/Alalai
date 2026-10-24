@@ -6,8 +6,7 @@
  * 
  * Integration:
  * - Uses the official Google Gen AI SDK (@google/genai) when GEMINI_API_KEY is configured.
- * - Automatically falls back to an intelligent heuristic analyzer if the API key is missing
- *   or if the external API call fails, ensuring zero downtime for disaster intake.
+ * - Fails explicitly when the external AI service is not configured or unavailable.
  */
 
 import { GoogleGenAI } from '@google/genai';
@@ -108,15 +107,9 @@ export async function analyzeDisasterDamage({
     }
   }
 
-  // Fallback heuristic analyzer
-  const heuristicResult = analyzeWithHeuristic({
-    disasterType,
-    damageDescription,
-    location,
-    householdSize
-  });
-
-  return attachDatabaseSubsidies(heuristicResult, disasterType);
+  const unavailable = new Error('The AI damage analysis service is not configured.');
+  unavailable.code = 'AI_UNAVAILABLE';
+  throw unavailable;
 }
 
 /**
@@ -229,121 +222,6 @@ DO NOT include markdown fences, code blocks, or extraneous text. Return ONLY the
     }
   }
   throw lastError || new Error('Gemini returned no response.');
-}
-
-const hasKeyword = (text, kw) => new RegExp(`(?:^|[^a-zA-ZáéíóúñÑ])${kw}(?:$|[^a-zA-ZáéíóúñÑ])`, 'i').test(text);
-
-/**
- * Heuristic Fallback Analysis Engine
- * Evaluates Tagalog and English disaster keywords, damage patterns, and scales.
- */
-function analyzeWithHeuristic({ disasterType, damageDescription, householdSize }) {
-  const text = (damageDescription || '')
-    .toLowerCase()
-    .replace(/\bno damage to the roof\b/g, ' ')
-    .replace(/\bwalang sira ang bubong\b/g, ' ');
-
-  // Keyword lexicons (English & Filipino / Tagalog)
-  const totalKeywords = ['wasak', 'guho', 'collapsed', 'washed away', 'anod', 'walang natira', 'total destruction', 'flattened', 'lipad lahat', 'lubog sa putik', 'abo lahat', 'sinunog', 'abo', 'lumubog'];
-  const severeKeywords = ['sira ang bubong', 'tinangay ang yero', 'bumagsak ang pader', 'chest deep', 'hanggang dibdib', 'hanggang bubong', 'malaking sira', 'patay ang pananim', 'wasak ang bangka', 'severe', 'major damage', 'lumipad ang yero'];
-  const moderateKeywords = ['bahagya', 'may sira', 'nabutas', 'tulo', 'nabasa', 'gutter', 'waist deep', 'hanggang bewang', 'knee deep', 'hanggang tuhod', 'tumbang puno', 'damaged roof', 'partial'];
-  
-  const agriKeywords = ['palay', 'sakahan', 'tanim', 'pananim', 'gulay', 'bukid', 'mais', 'talong', 'bangka', 'lambat', 'isda', 'fishpond', 'pig', 'baboy', 'manok', 'poultry', 'livestock', 'ani'];
-  const livelihoodKeywords = ['tindahan', 'sari-sari', 'paninda', 'talyer', 'tricycle', 'motor', 'kariton', 'pwesto', 'stocks', 'paninda sa palengke', 'equipment', 'sewing machine', 'freeze'];
-  const structuralKeywords = ['bubong', 'yero', 'pader', 'haligi', 'kisame', 'bintana', 'pinto', 'dingding', 'sahig', 'wall', 'roof', 'timber', 'post', 'ceiling', 'beam'];
-  const waterKeywords = ['baha', 'flood', 'tubig', 'putik', 'mud', 'inundation', 'agos', 'drainage'];
-
-  let severityScore = 30;
-  let severityLevel = 'Moderate';
-  let urgency = 'Standard';
-
-  if (totalKeywords.some(kw => hasKeyword(text, kw))) {
-    severityScore = 90;
-    severityLevel = 'Catastrophic';
-    urgency = 'Immediate Evacuation / Lifeline Need';
-  } else if (severeKeywords.some(kw => hasKeyword(text, kw))) {
-    severityScore = 75;
-    severityLevel = 'Severe';
-    urgency = 'High';
-  } else if (moderateKeywords.some(kw => hasKeyword(text, kw))) {
-    severityScore = 45;
-    severityLevel = 'Moderate';
-    urgency = 'Standard';
-  } else {
-    severityScore = 25;
-    severityLevel = 'Low';
-    urgency = 'Standard';
-  }
-
-  // Identify categories
-  const categories = [];
-  const recommendedAid = [];
-
-  if (structuralKeywords.some(kw => hasKeyword(text, kw))) {
-    categories.push('Structural & Roofing');
-    recommendedAid.push('structural');
-  }
-
-  if (waterKeywords.some(kw => hasKeyword(text, kw)) || disasterType.toLowerCase().includes('flood')) {
-    categories.push('Water Ingress & Flooding');
-    recommendedAid.push('general');
-  }
-
-  if (agriKeywords.some(kw => hasKeyword(text, kw))) {
-    categories.push('Agriculture & Fisheries');
-    recommendedAid.push('agricultural');
-  }
-
-  if (livelihoodKeywords.some(kw => hasKeyword(text, kw))) {
-    categories.push('Small Business & Livelihood');
-    recommendedAid.push('livelihood');
-  }
-
-  // Cost estimates in PHP
-  let costMin = 5000;
-  let costMax = 15000;
-
-  if (severityLevel === 'Catastrophic') {
-    costMin = 80000;
-    costMax = 250000;
-  } else if (severityLevel === 'Severe') {
-    costMin = 25000;
-    costMax = 75000;
-  } else if (severityLevel === 'Moderate') {
-    costMin = 10000;
-    costMax = 28000;
-  }
-
-  // Adjust slightly for household size
-  if (householdSize > 4) {
-    costMax = Math.round(costMax * 1.2);
-  }
-
-  const damageSummary = categories.length
-    ? `Initial intake identifies ${severityLevel.toLowerCase()} damage from ${disasterType}. Affected assets focus on ${categories.join(' and ')}. Urgent restoration is advised for family dwelling stability.`
-    : `Initial intake did not identify a supported damage category for ${disasterType}.`;
-
-  return {
-    engine: 'Heuristic Rule Analyzer (Gemini Ready)',
-    severity_level: severityLevel,
-    severity_score: severityScore,
-    damage_summary: damageSummary,
-    damage_categories: categories,
-    estimated_cost_min: costMin,
-    estimated_cost_max: costMax,
-    urgency: urgency,
-    recommended_aid_types: recommendedAid,
-    safety_precautions: [
-      'Mag-ingat sa mga nakabiting kawad ng kuryente at basang switch bago pumasok sa bahay.',
-      'Pakuluan ang tubig-inumin ng hindi bababa sa 3 minuto o gumamit ng water purification tablets.',
-      'Siyasatin ang katatagan ng kisame at mga pader bago payagan ang mga bata at matatanda sa loob.'
-    ],
-    suggested_actions: [
-      'Kumuha ng Barangay Certificate of Calamity / Indigency sa inyong Barangay Hall.',
-      'Kumuha ng malinaw na litrato ng mga nasirang bahagi ng bahay o pananim bago maglinis o mag-kumpuni.',
-      'I-print ang nakalakip na official disaster application slip at ipapirma sa Barangay Disaster Officer.'
-    ]
-  };
 }
 
 /**

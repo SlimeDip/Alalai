@@ -37,7 +37,7 @@ Create a `.env` file in `backend/.env` (or copy from `.env.example`):
 # Server Port (Default: 5000)
 PORT=5000
 
-# Google Gemini API Key (Optional: system automatically uses an intelligent Heuristic Analyzer fallback if not set)
+# Google Gemini API Key (Required for damage assessment)
 GEMINI_API_KEY=your_gemini_api_key_here
 ```
 

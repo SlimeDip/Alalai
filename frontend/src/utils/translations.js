@@ -106,7 +106,6 @@ export const translations = {
     // AI Assist Input
     aiInputLabel: 'Describe what happened to your home or belongings',
     aiInputPlaceholder: 'Example: Strong typhoon winds tore off 10 GI sheets from our roof. Rain water flooded the bedrooms and damaged our rice sacks and mattress...',
-    aiQuickExamples: 'Or click a sample to fill automatically:',
     damageImageLabel: 'Add a damage photo (optional)',
     damageImageHelp: 'Upload a clear photo of the affected property or livelihood. JPG, PNG, or WebP up to 8 MB. The photo must match the selected disaster; unrelated images are rejected.',
     damageImagePreviewAlt: 'Selected damage photo preview',
@@ -123,9 +122,6 @@ export const translations = {
     assessmentAlert: 'Assessment Notice',
     optional: 'optional',
     recommended: 'Recommended',
-    aiSample1: 'Typhoon: Blown off roof & water leak',
-    aiSample2: 'Flood: Submerged crops & rice field',
-    aiSample3: 'Earthquake: Cracked concrete wall & store damage',
     analyzeButton: 'Assess Damage & Find Aid',
 
     // Manual Checklist Input
@@ -356,9 +352,6 @@ export const translations = {
     assessmentAlert: 'Paunawa sa Pagsusuri',
     optional: 'opsyonal',
     recommended: 'Inirerekomenda',
-    aiSample1: 'Bagyo: Wasak na bubong at nabasang gamit',
-    aiSample2: 'Baha: Lubog na pananim at sakahan',
-    aiSample3: 'Lindol: Bitak na pader at sirang tindahan',
     analyzeButton: 'Tayahin ang Pinsala at Hanapin ang Tulong',
 
     // Manual Checklist Input

@@ -22,7 +22,7 @@ import {
   ImagePlus,
   X,
 } from 'lucide-react';
-import { runImageDamageAssessment, runLocalDamageAssessment } from '../utils/mockAssessment';
+import { runDamageAssessment } from '../utils/assessmentApi';
 
 const DISASTERS = [
   { value: 'Typhoon', icon: Wind, titleKey: 'disasterTyphoon', descKey: 'disasterTyphoonDesc' },
@@ -163,27 +163,28 @@ export default function DamageAssessmentForm({ user, t, lang = 'en', onSelectSub
     setLoading(true);
     setErrorMsg('');
     try {
+      const manualDescription = MANUAL_CHECK_KEYS
+        .filter((key) => manualChecks[key.id])
+        .map((key) => t(key.labelKey))
+        .join('. ');
+      const selectedCostTier = COST_TIERS.find((tier) => tier.value === costTier);
       const assessmentPayload = {
         disasterType: formData.disasterType,
-        damageDescription: formData.damageDescription,
+        damageDescription: inputMethod === 'manual'
+          ? `${manualDescription}. Estimated damage range selected by resident: ${selectedCostTier ? t(selectedCostTier.labelKey) : costTier}.`
+          : formData.damageDescription,
         householdSize: formData.householdSize,
         manualChecks: Object.fromEntries(
           MANUAL_CHECK_KEYS.filter((k) => manualChecks[k.id]).map((k) => [t(k.labelKey), true])
         ),
         costTier: inputMethod === 'manual' ? costTier : ''
       };
-      let assessment;
-      if (inputMethod === 'ai') {
-        assessment = await runImageDamageAssessment({
-          ...formData,
-          ...assessmentPayload,
-          incidentDate: formData.incidentDate,
-          damageImage
-        });
-      } else {
-        assessment = await runLocalDamageAssessment(assessmentPayload);
-      }
-      console.log('AI assessment response:\n' + JSON.stringify(assessment, null, 2));
+      const assessment = await runDamageAssessment({
+        ...formData,
+        ...assessmentPayload,
+        incidentDate: formData.incidentDate,
+        damageImage
+      });
       setResult(assessment);
       goStep(3);
     } catch (err) {
@@ -214,10 +215,6 @@ export default function DamageAssessmentForm({ user, t, lang = 'en', onSelectSub
       default:
         return 'badge-low';
     }
-  };
-
-  const applyAiSample = (text) => {
-    setFormData((prev) => ({ ...prev, damageDescription: text }));
   };
 
   const startAnotherAssessment = () => {
@@ -421,18 +418,6 @@ export default function DamageAssessmentForm({ user, t, lang = 'en', onSelectSub
                         </button>
                       </div>
                     )}
-                  </div>
-                  <p className="field-help" style={{ marginBottom: 10 }}>{t('aiQuickExamples')}</p>
-                  <div className="preset-chips">
-                    <button type="button" className="preset-chip" onClick={() => applyAiSample(t('aiSample1'))}>
-                      {t('aiSample1')}
-                    </button>
-                    <button type="button" className="preset-chip" onClick={() => applyAiSample(t('aiSample2'))}>
-                      {t('aiSample2')}
-                    </button>
-                    <button type="button" className="preset-chip" onClick={() => applyAiSample(t('aiSample3'))}>
-                      {t('aiSample3')}
-                    </button>
                   </div>
                 </>
               )}

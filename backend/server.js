@@ -70,5 +70,5 @@ app.use((error, req, res, next) => {
 // Start listening
 export const server = app.listen(PORT, () => {
   console.log(`Disaster Relief Backend running on http://localhost:${PORT}`);
-  console.log(`AI Module Status: ${isGeminiConfigured() ? 'Gemini client configured (connection not verified)' : 'Heuristic Rule Analyzer Active (Fallback)'}`);
+  console.log(`AI Module Status: ${isGeminiConfigured() ? 'Gemini client configured (connection not verified)' : 'Gemini API key is not configured'}`);
 });

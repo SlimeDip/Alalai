@@ -8,7 +8,7 @@ A disaster risk reduction and social welfare web application built with **React*
 
 1. **AI-Powered Calamity Damage Assessment**
    - Natural language damage evaluation accepting descriptions in Filipino/Tagalog, English, or regional dialects.
-   - Powered by Google Gemini (`@google/genai`) with an **intelligent rule-based heuristic fallback**, ensuring the system functions reliably with or without an active API key.
+   - Powered by Google Gemini (`@google/genai`). Assessments fail explicitly when Gemini is not configured or unavailable; fabricated fallback results are never shown.
    - Outputs severity level (Low, Moderate, Severe, Catastrophic), numeric severity scores (1-100), damage categorization, estimated repair costs in Philippine Pesos (₱), and urgent safety precautions.
 
 2. **Verified Philippine Government Subsidy Matching**
@@ -63,7 +63,7 @@ WebSysGroup12/
 │   │   ├── subsidies.js             # Subsidies listing & details endpoints
 │   │   └── applications.js          # CRUD operations for intake applications
 │   └── services/
-│       ├── aiService.js             # AI API template (Gemini SDK + Heuristic engine)
+│       ├── aiService.js             # Google Gemini damage analysis service
 │       └── README_AI_TEMPLATE.md    # Guide to configuring and customizing AI
 └── frontend/
     ├── index.html                   # HTML entry point with metadata
@@ -108,9 +108,8 @@ cd ../frontend
 npm install
 ```
 
-### 3. (Optional) Set your Gemini API Key
-By default, text-only assessments can use the built-in heuristic damage analyzer. Image-assisted
-assessments require Google Gemini:
+### 3. Configure your Gemini API Key
+All assessments require Google Gemini. The application does not generate local or fallback assessment results:
 1. Copy `backend/.env.example` to either `backend/.env` or the repository root `.env`.
 2. Set your API key in that file:
    ```env
@@ -170,7 +169,6 @@ web server or hosting service and point its `/api` requests to the backend.
 ## How to Test the Flow
 
 1. **Step 1 (Damage Assessment)**:
-   - Click one of the quick sample presets (e.g. *"Bagyo: Wasak na Bubong at Bahay"* or *"Baha: Lubog na Palayan at Pananim"*).
    - Click **"Suriin ang Pinsala at Hanapin ang Ayuda (Analyze Damages)"**.
    - Review the calculated damage severity score, estimated cost range in ₱, damage categories, safety reminders, and matched government subsidies.
 2. **Step 2 (Choose Subsidy & Pre-fill Form)**:
