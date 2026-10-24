@@ -59,24 +59,45 @@ export default function OfficialApplicationView({
   // Auto-fill from incoming data or logged-in user
   useEffect(() => {
     if (initialData) {
-      const applicant = initialData.applicant || {};
-      const assessment = initialData.assessment || initialData.fullRecord?.ai_response || {};
+      const record = initialData.fullRecord || {};
+      const applicant = initialData.applicant || record;
+      const assessment = initialData.assessment || record.ai_response || record;
       const subsidy = initialData.subsidy || {};
+      const recordSubsidies = Array.isArray(record.applied_subsidies)
+        ? record.applied_subsidies
+        : typeof record.applied_subsidies === 'string'
+          ? JSON.parse(record.applied_subsidies || '[]')
+          : [];
+      const selectedSubsidies = subsidy.title
+        ? [subsidy.title]
+        : recordSubsidies;
+      const estimatedDamage = assessment.estimated_cost_max
+        ?? record.estimated_damage_php
+        ?? 0;
 
       setFormData((prev) => ({
         ...prev,
-        applicant_name: applicant.applicantName || user?.name || prev.applicant_name,
-        contact_number: applicant.contactNumber || user?.mobile || prev.contact_number,
+        id: record.id || prev.id,
+        reference_number: record.reference_number || prev.reference_number,
+        applicant_name: applicant.applicantName || applicant.applicant_name || user?.name || prev.applicant_name,
+        applicant_age: applicant.applicantAge ?? applicant.applicant_age ?? prev.applicant_age,
+        civil_status: applicant.civilStatus || applicant.civil_status || prev.civil_status,
+        valid_id_type: applicant.validIdType || applicant.valid_id_type || prev.valid_id_type,
+        valid_id_number: applicant.idNumber || applicant.valid_id_number || prev.valid_id_number,
+        contact_number: applicant.contactNumber || applicant.contact_number || user?.mobile || prev.contact_number,
         province: applicant.province || user?.province || prev.province,
-        city_municipality: applicant.cityMunicipality || user?.cityMunicipality || prev.city_municipality,
+        city_municipality: applicant.cityMunicipality || applicant.city_municipality || user?.cityMunicipality || prev.city_municipality,
         barangay: applicant.barangay || user?.barangay || prev.barangay,
         disaster_type: applicant.disasterType || applicant.disaster_type || assessment.disaster_type || prev.disaster_type,
-        incident_date: applicant.incidentDate || prev.incident_date,
-        damage_level: assessment.severity_level || prev.damage_level,
+        incident_date: applicant.incidentDate || applicant.incident_date || prev.incident_date,
+        damage_level: assessment.severity_level || assessment.damage_level || prev.damage_level,
         damage_summary: assessment.damage_summary || applicant.damageDescription || prev.damage_summary,
-        estimated_damage_php: assessment.estimated_cost_max || prev.estimated_damage_php,
-        requested_amount_php: subsidy.max_amount_php || prev.requested_amount_php,
-        applied_subsidies: subsidy.title ? [subsidy.title] : prev.applied_subsidies
+        estimated_damage_php: estimatedDamage,
+        requested_amount_php: subsidy.max_amount_php ?? record.requested_amount_php ?? prev.requested_amount_php,
+        declared_needs: record.declared_needs
+          || (assessment.recommended_aid_types || assessment.damage_categories || []).join(', ')
+          || prev.declared_needs,
+        applied_subsidies: selectedSubsidies.length ? selectedSubsidies : prev.applied_subsidies
       }));
     } else if (user && !user.isGuest) {
       setFormData((prev) => ({
