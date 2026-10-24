@@ -18,7 +18,6 @@ import {
   Tornado,
   Waves,
   Sun,
-  Snowflake,
   ImagePlus,
   X,
 } from 'lucide-react';
@@ -34,7 +33,6 @@ const DISASTERS = [
   { value: 'Tornado', icon: Tornado, titleKey: 'disasterTornado', descKey: 'disasterTornadoDesc' },
   { value: 'Storm Surge', icon: Waves, titleKey: 'disasterStormSurge', descKey: 'disasterStormSurgeDesc' },
   { value: 'Drought', icon: Sun, titleKey: 'disasterDrought', descKey: 'disasterDroughtDesc' },
-  { value: 'Extreme Cold', icon: Snowflake, titleKey: 'disasterCold', descKey: 'disasterColdDesc' },
 ];
 
 const MANUAL_CHECK_KEYS = [

@@ -90,8 +90,6 @@ export const translations = {
     disasterStormSurgeDesc: 'Coastal flooding caused by a severe storm',
     disasterDrought: 'Drought',
     disasterDroughtDesc: 'Extended lack of rain affecting water and livelihoods',
-    disasterCold: 'Extreme Cold',
-    disasterColdDesc: 'Unusually cold conditions affecting homes or livelihoods',
 
     // Step 2: Assessment Method Choice
     step2Title: 'How Would You Like to Detail the Damages?',
@@ -319,8 +317,6 @@ export const translations = {
     disasterStormSurgeDesc: 'Pagbaha sa baybayin dahil sa malakas na bagyo',
     disasterDrought: 'Tagtuyot',
     disasterDroughtDesc: 'Matagal na kawalan ng ulan na nakaapekto sa tubig at kabuhayan',
-    disasterCold: 'Matinding Lamig',
-    disasterColdDesc: 'Hindi pangkaraniwang lamig na nakaapekto sa bahay o kabuhayan',
 
     // Assessment Method Choice
     step2Title: 'Paano Ninyo Nais Ilarawan ang Pinsala?',
