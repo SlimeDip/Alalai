@@ -1080,7 +1080,6 @@ body {
   font-weight: 800;
   background-color: #111827;
   color: #ffffff;
-  color: #000000;
   padding: 3px 8px;
   margin: 8px 0 6px 0;
   border: 1pt solid #000000;
@@ -1176,8 +1175,8 @@ body {
     padding: 0 !important;
     background: #ffffff !important;
     color: #000000 !important;
-    font-size: 8.5pt !important;
-    line-height: 1.25 !important;
+    font-size: 10pt !important;
+    line-height: 1.35 !important;
   }
 
   .app-outer-frame,
@@ -1210,40 +1209,49 @@ body {
   .official-form-container {
     width: 190mm !important;
     max-width: 190mm !important;
-    min-height: 279mm !important;
+    min-height: 0 !important;
     max-height: none !important;
     padding: 4mm 6mm !important;
     border: 1.5pt solid #000000 !important;
     box-sizing: border-box !important;
-    page-break-inside: avoid !important;
-    page-break-after: avoid !important;
-    page-break-before: avoid !important;
-    display: flex !important;
-    flex-direction: column !important;
-    justify-content: space-between !important;
+    page-break-inside: auto !important;
+    page-break-after: auto !important;
+    page-break-before: auto !important;
+    display: block !important;
     margin: 0 auto !important;
     overflow: visible !important;
   }
 
   .official-table th, .official-table td {
     border: 0.75pt solid #000000 !important;
-    padding: 2.5px 5px !important;
+    padding: 4px 6px !important;
+    font-size: 9.5pt !important;
   }
 
+  .official-republic { font-size: 12pt !important; }
+  .official-dept { font-size: 11pt !important; }
+  .official-form-title { font-size: 14pt !important; }
+  .official-meta-bar { font-size: 9.5pt !important; }
+
   .official-section-title {
-    background-color: #f1f5f9 !important;
+    background-color: #111827 !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
     border: 1pt solid #000000 !important;
-    color: #000000 !important;
-    padding: 2px 6px !important;
-    margin: 4px 0 !important;
+    color: #ffffff !important;
+    padding: 4px 7px !important;
+    margin: 7px 0 5px !important;
+    font-size: 10pt !important;
   }
 
   .sig-line {
     border-bottom: 1pt solid #000000 !important;
     margin: 18px 14px 2px 14px !important;
   }
+
+  .official-checklist-grid { font-size: 9pt !important; }
+  .official-attestation-box { font-size: 8.5pt !important; line-height: 1.35 !important; }
+  .official-footer-note { font-size: 8pt !important; }
 }
 
 /* ======================================================= */

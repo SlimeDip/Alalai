@@ -31,6 +31,8 @@ export default function OfficialApplicationView({
     reference_number: '',
     applicant_name: '',
     applicant_age: '',
+    birth_date: '',
+    sex: '',
     civil_status: 'Kasal (Married)',
     contact_number: '',
     valid_id_type: 'Philippine National ID (PhilSys)',
@@ -39,6 +41,13 @@ export default function OfficialApplicationView({
     city_municipality: '',
     barangay: '',
     purok_street: '',
+    household_members_count: 1,
+    occupation: '',
+    beneficiary_category: '',
+    representative_name: '',
+    representative_relationship: '',
+    representative_contact: '',
+    barangay_certificate_reference: '',
     spouse_name: 'N/A',
     children_count: '0',
     disaster_type: '',
@@ -49,6 +58,11 @@ export default function OfficialApplicationView({
     estimated_damage_php: 0,
     requested_amount_php: 0,
     declared_needs: '',
+    rsbsa_number: '',
+    agricultural_activity: '',
+    farm_fishery_location: '',
+    land_tenure: '',
+    pcic_policy_number: '',
     sworn_attestation: true,
     status: 'DRAFT'
   });
@@ -81,13 +95,22 @@ export default function OfficialApplicationView({
         reference_number: record.reference_number || prev.reference_number,
         applicant_name: applicant.applicantName || applicant.applicant_name || user?.name || prev.applicant_name,
         applicant_age: applicant.applicantAge ?? applicant.applicant_age ?? prev.applicant_age,
+        birth_date: applicant.birthDate || applicant.birth_date || prev.birth_date,
+        sex: applicant.sex || user?.sex || prev.sex,
         civil_status: applicant.civilStatus || applicant.civil_status || prev.civil_status,
         valid_id_type: applicant.validIdType || applicant.valid_id_type || prev.valid_id_type,
-        valid_id_number: applicant.idNumber || applicant.valid_id_number || prev.valid_id_number,
+        valid_id_number: applicant.idNumber || applicant.valid_id_number || user?.idNumber || prev.valid_id_number,
         contact_number: applicant.contactNumber || applicant.contact_number || user?.mobile || prev.contact_number,
         province: applicant.province || user?.province || prev.province,
         city_municipality: applicant.cityMunicipality || applicant.city_municipality || user?.cityMunicipality || prev.city_municipality,
         barangay: applicant.barangay || user?.barangay || prev.barangay,
+        household_members_count: applicant.householdSize ?? applicant.household_members_count ?? prev.household_members_count,
+        occupation: applicant.occupation || user?.occupation || record.occupation || prev.occupation,
+        beneficiary_category: applicant.beneficiaryCategory || user?.beneficiaryCategory || record.beneficiary_category || prev.beneficiary_category,
+        representative_name: record.representative_name || prev.representative_name,
+        representative_relationship: record.representative_relationship || prev.representative_relationship,
+        representative_contact: record.representative_contact || prev.representative_contact,
+        barangay_certificate_reference: record.barangay_certificate_reference || prev.barangay_certificate_reference,
         disaster_type: applicant.disasterType || applicant.disaster_type || assessment.disaster_type || prev.disaster_type,
         incident_date: applicant.incidentDate || applicant.incident_date || prev.incident_date,
         damage_level: assessment.severity_level || assessment.damage_level || prev.damage_level,
@@ -97,6 +120,11 @@ export default function OfficialApplicationView({
         declared_needs: record.declared_needs
           || (assessment.recommended_aid_types || assessment.damage_categories || []).join(', ')
           || prev.declared_needs,
+        rsbsa_number: applicant.rsbsaNumber || applicant.rsbsa_number || record.rsbsa_number || prev.rsbsa_number,
+        agricultural_activity: applicant.agriculturalActivity || applicant.agricultural_activity || record.agricultural_activity || prev.agricultural_activity,
+        farm_fishery_location: applicant.farmFisheryLocation || applicant.farm_fishery_location || record.farm_fishery_location || prev.farm_fishery_location,
+        land_tenure: applicant.landTenure || applicant.land_tenure || record.land_tenure || prev.land_tenure,
+        pcic_policy_number: applicant.pcicPolicyNumber || applicant.pcic_policy_number || record.pcic_policy_number || prev.pcic_policy_number,
         applied_subsidies: selectedSubsidies.length ? selectedSubsidies : prev.applied_subsidies
       }));
     } else if (user && !user.isGuest) {
@@ -111,11 +139,18 @@ export default function OfficialApplicationView({
     }
   }, [initialData, user]);
 
+  const hasAgriculturalProgram = formData.applied_subsidies.some((program) =>
+    /sure|crop insurance|pcic|agricultural|farm|fish/i.test(program)
+  );
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
+      ...(name === 'birth_date' && value
+        ? { applicant_age: Math.max(0, Math.floor((Date.now() - new Date(`${value}T00:00:00`).getTime()) / 31557600000)) }
+        : {}),
       ...(name === 'civil_status' && value.includes('Single')
         ? { spouse_name: 'N/A', children_count: 'N/A' }
         : {})
@@ -252,6 +287,22 @@ export default function OfficialApplicationView({
             </div>
 
             <div className="form-group">
+              <label className="form-label">Date of birth</label>
+              <input type="date" name="birth_date" value={formData.birth_date} onChange={handleChange} className="form-input" />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Sex</label>
+              <select name="sex" value={formData.sex} onChange={handleChange} className="form-select">
+                <option value="">Select</option>
+                <option value="Female">Female</option>
+                <option value="Male">Male</option>
+                <option value="Intersex">Intersex</option>
+                <option value="Prefer not to say">Prefer not to say</option>
+              </select>
+            </div>
+
+            <div className="form-group">
               <label className="form-label">{t('civilStatus')}</label>
               <select
                 name="civil_status"
@@ -353,6 +404,43 @@ export default function OfficialApplicationView({
                 className="form-input"
               />
             </div>
+            <div className="form-group">
+              <label className="form-label">Household members *</label>
+              <input type="number" min="1" name="household_members_count" value={formData.household_members_count} onChange={handleChange} className="form-input" />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Occupation / livelihood</label>
+              <input type="text" name="occupation" value={formData.occupation} onChange={handleChange} className="form-input" placeholder="Farmer, fisherfolk, vendor, employee" />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Beneficiary category</label>
+              <select name="beneficiary_category" value={formData.beneficiary_category} onChange={handleChange} className="form-select">
+                <option value="">Select if applicable</option>
+                <option value="Disaster-affected household">Disaster-affected household</option>
+                <option value="Farmer">Farmer</option>
+                <option value="Fisherfolk">Fisherfolk</option>
+                <option value="Livelihood worker / microenterprise">Livelihood worker / microenterprise</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="form-grid" style={{ marginTop: 8 }}>
+            <div className="form-group">
+              <label className="form-label">Barangay certificate / incident reference</label>
+              <input type="text" name="barangay_certificate_reference" value={formData.barangay_certificate_reference} onChange={handleChange} className="form-input" placeholder="Reference number, if issued" />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Authorized representative</label>
+              <input type="text" name="representative_name" value={formData.representative_name} onChange={handleChange} className="form-input" placeholder="Only if filing through a representative" />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Representative relationship</label>
+              <input type="text" name="representative_relationship" value={formData.representative_relationship} onChange={handleChange} className="form-input" />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Representative contact</label>
+              <input type="text" name="representative_contact" value={formData.representative_contact} onChange={handleChange} className="form-input" />
+            </div>
           </div>
 
           <h3 className="application-section-heading">
@@ -404,6 +492,41 @@ export default function OfficialApplicationView({
               />
             </div>
           </div>
+
+          {hasAgriculturalProgram && (
+            <>
+              <h3 className="application-section-heading">Agriculture / crop insurance details</h3>
+              <p className="field-help">Complete these only when applying as a farmer or fisherfolk for an agricultural or crop-insurance program.</p>
+              <div className="form-grid">
+                <div className="form-group">
+                  <label className="form-label">RSBSA registration number</label>
+                  <input type="text" name="rsbsa_number" value={formData.rsbsa_number} onChange={handleChange} className="form-input" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Farm / fishery activity</label>
+                  <input type="text" name="agricultural_activity" value={formData.agricultural_activity} onChange={handleChange} className="form-input" placeholder="Rice, vegetables, livestock, fishing" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Farm / fishery location</label>
+                  <input type="text" name="farm_fishery_location" value={formData.farm_fishery_location} onChange={handleChange} className="form-input" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Land / fishing tenure</label>
+                  <select name="land_tenure" value={formData.land_tenure} onChange={handleChange} className="form-select">
+                    <option value="">Select if applicable</option>
+                    <option value="Owner">Owner</option>
+                    <option value="Tenant / leaseholder">Tenant / leaseholder</option>
+                    <option value="Co-owner">Co-owner</option>
+                    <option value="Communal / no formal title">Communal / no formal title</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">PCIC policy number</label>
+                  <input type="text" name="pcic_policy_number" value={formData.pcic_policy_number} onChange={handleChange} className="form-input" placeholder="If crop insurance claim" />
+                </div>
+              </div>
+            </>
+          )}
 
           <div className="form-group" style={{ marginTop: 8 }}>
             <label className="form-label">{t('damageSummary')}</label>
@@ -537,14 +660,18 @@ export default function OfficialApplicationView({
                   <tr>
                     <th>{t('civilStatus')}</th>
                     <td>{formData.civil_status}</td>
-                    <th>Telepono</th>
-                    <td>{formData.contact_number || 'N/A'}</td>
+                    <th>Birth date / sex</th>
+                    <td>{formData.birth_date || 'N/A'}{formData.sex ? ` • ${formData.sex}` : ''}</td>
                   </tr>
                   <tr>
                     <th>Uri ng Valid ID</th>
                     <td>{formData.valid_id_type}</td>
+                    <th>Telepono</th>
+                    <td>{formData.contact_number || 'N/A'}</td>
+                  </tr>
+                  <tr>
                     <th>ID Number</th>
-                    <td><strong>{formData.valid_id_number || '____________________'}</strong></td>
+                    <td colSpan={3}><strong>{formData.valid_id_number || '____________________'}</strong></td>
                   </tr>
                   <tr>
                     <th>Tirahan (Address)</th>
@@ -553,6 +680,18 @@ export default function OfficialApplicationView({
                         .filter(Boolean)
                         .join(', ') || 'Barangay, Munisipyo, Lalawigan'}
                     </td>
+                  </tr>
+                  <tr>
+                    <th>Household / livelihood</th>
+                    <td colSpan={3}>
+                      {formData.household_members_count || '___'} member(s)
+                      {formData.occupation ? ` • ${formData.occupation}` : ''}
+                      {formData.beneficiary_category ? ` • ${formData.beneficiary_category}` : ''}
+                    </td>
+                  </tr>
+                  <tr>
+                    <th>Barangay reference</th>
+                    <td colSpan={3}>{formData.barangay_certificate_reference || 'Not yet issued'}</td>
                   </tr>
                 </tbody>
               </table>
@@ -600,6 +739,15 @@ export default function OfficialApplicationView({
                     <th>{t('declaredNeeds')}</th>
                     <td colSpan={3}>{formData.declared_needs}</td>
                   </tr>
+                  {hasAgriculturalProgram && (
+                    <tr>
+                      <th>Agriculture records</th>
+                      <td colSpan={3}>
+                        RSBSA: {formData.rsbsa_number || 'N/A'} • Activity: {formData.agricultural_activity || 'N/A'} •
+                        Location: {formData.farm_fishery_location || 'N/A'} • PCIC policy: {formData.pcic_policy_number || 'N/A'}
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
 
@@ -610,15 +758,13 @@ export default function OfficialApplicationView({
               <table className="official-table">
                 <thead>
                   <tr>
-                    <th style={{ width: '8%' }}>Blg.</th>
-                    <th style={{ width: '52%' }}>{t('spouseName')}</th>
-                    <th style={{ width: '15%' }}>{t('childrenCount')}</th>
-                    <th style={{ width: '25%' }}>{t('relation')}</th>
+                    <th style={{ width: '55%' }}>{t('spouseName')}</th>
+                    <th style={{ width: '20%' }}>{t('childrenCount')}</th>
+                    <th style={{ width: '25%' }}>Household relationship</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr>
-                    <td>1</td>
                     <td><strong>{formData.spouse_name || 'N/A'}</strong></td>
                     <td>{formData.children_count || 'N/A'}</td>
                     <td>{t('spouseAndChildren')}</td>
