@@ -13,9 +13,9 @@ A disaster risk reduction and social welfare web application built with **React*
 
 2. **Verified Philippine Government Subsidy Matching**
    - No subsidy claims are bundled, mocked, or seeded by default.
-   - Administrators can copy `backend/data/subsidies.template.json` to
-     `backend/data/subsidies.json`, verify every record on its official source,
-     and restart the backend to import it. See `backend/data/README.md`.
+   - Subsidies are maintained locally in `backend/data/subsidies.json` and mirrored
+     into the frontend build; there is no public subsidies API. Verify every record
+     on its official source before publishing changes.
 
 3. **Editable Official Intake Slip & Direct Print (`window.print()`)**
    - Formatted in accordance with standard Philippine disaster intake sheets (DSWD Family Access Card / NDRRMC Relief Intake Sheet).
@@ -60,10 +60,10 @@ WebSysGroup12/
 │   ├── server.js                    # Express app configuration & routing
 │   ├── routes/
 │   │   ├── assessments.js           # Assessment endpoint & AI analyzer invocation
-│   │   ├── subsidies.js             # Subsidies listing & details endpoints
 │   │   └── applications.js          # CRUD operations for intake applications
 │   └── services/
 │       ├── aiService.js             # Google Gemini damage analysis service
+│       ├── subsidyCatalog.js        # Local subsidies.json catalog reader
 │       └── README_AI_TEMPLATE.md    # Guide to configuring and customizing AI
 └── frontend/
     ├── index.html                   # HTML entry point with metadata

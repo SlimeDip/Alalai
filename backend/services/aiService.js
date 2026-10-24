@@ -10,8 +10,8 @@
  */
 
 import { GoogleGenAI } from '@google/genai';
-import db from '../database.js';
 import { attachSubsidyEligibility } from './subsidyMatcher.js';
+import { getSubsidyCatalog } from './subsidyCatalog.js';
 
 let aiClient = null;
 let aiClientApiKey = null;
@@ -228,7 +228,7 @@ DO NOT include markdown fences, code blocks, or extraneous text. Return ONLY the
  * Match subsidies from the SQLite database based on analyzed damage characteristics
  */
 function attachDatabaseSubsidies(analysis, disasterType) {
-  const allSubsidies = db.prepare('SELECT subsidy_id AS id, * FROM subsidies').all();
+  const allSubsidies = getSubsidyCatalog();
 
   return attachSubsidyEligibility(analysis, disasterType, allSubsidies);
 }

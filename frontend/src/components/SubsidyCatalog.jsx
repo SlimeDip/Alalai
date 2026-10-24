@@ -1,30 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Layers, ArrowRight, Search, SlidersHorizontal, X } from 'lucide-react';
+import subsidyCatalog from '../data/subsidies.json';
 
 export default function SubsidyCatalog({ onSelectSubsidyForApplication, t, lang = 'en' }) {
-  const [subsidies, setSubsidies] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState('');
+  const [subsidies] = useState(subsidyCatalog);
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedModalSubsidy, setSelectedModalSubsidy] = useState(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch('/api/subsidies')
-      .then(async (response) => {
-        const payload = await response.json().catch(() => ({}));
-        if (!response.ok || !payload.success) throw new Error(payload.error || 'Unable to load relief programs.');
-        if (!cancelled) setSubsidies(payload.data || []);
-      })
-      .catch((error) => {
-        if (!cancelled) setLoadError(error.message);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => { cancelled = true; };
-  }, []);
 
   const filtered = subsidies.filter((sub) => {
     const types = Array.isArray(sub.damage_types)
@@ -85,13 +67,9 @@ export default function SubsidyCatalog({ onSelectSubsidyForApplication, t, lang 
           </select>
         </div>
 
-        {loading && <p className="field-help">{t('loadingPrograms')}</p>}
-        {!loading && loadError && <p className="field-help">{loadError}</p>}
-        {!loading && !loadError && subsidies.length === 0 && (
+        {subsidies.length === 0 && (
           <p className="field-help">
-            {t('noProgramsLoaded')} {t('adminProgramNote')}
-            {' '}
-            <code>backend/data/subsidies.template.json</code>
+            {t('noProgramsLoaded')}
           </p>
         )}
         <div className="subsidy-grid" style={{ marginTop: 20 }}>

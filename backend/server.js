@@ -4,7 +4,6 @@ import cors from 'cors';
 import multer from 'multer';
 import { initDatabase } from './database.js';
 import authRouter, { requireAuthenticatedUser } from './routes/auth.js';
-import subsidiesRouter from './routes/subsidies.js';
 import assessmentsRouter from './routes/assessments.js';
 import applicationsRouter from './routes/applications.js';
 import { isGeminiConfigured } from './services/aiService.js';
@@ -25,7 +24,6 @@ app.use(cors({
 app.use(express.json());
 
 // API Routes
-app.use('/api/subsidies', subsidiesRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/assessments', assessmentsRouter);
 app.use('/api/applications', requireAuthenticatedUser, applicationsRouter);

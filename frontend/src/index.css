@@ -678,6 +678,90 @@ body {
   resize: vertical;
 }
 
+.application-editor {
+  border: 2px solid #111827;
+  border-radius: 4px;
+  padding: 24px;
+  background-color: #fff;
+}
+
+.application-form-heading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  border-bottom: 2px solid #111827;
+  padding-bottom: 14px;
+  margin-bottom: 18px;
+  text-align: center;
+  color: #111827;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.application-form-heading span {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.application-form-heading strong {
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.application-section-heading {
+  margin: 20px 0 14px;
+  padding: 7px 10px;
+  border: 1px solid #111827;
+  background-color: #f1f5f9;
+  color: #111827;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.application-editor .form-grid {
+  gap: 0;
+  border-left: 1px solid #64748b;
+  border-top: 1px solid #64748b;
+}
+
+.application-editor .form-group {
+  gap: 4px;
+  margin: 0;
+  padding: 9px 10px;
+  border-right: 1px solid #64748b;
+  border-bottom: 1px solid #64748b;
+  background-color: #fff;
+}
+
+.application-editor .form-label {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+}
+
+.application-editor .form-input,
+.application-editor .form-select,
+.application-editor .form-textarea {
+  min-height: 34px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 0;
+  font-size: 14px;
+}
+
+.application-editor .form-textarea {
+  min-height: 86px;
+}
+
+.application-editor > .form-group {
+  border: 1px solid #64748b;
+  padding: 9px 10px;
+}
+
 .image-upload-preview {
   display: flex;
   align-items: flex-start;

@@ -30,7 +30,7 @@ export default function OfficialApplicationView({
     id: '',
     reference_number: '',
     applicant_name: '',
-    applicant_age: 42,
+    applicant_age: '',
     civil_status: 'Kasal (Married)',
     contact_number: '',
     valid_id_type: 'Philippine National ID (PhilSys)',
@@ -41,14 +41,14 @@ export default function OfficialApplicationView({
     purok_street: '',
     spouse_name: 'N/A',
     children_count: '0',
-    disaster_type: 'Typhoon',
+    disaster_type: '',
     incident_date: new Date().toISOString().split('T')[0],
-    damage_level: 'Severe',
+    damage_level: '',
     damage_summary: '',
     applied_subsidies: [],
-    estimated_damage_php: 25000,
-    requested_amount_php: 10000,
-    declared_needs: 'Yero (GI sheets), kahoy, pako, bigas, at agarang tulong pinansyal.',
+    estimated_damage_php: 0,
+    requested_amount_php: 0,
+    declared_needs: '',
     sworn_attestation: true,
     status: 'DRAFT'
   });
@@ -191,8 +191,13 @@ export default function OfficialApplicationView({
 
       {/* VIEW 1: CLEAN RESPONSIVE FORM EDITOR */}
       {activeView === 'editor' && (
-        <div className="flow-card no-print">
-          <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 16, color: 'var(--slate-900)' }}>
+        <div className="flow-card application-editor no-print">
+          <div className="application-form-heading">
+            <span>ALALAI COMMUNITY DISASTER ASSISTANCE</span>
+            <strong>{t('applicantDetailsSection')}</strong>
+          </div>
+
+          <h3 className="application-section-heading">
             {t('applicantDetailsSection')}
           </h3>
 
@@ -324,7 +329,7 @@ export default function OfficialApplicationView({
             </div>
           </div>
 
-          <h3 style={{ fontSize: 16, fontWeight: 800, margin: '24px 0 14px 0', color: 'var(--slate-900)' }}>
+          <h3 className="application-section-heading">
             {t('disasterDetailsSection')}
           </h3>
 
