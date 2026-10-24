@@ -105,6 +105,11 @@ export default function OfficialApplicationView({
     window.print();
   };
 
+  const openPdfView = () => {
+    setActiveView('preview');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handleSaveToDatabase = async () => {
     setSaving(true);
     setSaveSuccess('');
@@ -172,7 +177,7 @@ export default function OfficialApplicationView({
               type="button"
               className="btn-pill-dark"
               style={{ fontSize: 13, padding: '8px 18px' }}
-              onClick={handleDownloadPdfOrPrint}
+              onClick={openPdfView}
               title={t('printBtn')}
             >
               <Download size={14} />

@@ -830,6 +830,72 @@ body {
   justify-content: space-between;
 }
 
+.subsidy-agency {
+  display: block;
+  color: var(--primary);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.subsidy-meta {
+  margin-top: 8px;
+  color: var(--slate-500);
+  font-size: 12px;
+}
+
+.subsidy-channel {
+  margin-top: 14px;
+  padding: 10px 12px;
+  border-left: 3px solid var(--primary);
+  background-color: #eff6ff;
+  color: var(--slate-700);
+  font-size: 13px;
+}
+
+.subsidy-detail-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.subsidy-detail-columns h4 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.subsidy-detail-columns ul,
+.subsidy-detail-columns ol {
+  padding-left: 20px;
+  color: var(--slate-600);
+  font-size: 13px;
+}
+
+.subsidy-detail-columns li + li {
+  margin-top: 6px;
+}
+
+.subsidy-source-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 18px;
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+@media (max-width: 640px) {
+  .subsidy-detail-columns {
+    grid-template-columns: 1fr;
+  }
+}
+
 .subsidy-card.top-match {
   border: 2px solid var(--emerald-700);
 }

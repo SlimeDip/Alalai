@@ -170,7 +170,7 @@ export const translations = {
     previewA4Form: 'Preview A4 Form',
     saveBtn: 'Save Application',
     saveError: 'There was an error saving: ',
-    printBtn: 'Download PDF / Print (A4)',
+    printBtn: 'Print / Save as PDF (A4)',
     printGuaranteeNotice: 'A4 format: This form is designed to fit on one standard A4 page (210mm x 297mm).',
 
     // Form fields
@@ -398,7 +398,7 @@ export const translations = {
     previewA4Form: 'I-preview ang Form sa A4',
     saveBtn: 'I-save ang Aplikasyon',
     saveError: 'Nagkaroon ng problema sa pag-save: ',
-    printBtn: 'I-download ang PDF / I-print (A4)',
+    printBtn: 'I-print / I-save bilang PDF (A4)',
     printGuaranteeNotice: 'Format na A4: Ang form na ito ay ginawa upang magkasya sa isang pahina ng karaniwang A4 (210mm x 297mm).',
 
     // Form fields

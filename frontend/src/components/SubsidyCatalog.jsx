@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Layers, ArrowRight, Search, SlidersHorizontal, X } from 'lucide-react';
+import { Layers, ArrowRight, Search, SlidersHorizontal, X, ExternalLink, CheckCircle2, ListChecks } from 'lucide-react';
 import subsidyCatalog from '../data/subsidies.json';
 
 export default function SubsidyCatalog({ onSelectSubsidyForApplication, t, lang = 'en' }) {
@@ -76,11 +76,13 @@ export default function SubsidyCatalog({ onSelectSubsidyForApplication, t, lang 
             {filtered.map((sub) => (
               <div key={sub.id} className="subsidy-card">
                 <div>
-                  <h3 style={{ fontSize: 17, fontWeight: 700, marginBottom: 6 }}>{sub.title}</h3>
+                  <span className="subsidy-agency">{sub.agency}</span>
+                  <h3 style={{ fontSize: 17, fontWeight: 700, margin: '5px 0 6px' }}>{sub.title}</h3>
                   <p style={{ fontSize: 14, color: 'var(--slate-600)', marginBottom: 10 }}>{sub.short_description}</p>
                   <div className="subsidy-amount">
                     {Number(sub.amount_display) > 0 ? `₱${Number(sub.amount_display).toLocaleString()}` : t('amountVaries')}
                   </div>
+                  <p className="subsidy-meta">Verified: {sub.last_verified_on}</p>
                 </div>
                 <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
                   <button type="button" className="btn btn-secondary btn-sm" style={{ flex: 1 }} onClick={() => setSelectedModalSubsidy(sub)}>
@@ -116,6 +118,24 @@ export default function SubsidyCatalog({ onSelectSubsidyForApplication, t, lang 
                 : t('amountVaries')}
             </div>
             <p style={{ fontSize: 15, marginTop: 10 }}>{selectedModalSubsidy.details}</p>
+            <p className="subsidy-channel">{selectedModalSubsidy.application_channel}</p>
+            <div className="subsidy-detail-columns">
+              <div>
+                <h4><CheckCircle2 size={15} /> Prepare</h4>
+                <ul>
+                  {selectedModalSubsidy.requirements.map((item) => <li key={item}>{item}</li>)}
+                </ul>
+              </div>
+              <div>
+                <h4><ListChecks size={15} /> How to apply</h4>
+                <ol>
+                  {selectedModalSubsidy.application_steps.map((item) => <li key={item}>{item}</li>)}
+                </ol>
+              </div>
+            </div>
+            <a className="subsidy-source-link" href={selectedModalSubsidy.source_url} target="_blank" rel="noreferrer">
+              Open official source <ExternalLink size={14} />
+            </a>
             <div style={{ marginTop: 20, display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
               <button type="button" className="btn btn-secondary" onClick={() => setSelectedModalSubsidy(null)}>
                 {t('close')}
