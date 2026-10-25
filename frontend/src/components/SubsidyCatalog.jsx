@@ -1,12 +1,32 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Layers, ArrowRight, Search, SlidersHorizontal, X, ExternalLink, CheckCircle2, ListChecks } from 'lucide-react';
-import subsidyCatalog from '../data/subsidies.json';
 
 export default function SubsidyCatalog({ onSelectSubsidyForApplication, t, lang = 'en' }) {
-  const [subsidies] = useState(subsidyCatalog);
+  const [subsidies, setSubsidies] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedModalSubsidy, setSelectedModalSubsidy] = useState(null);
+
+  useEffect(() => {
+    const loadSubsidies = async () => {
+      try {
+        const response = await fetch('/api/subsidies');
+        const payload = await response.json();
+        if (!response.ok || !payload.success || !Array.isArray(payload.subsidies)) {
+          throw new Error(payload.error || 'Unable to load subsidy programs.');
+        }
+        setSubsidies(payload.subsidies);
+      } catch (error) {
+        setLoadError(error.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadSubsidies();
+  }, []);
 
   const filtered = subsidies.filter((sub) => {
     const types = Array.isArray(sub.damage_types)
@@ -67,7 +87,13 @@ export default function SubsidyCatalog({ onSelectSubsidyForApplication, t, lang 
           </select>
         </div>
 
-        {subsidies.length === 0 && (
+        {isLoading && (
+          <p className="field-help">{t('loadingPrograms')}</p>
+        )}
+        {!isLoading && loadError && (
+          <p className="field-help">{loadError}</p>
+        )}
+        {!isLoading && !loadError && subsidies.length === 0 && (
           <p className="field-help">
             {t('noProgramsLoaded')}
           </p>

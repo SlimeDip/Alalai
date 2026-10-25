@@ -13,8 +13,9 @@ A disaster risk reduction and social welfare web application built with **React*
 
 2. **Verified Philippine Government Subsidy Matching**
    - No subsidy claims are bundled, mocked, or seeded by default.
-   - Subsidies are maintained locally in `backend/data/subsidies.json` and mirrored
-     into the frontend build; there is no public subsidies API. Verify every record
+   - Subsidies are maintained in `backend/data/subsidies.json` and served to the
+     frontend through a read-only API; the backend also uses them for matching and
+     SQLite persistence. Verify every record
      on its official source before publishing changes.
 
 3. **Editable Official Intake Slip & Direct Print (`window.print()`)**
@@ -55,7 +56,11 @@ WebSysGroup12/
 ├── backend/
 │   ├── .env.example
 │   ├── package.json
-│   ├── database.js                  # SQLite initialization & Philippine subsidy seed data
+│   ├── database.js                  # SQLite initialization & subsidy catalog import
+│   ├── data/
+│   │   ├── subsidies.json           # Single verified subsidy catalog source
+│   │   ├── subsidies.template.json
+│   │   └── README.md                # Catalog maintenance guide
 │   ├── disaster_relief.db           # SQLite database file (created on startup)
 │   ├── server.js                    # Express app configuration & routing
 │   ├── routes/
@@ -63,7 +68,7 @@ WebSysGroup12/
 │   │   └── applications.js          # CRUD operations for intake applications
 │   └── services/
 │       ├── aiService.js             # Google Gemini damage analysis service
-│       ├── subsidyCatalog.js        # Local subsidies.json catalog reader
+│       ├── subsidyCatalog.js        # Frontend catalog reader for backend matching
 │       └── README_AI_TEMPLATE.md    # Guide to configuring and customizing AI
 └── frontend/
     ├── index.html                   # HTML entry point with metadata
