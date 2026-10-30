@@ -1,6 +1,7 @@
 import express from 'express';
 import crypto from 'crypto';
 import db from '../database.js';
+import { findSubsidy } from '../services/subsidyCatalog.js';
 
 const router = express.Router();
 const recognizedStatuses = new Set(['DRAFT', 'SUBMITTED', 'UNDER_REVIEW', 'APPROVED']);
@@ -131,12 +132,9 @@ function validateApplicationPayload(body, { existing = null, userId } = {}) {
   )) {
     return { error: 'applied_subsidies must be an array of non-empty subsidy IDs or titles.' };
   }
-  const findSubsidy = db.prepare(
-    'SELECT 1 FROM subsidies WHERE subsidy_id = ? OR title = ? LIMIT 1'
-  );
   for (const selection of subsidies) {
     const reference = selection.trim();
-    if (!findSubsidy.get(reference, reference)) {
+    if (!findSubsidy(reference)) {
       return { error: `Unknown subsidy reference: ${reference}.` };
     }
   }

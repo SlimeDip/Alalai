@@ -1,0 +1,19 @@
+[
+  {
+    "id": "replace-with-stable-program-id",
+    "agency": "Official agency name",
+    "title": "Official program name",
+    "short_description": "Short description copied or summarized from the official source.",
+    "details": "Eligibility and coverage, written only from the official source.",
+    "max_amount_php": 0,
+    "amount_display": 0,
+    "disaster_categories": ["Typhoon"],
+    "damage_types": ["general"],
+    "min_severity": "Low",
+    "requirements": ["Requirement from the official source"],
+    "contact_info": "Official URL, hotline, or office",
+    "application_steps": ["Official application step"],
+    "source_url": "https://official-government-domain.example/program",
+    "last_verified_on": "YYYY-MM-DD"
+  }
+]

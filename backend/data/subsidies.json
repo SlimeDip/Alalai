@@ -1,0 +1,600 @@
+[
+  {
+    "id": "dswd-emergency-cash-transfer",
+    "agency": "Department of Social Welfare and Development (DSWD)",
+    "title": "Emergency Cash Transfer (ECT)",
+    "short_description": "Unconditional cash assistance for families affected by disasters, supporting urgent needs and early recovery.",
+    "details": "For disaster-affected families following a declared state of calamity, subject to applicable DSWD guidelines, beneficiary validation, and operational local markets. Assistance may support food, medicines, shelter repairs, and restoration of primary income sources. Planning estimate: up to ₱10,000; confirm the approved amount under current DSWD guidelines.",
+    "max_amount_php": 10000,
+    "amount_display": 10000,
+    "disaster_categories": [
+      "Typhoon",
+      "Flood",
+      "Earthquake",
+      "Volcanic Eruption",
+      "Landslide",
+      "Fire"
+    ],
+    "damage_types": [
+      "general",
+      "livelihood",
+      "food",
+      "medical",
+      "structural"
+    ],
+    "min_severity": "Low",
+    "requirements": [
+      "Proof of identity, as required",
+      "Validation of disaster impact",
+      "Inclusion in the applicable beneficiary list",
+      "Other documents required under current DSWD guidelines"
+    ],
+    "contact_info": "DSWD Disaster Response Management Group",
+    "application_channel": "Start with the barangay or City/Municipal Social Welfare and Development Office (CSWDO/MSWDO).",
+    "application_steps": [
+      "Report the disaster impact to the barangay or local government unit.",
+      "Coordinate with the local social welfare office regarding beneficiary profiling.",
+      "Submit the required information and supporting documents.",
+      "Wait for validation and official distribution announcements."
+    ],
+    "source_url": "https://drm.dswd.gov.ph/emergency-cash-transfer/",
+    "last_verified_on": "2026-10-16"
+  },
+  {
+    "id": "dswd-emergency-shelter-assistance",
+    "agency": "Department of Social Welfare and Development (DSWD)",
+    "title": "Emergency Shelter Assistance (ESA)",
+    "short_description": "Shelter assistance for families whose houses were partially or totally destroyed by natural or human-induced disasters.",
+    "details": "Provides assistance to eligible disaster-affected households to address immediate shelter needs and support early recovery. Planning estimate: up to ₱30,000; confirm the approved amount with the implementing DSWD field office. Beneficiary eligibility, damage classification, documentary requirements, and distribution are subject to DSWD guidelines and local validation.",
+    "max_amount_php": 30000,
+    "amount_display": 30000,
+    "disaster_categories": [
+      "Typhoon",
+      "Flood",
+      "Earthquake",
+      "Landslide",
+      "Fire",
+      "Fire"
+    ],
+    "damage_types": [
+      "structural"
+    ],
+    "min_severity": "Low",
+    "requirements": [
+      "Barangay certification classifying the house damage",
+      "Government-issued identification",
+      "Certificate of indigency",
+      "Inclusion in the validated beneficiary master list",
+      "Additional documents required by the implementing office"
+    ],
+    "contact_info": "DSWD Field Office or local social welfare office",
+    "application_channel": "Report the damaged house to the barangay and request an official damage classification.",
+    "application_steps": [
+      "Report the damaged house to the barangay or local government unit.",
+      "Obtain official damage classification.",
+      "Submit the required documents to the local social welfare office.",
+      "Await beneficiary validation and assistance distribution."
+    ],
+    "source_url": "https://fo1.dswd.gov.ph/emergency-shelter-assistance/",
+    "last_verified_on": "2026-10-16"
+  },
+  {
+    "id": "dswd-assistance-communities-in-need",
+    "agency": "Department of Social Welfare and Development (DSWD)",
+    "title": "Assistance to Communities in Need (ACN)",
+    "short_description": "Supports communities affected by disasters through food packs, cash-for-work or food-for-work, and eligible community facility repairs.",
+    "details": "Disaster recovery assistance intended to help affected communities recover. Support may include food packs, cash-for-work or food-for-work, and construction or repair of eligible day care centers and senior citizen centers. No individual household amount is specified; confirm any approved community project budget with DSWD/LGU. Availability and eligibility depend on the applicable program implementation.",
+    "max_amount_php": 0,
+    "amount_display": 0,
+    "disaster_categories": [
+      "Typhoon",
+      "Flood",
+      "Earthquake",
+      "Volcanic Eruption",
+      "Landslide",
+      "Other Disasters"
+    ],
+    "damage_types": [
+      "general",
+      "food",
+      "livelihood"
+    ],
+    "min_severity": "Low",
+    "requirements": [
+      "Evidence that the community was affected by a disaster",
+      "Local government or community coordination",
+      "Assessment and documents required by DSWD for the applicable intervention"
+    ],
+    "contact_info": "DSWD Crisis Intervention Section",
+    "application_channel": "Coordinate through the barangay or LGU; this is a community-level program, not an automatic individual cash grant.",
+    "application_steps": [
+      "Coordinate with the barangay or local government unit regarding community disaster impacts.",
+      "Request assessment and referral to the appropriate DSWD office.",
+      "Provide the required community impact information and supporting documents.",
+      "Await assessment and confirmation of available assistance."
+    ],
+    "source_url": "https://crisis-intervention.dswd.gov.ph/services/",
+    "last_verified_on": "2026-10-16"
+  },
+  {
+    "id": "dswd-assistance-individuals-crisis-situation",
+    "agency": "Department of Social Welfare and Development (DSWD)",
+    "title": "Assistance to Individuals in Crisis Situation (AICS)",
+    "short_description": "Needs-based financial, food, medical, transportation, and other crisis assistance for disaster-affected individuals and families.",
+    "details": "AICS assistance is assessed by DSWD social workers and depends on the type of crisis, available funds, and documentary requirements. Disaster applicants should coordinate with the nearest DSWD Field Office or local social welfare office. Amounts vary by assessed need and are not guaranteed.",
+    "max_amount_php": 0,
+    "amount_display": 0,
+    "disaster_categories": [
+      "Typhoon",
+      "Flood",
+      "Earthquake",
+      "Volcanic Eruption",
+      "Landslide",
+      "Fire",
+      "Storm Surge",
+      "Drought"
+    ],
+    "damage_types": [
+      "general",
+      "food",
+      "medical",
+      "structural",
+      "livelihood"
+    ],
+    "min_severity": "Low",
+    "requirements": [
+      "Valid government-issued identification",
+      "Barangay certification or other proof of disaster impact",
+      "Assessment by a DSWD social worker",
+      "Additional documents required for the specific assistance type"
+    ],
+    "contact_info": "DSWD Assistance to Individuals in Crisis Situation",
+    "application_channel": "Apply or inquire through a DSWD Field Office, DSWD Crisis Intervention Unit, or local social welfare office.",
+    "application_steps": [
+      "Report the disaster impact to the barangay or local social welfare office.",
+      "Bring valid identification and available proof of the disaster impact.",
+      "Complete the DSWD assessment and submit documents requested for the assistance type.",
+      "Wait for the official assessment and release instructions."
+    ],
+    "source_url": "https://www.dswd.gov.ph/cip/assistance-to-individuals-in-crisis-situation/",
+    "last_verified_on": "2026-10-24"
+  },
+  {
+    "id": "acpc-sure-assistance-program",
+    "agency": "Agricultural Credit Policy Council (DA-ACPC)",
+    "title": "Survival and Recovery (SURE) Assistance Program",
+    "short_description": "Calamity recovery financing for eligible small farmers and fisherfolk to restore farm, fishing, and livelihood activities.",
+    "details": "SURE assistance is implemented through eligible lending conduits and local agriculture offices for qualified small farmers and fisherfolk affected by declared calamities. Loan terms, eligibility, and availability depend on the current ACPC guidelines and calamity coverage.",
+    "max_amount_php": 25000,
+    "amount_display": 25000,
+    "disaster_categories": [
+      "Typhoon",
+      "Flood",
+      "Earthquake",
+      "Landslide",
+      "Drought",
+      "Storm Surge"
+    ],
+    "damage_types": [
+      "agricultural",
+      "livelihood"
+    ],
+    "min_severity": "Moderate",
+    "requirements": [
+      "Proof of farmer or fisherfolk status",
+      "Registration or validation through the local agriculture office",
+      "Proof of calamity-related production or livelihood loss",
+      "Other documents required by the lending conduit and current ACPC rules"
+    ],
+    "contact_info": "Agricultural Credit Policy Council",
+    "application_channel": "Inquire at the Municipal/City Agriculture Office or an ACPC-accredited lending conduit.",
+    "application_steps": [
+      "Report the farm, fishery, or livelihood loss to the local agriculture office.",
+      "Ask whether the area and applicant qualify under the current SURE coverage.",
+      "Prepare the required farmer or fisherfolk registration and calamity documents.",
+      "Submit the application through the designated lending conduit."
+    ],
+    "source_url": "https://acpc.gov.ph/survival-and-recovery-program/",
+    "last_verified_on": "2026-10-24"
+  },
+  {
+    "id": "pcic-crop-insurance-indemnity",
+    "agency": "Philippine Crop Insurance Corporation (PCIC)",
+    "title": "PCIC Crop Insurance Indemnity",
+    "short_description": "Insurance protection and indemnity claims for insured crops damaged or lost because of typhoon, flood, drought, and other covered perils.",
+    "details": "PCIC indemnity is available only for eligible insured agricultural production and covered losses. The claim amount depends on the policy, insured crop, verified damage, and PCIC assessment; it is not a general disaster cash grant.",
+    "max_amount_php": 0,
+    "amount_display": 0,
+    "disaster_categories": [
+      "Typhoon",
+      "Flood",
+      "Drought",
+      "Earthquake",
+      "Landslide",
+      "Storm Surge"
+    ],
+    "damage_types": [
+      "agricultural"
+    ],
+    "min_severity": "Low",
+    "requirements": [
+      "Active PCIC insurance coverage or eligible government-subsidized policy",
+      "Proof of insured crop, livestock, or fishery activity",
+      "Notice of loss within the applicable deadline",
+      "Field loss assessment and documents required by PCIC"
+    ],
+    "contact_info": "Philippine Crop Insurance Corporation",
+    "application_channel": "File a notice of loss with the nearest PCIC Regional Office, Provincial Extension Office, or authorized partner.",
+    "application_steps": [
+      "Notify PCIC or the authorized partner promptly after the loss.",
+      "Keep farm records, policy documents, and evidence of the damaged production.",
+      "Allow PCIC or its authorized field personnel to inspect and assess the loss.",
+      "Submit the claim documents and wait for the official claim decision."
+    ],
+    "source_url": "https://pcic.gov.ph/",
+    "last_verified_on": "2026-10-24"
+  },
+  {
+    "id": "dswd-sustainable-livelihood-program",
+    "agency": "Department of Social Welfare and Development (DSWD)",
+    "title": "Sustainable Livelihood Program (SLP)",
+    "short_description": "Livelihood formation and employment support for qualified low-income families, including communities affected by disasters.",
+    "details": "SLP may provide livelihood formation, employment facilitation, skills support, or enterprise assistance through community-based implementation. Participation, assistance type, and amount depend on program assessment, local implementation, and available funds.",
+    "max_amount_php": 0,
+    "amount_display": 0,
+    "disaster_categories": [
+      "Typhoon",
+      "Flood",
+      "Earthquake",
+      "Landslide",
+      "Fire",
+      "Drought"
+    ],
+    "damage_types": [
+      "livelihood",
+      "agricultural",
+      "general"
+    ],
+    "min_severity": "Low",
+    "requirements": [
+      "Household assessment by DSWD or the implementing local office",
+      "Proof of identity and household information",
+      "Evidence of livelihood need or loss",
+      "Participation in required training, validation, or enterprise planning"
+    ],
+    "contact_info": "DSWD Sustainable Livelihood Program",
+    "application_channel": "Ask the local social welfare office or DSWD Field Office about active SLP intake in the area.",
+    "application_steps": [
+      "Register the household and livelihood impact with the barangay or local social welfare office.",
+      "Request referral to the SLP implementing office.",
+      "Complete household assessment and livelihood planning activities.",
+      "Follow the office instructions for training, validation, and release."
+    ],
+    "source_url": "https://slp.dswd.gov.ph/",
+    "last_verified_on": "2026-10-24"
+  },
+  {
+    "id": "dole-tupad-emergency-employment",
+    "agency": "Department of Labor and Employment (DOLE)",
+    "title": "TUPAD Emergency Employment (Tulong Panghanapbuhay sa Ating Disadvantaged/Displaced Workers)",
+    "short_description": "Short-term community clean-up and rehabilitation work paid at the regional daily minimum wage for workers displaced by disasters.",
+    "details": "Provides temporary emergency employment (typically 10 to 30 days, longer in some cases depending on the work) to displaced, underemployed, and seasonal workers in calamity-hit communities. Work usually covers clearing, clean-up, and rehabilitation. Pay equals the regional minimum daily wage, so the total varies by region and number of days. Beneficiaries are usually identified through the LGU's Public Employment Service Office (PESO). Not an automatic cash grant; slots are limited and depend on DOLE funding.",
+    "max_amount_php": 0,
+    "amount_display": 0,
+    "disaster_categories": [
+      "Typhoon",
+      "Flood",
+      "Earthquake",
+      "Volcanic Eruption",
+      "Landslide",
+      "Fire",
+      "Storm Surge"
+    ],
+    "damage_types": [
+      "livelihood",
+      "general"
+    ],
+    "min_severity": "Low",
+    "requirements": [
+      "Proof of identity",
+      "Proof of residence in the calamity-affected area (e.g., barangay certification)",
+      "Inclusion in the PESO or LGU list of affected or displaced workers",
+      "Other documents required by the DOLE field or provincial office"
+    ],
+    "contact_info": "DOLE Regional/Provincial/Field Office and the local PESO",
+    "application_channel": "Register with the city/municipal PESO or the nearest DOLE field or provincial office.",
+    "application_steps": [
+      "Report your loss of work or income to the barangay and the local PESO.",
+      "Ask the PESO whether a TUPAD emergency employment batch is open for your area.",
+      "Submit identification and proof of residence in the affected area.",
+      "Attend the orientation, complete the assigned community work, and receive wages through the DOLE-designated payout channel."
+    ],
+    "source_url": "https://www.dole.gov.ph/",
+    "last_verified_on": "2026-10-25"
+  },
+  {
+    "id": "sss-calamity-loan-program",
+    "agency": "Social Security System (SSS)",
+    "title": "SSS Calamity Loan Program",
+    "short_description": "Low-interest salary-type loan for SSS members living or working in areas declared under a state of calamity.",
+    "details": "Opened by SSS when areas are declared under a state of calamity. Reported terms in the most recent rounds: loan equal to one monthly salary credit (MSC), capped at ₱20,000, with a reported 7% annual interest and renewal after 6 months. Earlier rounds used 10% interest and 24 monthly installments. This is a loan, not a grant, and it opens only for specific declared areas and application windows. Confirm the current circular and deadline with SSS.",
+    "max_amount_php": 20000,
+    "amount_display": 20000,
+    "disaster_categories": [
+      "Typhoon",
+      "Flood",
+      "Earthquake",
+      "Volcanic Eruption",
+      "Landslide",
+      "Storm Surge",
+      "Other Disasters"
+    ],
+    "damage_types": [
+      "general",
+      "structural",
+      "livelihood",
+      "food",
+      "medical"
+    ],
+    "min_severity": "Low",
+    "requirements": [
+      "Active SSS membership with a registered address or place of employment in an area declared under a state of calamity",
+      "No outstanding restructured loan or previous calamity loan balance",
+      "No past-due short-term member loans",
+      "Be below 65 years old at the time of application",
+      "Employer certification for employed members (online)",
+      "Disbursement account (bank or e-wallet) enrolled with SSS"
+    ],
+    "contact_info": "SSS branch, SSS Mobile App, or My.SSS portal",
+    "application_channel": "Apply online through My.SSS or the SSS Mobile App while the program window for your area is open.",
+    "application_steps": [
+      "Check that your area has been declared under a state of calamity and that SSS has opened the calamity loan for it.",
+      "Log in to your My.SSS account or the SSS Mobile App and choose the calamity loan application.",
+      "Complete the form and have your employer certify the application online, if you are an employed member.",
+      "Wait for approval; proceeds are credited to your enrolled bank account or e-wallet."
+    ],
+    "source_url": "https://www.sss.gov.ph/",
+    "last_verified_on": "2026-10-25"
+  },
+  {
+    "id": "gsis-emergency-loan",
+    "agency": "Government Service Insurance System (GSIS)",
+    "title": "GSIS Emergency Loan",
+    "short_description": "Low-interest emergency loan for GSIS active members and pensioners living or working in areas declared under a state of calamity.",
+    "details": "Available to qualified active members and old-age/disability pensioners in areas declared under a state of calamity. Reported terms: up to ₱20,000 for those without an existing emergency loan; up to ₱40,000 gross for those with an existing balance (the old balance is settled first, with net proceeds capped at ₱20,000). Interest is reported at 6% per year, payable over 3 years. This is a loan, not a grant. Windows and areas are announced per calamity, so confirm with GSIS.",
+    "max_amount_php": 20000,
+    "amount_display": 20000,
+    "disaster_categories": [
+      "Typhoon",
+      "Flood",
+      "Earthquake",
+      "Volcanic Eruption",
+      "Landslide",
+      "Storm Surge",
+      "Other Disasters"
+    ],
+    "damage_types": [
+      "general",
+      "structural",
+      "livelihood",
+      "food",
+      "medical"
+    ],
+    "min_severity": "Low",
+    "requirements": [
+      "Active GSIS member or old-age/disability pensioner residing or working in an area declared under a state of calamity",
+      "Active members: not on leave without pay, no pending administrative or criminal case, at least 6 months of premiums paid, and net take-home pay of at least ₱5,000 after deductions",
+      "Pensioners: net monthly pension of at least 25% after loan deductions",
+      "GSIS UMID card or temporary card (photo with the card may be required for online filing)"
+    ],
+    "contact_info": "GSIS Touch app, eGSISMO, or your GSIS handling branch",
+    "application_channel": "Apply through the GSIS Touch mobile app or eGSISMO, or email the form to your handling branch.",
+    "application_steps": [
+      "Confirm your area is covered and note the application deadline announced by GSIS.",
+      "Log in to GSIS Touch or eGSISMO and select Emergency Loan (new or renewal).",
+      "Upload the required photo with your UMID or temporary card and confirm the loan agreement.",
+      "Wait for approval; proceeds are credited to your account."
+    ],
+    "source_url": "https://www.gsis.gov.ph/",
+    "last_verified_on": "2026-10-25"
+  },
+  {
+    "id": "pagibig-calamity-loan",
+    "agency": "Pag-IBIG Fund (HDMF)",
+    "title": "Pag-IBIG Calamity Loan",
+    "short_description": "Cash loan for Pag-IBIG members in areas declared under a state of calamity, based on their accumulated savings.",
+    "details": "Loanable amount is the lowest of the amount applied for or 80% of the member's Total Accumulated Value (TAV), less any outstanding calamity or multi-purpose loan balance. Applications are generally accepted within 90 days from the declaration of the state of calamity. A loan, not a grant; the maximum depends on each member's own savings, so no fixed peso cap applies. Confirm current terms, rates, and the filing channel with Pag-IBIG.",
+    "max_amount_php": 0,
+    "amount_display": 0,
+    "disaster_categories": [
+      "Typhoon",
+      "Flood",
+      "Earthquake",
+      "Volcanic Eruption",
+      "Landslide",
+      "Fire",
+      "Storm Surge",
+      "Other Disasters"
+    ],
+    "damage_types": [
+      "general",
+      "structural",
+      "livelihood",
+      "food",
+      "medical"
+    ],
+    "min_severity": "Low",
+    "requirements": [
+      "Pag-IBIG member with the required number of monthly contributions (or equivalent savings)",
+      "Residence in an area declared under a state of calamity",
+      "Up-to-date payments on any existing Pag-IBIG housing, multi-purpose, or calamity loan",
+      "Accomplished Calamity Loan Application Form",
+      "Valid ID and other documents required by Pag-IBIG"
+    ],
+    "contact_info": "Pag-IBIG Fund branch or Virtual Pag-IBIG",
+    "application_channel": "Apply through Virtual Pag-IBIG, a Pag-IBIG branch, or the regional office channel announced for your area.",
+    "application_steps": [
+      "Confirm your area is under a declared state of calamity and note the 90-day filing window.",
+      "Check your contributions and Total Accumulated Value.",
+      "Complete the Calamity Loan Application Form and attach your valid ID and other requirements.",
+      "Submit online or at a branch and wait for approval and release of proceeds."
+    ],
+    "source_url": "https://www.pagibigfund.gov.ph/",
+    "last_verified_on": "2026-10-25"
+  },
+  {
+    "id": "nha-emergency-housing-assistance-program",
+    "agency": "National Housing Authority (NHA)",
+    "title": "Emergency Housing Assistance Program (EHAP)",
+    "short_description": "Cash assistance for low-income families whose houses were partially or totally damaged by natural or man-made calamities.",
+    "details": "Reported release rates in recent rounds: about ₱10,000 for partially damaged houses and ₱20,000 for totally damaged houses, though some rounds and reports cite ranges from ₱5,000 up to ₱30,000. Assistance is released through special EHAP releases per calamity and depends on available funds; beneficiary lists are validated with LGUs and social welfare offices. Because DSWD's Emergency Shelter Assistance also covers damaged houses, ask the local social welfare office how the two programs are coordinated for your case.",
+    "max_amount_php": 20000,
+    "amount_display": 20000,
+    "disaster_categories": [
+      "Typhoon",
+      "Flood",
+      "Earthquake",
+      "Landslide",
+      "Fire",
+      "Volcanic Eruption"
+    ],
+    "damage_types": [
+      "structural"
+    ],
+    "min_severity": "Low",
+    "requirements": [
+      "House damage verified by the barangay or LGU (partially or totally damaged)",
+      "Inclusion in the LGU or DSWD-validated list of affected families",
+      "Photos of the damaged house (may be used for validation)",
+      "Valid ID and other documents required by the NHA regional or district office"
+    ],
+    "contact_info": "NHA Regional or District Office",
+    "application_channel": "Report house damage to the barangay and LGU, then coordinate with the NHA regional or district office through the local social welfare office.",
+    "application_steps": [
+      "Report the house damage to the barangay or LGU and request an official damage assessment.",
+      "Make sure your household is included in the validated list of affected families.",
+      "Provide photos, ID, and other documents requested by the NHA office.",
+      "Wait for the NHA announcement of the payout schedule and claim the assistance in person."
+    ],
+    "source_url": "https://nha.gov.ph/",
+    "last_verified_on": "2026-10-25"
+  },
+  {
+    "id": "owwa-welfare-assistance-calamity",
+    "agency": "Overseas Workers Welfare Administration (OWWA) / Department of Migrant Workers",
+    "title": "OWWA Welfare Assistance Program (WAP) - Calamity Assistance",
+    "short_description": "Cash relief for OWWA member OFWs and their families affected by typhoons, earthquakes, floods, and other disasters.",
+    "details": "Calamity assistance under WAP covers OWWA members, active or non-active, and their families affected by natural or human-induced disasters. In one regional release, active members received ₱3,000 and inactive members ₱1,500, with one OFW per family entitled. Amounts and eligibility can change per release, and beneficiaries must reside in an area declared under a state of calamity by the LGU or the Office of the President.",
+    "max_amount_php": 3000,
+    "amount_display": 3000,
+    "disaster_categories": [
+      "Typhoon",
+      "Flood",
+      "Earthquake",
+      "Volcanic Eruption",
+      "Landslide",
+      "Storm Surge",
+      "Other Disasters"
+    ],
+    "damage_types": [
+      "general",
+      "food",
+      "structural",
+      "livelihood"
+    ],
+    "min_severity": "Low",
+    "requirements": [
+      "OFW registered as an OWWA member (active or inactive)",
+      "Permanent residence in an area declared under a state of calamity",
+      "Certification from the barangay or City/Municipal Social Welfare Office that the family was affected",
+      "Proof of relationship to the OFW for family members claiming on their behalf",
+      "Other documents listed by the OWWA Regional Welfare Office"
+    ],
+    "contact_info": "OWWA Regional Welfare Office, OWWA hotline 1348",
+    "application_channel": "Go to the OWWA Regional Welfare Office nearest the OFW's permanent address, or call 1348 for guidance.",
+    "application_steps": [
+      "Get a certification from the barangay or social welfare office confirming the family was affected.",
+      "Prepare proof of OWWA membership and proof of relationship to the OFW.",
+      "Submit the documents to the OWWA Regional Welfare Office or the arranged payout venue.",
+      "Wait for validation and the announced release schedule."
+    ],
+    "source_url": "https://owwa.gov.ph/",
+    "last_verified_on": "2026-10-25"
+  },
+  {
+    "id": "dti-pangkabuhayan-sa-pagbangon-at-ginhawa",
+    "agency": "Department of Trade and Industry (DTI)",
+    "title": "Pangkabuhayan sa Pagbangon at Ginhawa (PPG) Livelihood Kit",
+    "short_description": "Livelihood kits and entrepreneurship training for micro-enterprises affected by calamities and fire incidents.",
+    "details": "Gives affected micro-enterprises a package of information materials, entrepreneurship training, and items such as raw materials, tools, or equipment. A regional release cites packages worth up to ₱10,000 per family or individual, and other reports cite ₱5,000 to ₱10,000 for DTI livelihood seeding. The kit is in-kind, and a master list of affected individuals prepared by competent authority is used for selection. Availability depends on DTI funds and the area covered.",
+    "max_amount_php": 10000,
+    "amount_display": 10000,
+    "disaster_categories": [
+      "Typhoon",
+      "Flood",
+      "Earthquake",
+      "Volcanic Eruption",
+      "Landslide",
+      "Fire",
+      "Other Disasters"
+    ],
+    "damage_types": [
+      "livelihood"
+    ],
+    "min_severity": "Low",
+    "requirements": [
+      "Owner or operator of a micro-enterprise or small livelihood activity affected by the calamity",
+      "Inclusion in the master list of affected individuals or families from the LGU or other competent authority",
+      "Proof of residence and identification",
+      "Participation in the required entrepreneurship training"
+    ],
+    "contact_info": "DTI Provincial Office or Negosyo Center",
+    "application_channel": "Inquire at the nearest DTI Provincial Office or Negosyo Center, and ask the LGU to include you in the affected-enterprise master list.",
+    "application_steps": [
+      "Report the loss to the barangay or LGU and ask to be included in the affected-enterprise master list.",
+      "Contact the DTI Provincial Office or Negosyo Center to ask whether a PPG package is open for your area.",
+      "Submit identification, proof of the livelihood, and other requested documents.",
+      "Attend the training and receive the livelihood kit."
+    ],
+    "source_url": "https://www.dti.gov.ph/",
+    "last_verified_on": "2026-10-25"
+  },
+  {
+    "id": "bfar-fisheries-rehabilitation-and-recovery",
+    "agency": "Bureau of Fisheries and Aquatic Resources (DA-BFAR)",
+    "title": "BFAR Fisheries Rehabilitation and Recovery Assistance",
+    "short_description": "Boat repair materials, replacement boats, fishing gear, and other support for fisherfolk whose livelihoods were damaged by disasters.",
+    "details": "Following major typhoons, BFAR has distributed boat repair materials (e.g., marine plywood, nails, epoxy, paint), fiberglass-reinforced plastic boats with engines, fishing gear, and seaweed farming inputs through regional rehabilitation and recovery programs. Assistance is mainly in-kind and delivered through BFAR regional offices and LGUs. It is not a cash grant, and availability depends on the calamity and the funds released.",
+    "max_amount_php": 0,
+    "amount_display": 0,
+    "disaster_categories": [
+      "Typhoon",
+      "Flood",
+      "Earthquake",
+      "Storm Surge",
+      "Volcanic Eruption",
+      "Other Disasters"
+    ],
+    "damage_types": [
+      "agricultural",
+      "livelihood"
+    ],
+    "min_severity": "Moderate",
+    "requirements": [
+      "Registration as a fisherfolk with BFAR or the LGU (FishR registry)",
+      "Proof of damage to the fishing boat, gear, or aquaculture facilities",
+      "Inclusion in the LGU or BFAR list of affected fisherfolk",
+      "Other documents required by the BFAR regional office"
+    ],
+    "contact_info": "BFAR Regional Office or the Municipal/City Agriculture or Fisheries Office",
+    "application_channel": "Report damage to the municipal/city agriculture or fisheries office and the nearest BFAR regional office.",
+    "application_steps": [
+      "Confirm your fisherfolk registration with the LGU or BFAR.",
+      "Report the damaged boat, gear, or farm and provide photos or other proof.",
+      "Ask the BFAR regional office or LGU whether a rehabilitation and recovery distribution covers your area.",
+      "Wait for validation and the announced distribution schedule."
+    ],
+    "source_url": "https://www.bfar.da.gov.ph/",
+    "last_verified_on": "2026-10-25"
+  }
+]

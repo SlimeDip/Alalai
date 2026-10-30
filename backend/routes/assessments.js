@@ -72,7 +72,7 @@ function formatRecoveryCase(row) {
   };
 }
 
-// Run damage assessment through AI template + heuristic and save to SQLite
+// Run damage assessment through Gemini and save the verified result to SQLite
 router.post('/', upload.single('damageImage'), async (req, res) => {
   try {
     if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
@@ -134,10 +134,13 @@ router.post('/', upload.single('damageImage'), async (req, res) => {
       incidentDate = new Date().toISOString().split('T')[0],
     } = req.body;
 
-    if (typeof damageDescription !== 'string' || damageDescription.trim().length === 0) {
+    if (
+      (typeof damageDescription !== 'string' || damageDescription.trim().length === 0)
+      && !req.file
+    ) {
       return res.status(400).json({
         success: false,
-        error: 'Damage description is required for assessment.'
+        error: 'Damage description or a damage image is required for assessment.'
       });
     }
     if (typeof disasterType !== 'string' || disasterType.trim().length === 0) {
@@ -157,6 +160,7 @@ router.post('/', upload.single('damageImage'), async (req, res) => {
       householdSize: Number(householdSize) || 1,
       image: req.file
     });
+    console.log('AI response JSON:', JSON.stringify(assessmentResult, null, 2));
 
     // Generate unique ID
     const assessmentId = 'CASE-' + crypto.randomUUID();
@@ -270,15 +274,20 @@ router.post('/', upload.single('damageImage'), async (req, res) => {
       }
     });
   } catch (error) {
-    if (error.code === 'IRRELEVANT_IMAGE') {
+    if (
+      error.code === 'IRRELEVANT_IMAGE'
+      || error.code === 'NO_DAMAGE_DETECTED'
+      || error.code === 'AI_UNAVAILABLE'
+    ) {
       return res.status(422).json({
         success: false,
         code: error.code,
+        reason: error.reason,
         error: error.message
       });
     }
     console.error('Error conducting assessment:', error);
-    res.status(500).json({ success: false, error: 'Internal assessment error.' });
+    res.status(500).json({ success: false, code: 'SERVER_ERROR', error: 'An unexpected error occurred while processing your damage assessment. Please try again.' });
   }
 });
 

@@ -7,7 +7,7 @@ import {
   MapPin,
   RefreshCw
 } from 'lucide-react';
-import { readSavedApplications, writeSavedApplications } from '../utils/mockData';
+import { readSavedApplications, writeSavedApplications } from '../utils/applicationStorage';
 
 export default function SavedApplicationsList({ onSelectApplication, t = (key) => key, lang = 'en' }) {
   const [applications, setApplications] = useState(() => readSavedApplications());

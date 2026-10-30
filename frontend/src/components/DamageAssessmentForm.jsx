@@ -18,11 +18,10 @@ import {
   Tornado,
   Waves,
   Sun,
-  Snowflake,
   ImagePlus,
   X,
 } from 'lucide-react';
-import { runImageDamageAssessment, runLocalDamageAssessment } from '../utils/mockAssessment';
+import { runDamageAssessment } from '../utils/assessmentApi';
 
 const DISASTERS = [
   { value: 'Typhoon', icon: Wind, titleKey: 'disasterTyphoon', descKey: 'disasterTyphoonDesc' },
@@ -34,7 +33,6 @@ const DISASTERS = [
   { value: 'Tornado', icon: Tornado, titleKey: 'disasterTornado', descKey: 'disasterTornadoDesc' },
   { value: 'Storm Surge', icon: Waves, titleKey: 'disasterStormSurge', descKey: 'disasterStormSurgeDesc' },
   { value: 'Drought', icon: Sun, titleKey: 'disasterDrought', descKey: 'disasterDroughtDesc' },
-  { value: 'Extreme Cold', icon: Snowflake, titleKey: 'disasterCold', descKey: 'disasterColdDesc' },
 ];
 
 const MANUAL_CHECK_KEYS = [
@@ -151,11 +149,7 @@ export default function DamageAssessmentForm({ user, t, lang = 'en', onSelectSub
     e.preventDefault();
 
     if (inputMethod === 'ai' && !formData.damageDescription.trim() && !damageImage) {
-      setErrorMsg(
-        lang === 'tl'
-          ? 'Magbigay ng kahit isa: paglalarawan ng pinsala O mag-upload ng litrato.'
-          : 'Please provide at least one input: a damage description OR a photo.'
-      );
+      setErrorMsg(t('provideAnalysisInput'));
       return;
     }
 
@@ -167,47 +161,42 @@ export default function DamageAssessmentForm({ user, t, lang = 'en', onSelectSub
     setLoading(true);
     setErrorMsg('');
     try {
+      const manualDescription = MANUAL_CHECK_KEYS
+        .filter((key) => manualChecks[key.id])
+        .map((key) => t(key.labelKey))
+        .join('. ');
+      const selectedCostTier = COST_TIERS.find((tier) => tier.value === costTier);
       const assessmentPayload = {
         disasterType: formData.disasterType,
-        damageDescription: formData.damageDescription,
+        damageDescription: inputMethod === 'manual'
+          ? `${manualDescription}. Estimated damage range selected by resident: ${selectedCostTier ? t(selectedCostTier.labelKey) : costTier}.`
+          : formData.damageDescription,
         householdSize: formData.householdSize,
         manualChecks: Object.fromEntries(
           MANUAL_CHECK_KEYS.filter((k) => manualChecks[k.id]).map((k) => [t(k.labelKey), true])
         ),
         costTier: inputMethod === 'manual' ? costTier : ''
       };
-      let assessment;
-      if (damageImage) {
-        try {
-          assessment = await runImageDamageAssessment({
-            ...formData,
-            ...assessmentPayload,
-            incidentDate: formData.incidentDate,
-            damageImage
-          });
-        } catch (error) {
-          if (error.code === 'IRRELEVANT_IMAGE') {
-            throw error;
-          }
-          console.warn('AI assessment service unreachable, falling back to local assessment:', error.message);
-          assessment = await runLocalDamageAssessment(assessmentPayload);
-        }
-      } else {
-        assessment = await runLocalDamageAssessment(assessmentPayload);
-      }
+      const assessment = await runDamageAssessment({
+        ...formData,
+        ...assessmentPayload,
+        incidentDate: formData.incidentDate,
+        damageImage
+      });
       setResult(assessment);
       goStep(3);
     } catch (err) {
       console.error(err);
-      // ALWAYS use t('imageRelevanceError') for relevance guardrail errors to respect active language
-      if (err.code === 'IRRELEVANT_IMAGE' || err.isRelevanceError) {
+      if (err.code === 'NO_DAMAGE_DETECTED') {
+        setErrorMsg(t('noDamageDetectedError'));
+      } else if (err.code === 'IRRELEVANT_IMAGE' || err.isRelevanceError) {
         setErrorMsg(t('imageRelevanceError'));
+      } else if (err.code === 'AI_UNAVAILABLE') {
+        setErrorMsg(t('aiUnavailableError'));
+      } else if (err.code === 'MISSING_ANALYSIS_INPUT') {
+        setErrorMsg(t('missingAnalysisInputError'));
       } else {
-        setErrorMsg(
-          lang === 'tl'
-            ? 'Hindi maiproseso ang pagsusuri. Paki-check ang iyong ibinigay na detalye.'
-            : 'Unable to analyze the input. Please check your uploaded details.'
-        );
+        setErrorMsg(t('analysisError'));
       }
     } finally {
       setLoading(false);
@@ -224,10 +213,6 @@ export default function DamageAssessmentForm({ user, t, lang = 'en', onSelectSub
       default:
         return 'badge-low';
     }
-  };
-
-  const applyAiSample = (text) => {
-    setFormData((prev) => ({ ...prev, damageDescription: text }));
   };
 
   const startAnotherAssessment = () => {
@@ -291,7 +276,7 @@ export default function DamageAssessmentForm({ user, t, lang = 'en', onSelectSub
               <AlertTriangle size={28} />
             </div>
             <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#0f172a', marginBottom: '8px' }}>
-              {lang === 'tl' ? 'Pansin sa Pagsusuri' : 'Assessment Alert'}
+              {t('assessmentAlert')}
             </h3>
             <p style={{ fontSize: '14px', color: '#475569', lineHeight: '1.5', marginBottom: '20px' }}>
               {errorMsg}
@@ -302,7 +287,7 @@ export default function DamageAssessmentForm({ user, t, lang = 'en', onSelectSub
               style={{ width: '100%', padding: '10px 16px', fontWeight: '600', borderRadius: '8px' }}
               onClick={() => setErrorMsg('')}
             >
-              {lang === 'tl' ? 'Naintindihan Ko' : 'Got It'}
+              {t('gotIt')}
             </button>
           </div>
         </div>
@@ -432,18 +417,6 @@ export default function DamageAssessmentForm({ user, t, lang = 'en', onSelectSub
                       </div>
                     )}
                   </div>
-                  <p className="field-help" style={{ marginBottom: 10 }}>{t('aiQuickExamples')}</p>
-                  <div className="preset-chips">
-                    <button type="button" className="preset-chip" onClick={() => applyAiSample(t('aiSample1'))}>
-                      {t('aiSample1')}
-                    </button>
-                    <button type="button" className="preset-chip" onClick={() => applyAiSample(t('aiSample2'))}>
-                      {t('aiSample2')}
-                    </button>
-                    <button type="button" className="preset-chip" onClick={() => applyAiSample(t('aiSample3'))}>
-                      {t('aiSample3')}
-                    </button>
-                  </div>
                 </>
               )}
 
@@ -482,7 +455,7 @@ export default function DamageAssessmentForm({ user, t, lang = 'en', onSelectSub
               )}
 
               <details className="optional-details">
-                <summary>{t('fullName')} & {t('address')} ({lang === 'tl' ? 'opsyonal' : 'optional'})</summary>
+                <summary>{t('fullName')} & {t('address')} ({t('optional')})</summary>
                 <div className="form-grid" style={{ marginTop: 12 }}>
                   <div className="form-group">
                     <label className="form-label"><User size={15} /> {t('fullName')}</label>
@@ -497,7 +470,7 @@ export default function DamageAssessmentForm({ user, t, lang = 'en', onSelectSub
                     <input type="text" name="barangay" placeholder="Barangay" value={formData.barangay} onChange={handleChange} className="form-input" />
                   </div>
                   <div className="form-group">
-                    <input type="text" name="cityMunicipality" placeholder="City" value={formData.cityMunicipality} onChange={handleChange} className="form-input" />
+                    <input type="text" name="cityMunicipality" placeholder={t('cityPlaceholder')} value={formData.cityMunicipality} onChange={handleChange} className="form-input" />
                   </div>
                   <div className="form-group">
                     <input type="text" name="province" placeholder="Province" value={formData.province} onChange={handleChange} className="form-input" />
@@ -588,10 +561,12 @@ export default function DamageAssessmentForm({ user, t, lang = 'en', onSelectSub
               {(result.matched_subsidies || []).slice(0, 8).map((sub) => (
                 <div key={sub.id} className={`subsidy-card ${sub.is_top_match ? 'top-match' : ''}`}>
                   <div>
-                    {sub.is_top_match && <span className="top-match-tag">{lang === 'tl' ? 'Inirerekomenda' : 'Recommended'}</span>}
+                    {sub.is_top_match && <span className="top-match-tag">{t('recommended')}</span>}
                     <h4 style={{ fontSize: 17, fontWeight: 700, margin: '8px 0 6px' }}>{sub.title}</h4>
                     <p style={{ fontSize: 14, color: 'var(--slate-600)', marginBottom: 10 }}>{sub.short_description}</p>
-                    <div className="subsidy-amount">{sub.amount_display}</div>
+                    <div className="subsidy-amount">
+                      {Number(sub.amount_display) > 0 ? `₱${Number(sub.amount_display).toLocaleString()}` : t('amountVaries')}
+                    </div>
                   </div>
                   <button
                     type="button"

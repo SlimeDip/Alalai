@@ -6,13 +6,12 @@
  * 
  * Integration:
  * - Uses the official Google Gen AI SDK (@google/genai) when GEMINI_API_KEY is configured.
- * - Automatically falls back to an intelligent heuristic analyzer if the API key is missing
- *   or if the external API call fails, ensuring zero downtime for disaster intake.
+ * - Fails explicitly when the external AI service is not configured or unavailable.
  */
 
 import { GoogleGenAI } from '@google/genai';
-import db from '../database.js';
 import { attachSubsidyEligibility } from './subsidyMatcher.js';
+import { getSubsidyCatalog } from './subsidyCatalog.js';
 
 let aiClient = null;
 let aiClientApiKey = null;
@@ -98,22 +97,19 @@ export async function analyzeDisasterDamage({
         return attachDatabaseSubsidies(geminiResult, disasterType);
       }
     } catch (err) {
-      if (err.code === 'IRRELEVANT_IMAGE') {
+      if (err.code === 'IRRELEVANT_IMAGE' || err.code === 'NO_DAMAGE_DETECTED') {
         throw err;
       }
-      console.warn('Gemini API call failed or timed out. Falling back to heuristic engine:', err.message);
+      const unavailable = new Error('The AI damage analysis service is temporarily unavailable. Please try again in a few moments, or use the Manual Checklist method instead.');
+      unavailable.code = 'AI_UNAVAILABLE';
+      unavailable.cause = err;
+      throw unavailable;
     }
   }
 
-  // Fallback heuristic analyzer
-  const heuristicResult = analyzeWithHeuristic({
-    disasterType,
-    damageDescription,
-    location,
-    householdSize
-  });
-
-  return attachDatabaseSubsidies(heuristicResult, disasterType);
+  const unavailable = new Error('The AI damage analysis service is not configured.');
+  unavailable.code = 'AI_UNAVAILABLE';
+  throw unavailable;
 }
 
 /**
@@ -130,14 +126,18 @@ Analyze the following calamity damage report submitted by a resident in the Phil
 - Household Size: ${householdSize}
 - Resident's Damage Narrative: "${damageDescription}"
 ${image ? `
-An image is attached. First determine whether it clearly shows physical damage or loss related to the selected calamity. If it is unrelated, not a damage photo, or too unclear to verify, return:
-{"image_relevant": false}
-and no other fields. Otherwise return the complete schema below with "image_relevant": true.
+An image is attached. First determine whether it shows physical damage or loss related to the selected calamity.
+If it is unrelated (for example a person, pet, food, vehicle, landscape, or another non-property image), return:
+{"image_relevant": false, "image_issue": "unrelated"}
+If it shows a home/property clearly but you detect no visible damage, return:
+{"image_relevant": true, "damage_detected": false, "image_issue": "no_damage"}
+Otherwise return the complete schema below with "image_relevant": true and "damage_detected": true.
 ` : ''}
 
 Analyze the report thoroughly and return STRICTLY a valid JSON object matching the following schema:
 {
   "image_relevant": true,
+  "damage_detected": true,
   "severity_level": "Low" | "Moderate" | "Severe" | "Catastrophic",
   "severity_score": <number between 1 and 100>,
   "damage_summary": "<clear 2-3 sentence professional summary suitable for an official government intake slip>",
@@ -173,170 +173,62 @@ DO NOT include markdown fences, code blocks, or extraneous text. Return ONLY the
       }]
     : prompt;
 
-  let response;
   let lastError;
-  for (let attempt = 1; attempt <= 3; attempt += 1) {
-    try {
-      response = await getGeminiClient().models.generateContent({
-        model: 'gemini-3.1-flash-lite',
-        contents,
-        config: {
-          temperature: 0.2,
-          responseMimeType: 'application/json'
+  const configuredModel = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
+  const models = [...new Set([configuredModel, 'gemini-3.1-flash-lite'])];
+  for (const model of models) {
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+      try {
+        const response = await getGeminiClient().models.generateContent({
+          model,
+          contents,
+          config: {
+            temperature: 0.2,
+            responseMimeType: 'application/json'
+          }
+        });
+        if (!response) throw new Error('Gemini returned no response.');
+        const responseText = response.text?.trim() || '';
+        const cleanedText = responseText.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
+        const parsed = JSON.parse(cleanedText);
+        if (image && parsed.image_relevant === false) {
+          const error = new Error('The uploaded image does not appear to show disaster-related damage. Please upload a clear photo of the affected property or area.');
+          error.code = 'IRRELEVANT_IMAGE';
+          error.reason = parsed.image_issue || 'unrelated';
+          throw error;
         }
-      });
-      break;
-    } catch (error) {
-      lastError = error;
-      const status = Number(error.status || error.code);
-      if (attempt === 3 || ![429, 500, 502, 503, 504].includes(status)) {
-        throw error;
+        if (image && parsed.damage_detected === false) {
+          const error = new Error('No visible damage was detected in the uploaded photo. Please describe the specific damage in the text box so we can assess it accurately.');
+          error.code = 'NO_DAMAGE_DETECTED';
+          error.reason = 'no_damage';
+          throw error;
+        }
+        if (image && parsed.image_relevant !== true) {
+          throw new TypeError('Gemini did not verify the uploaded image.');
+        }
+        delete parsed.image_relevant;
+        delete parsed.damage_detected;
+        delete parsed.image_issue;
+        validateGeminiAnalysisResult(parsed);
+        parsed.engine = `Gemini (${model})`;
+        return parsed;
+      } catch (error) {
+        lastError = error;
+        if (error.code === 'IRRELEVANT_IMAGE' || error.code === 'NO_DAMAGE_DETECTED') throw error;
+        const status = Number(error.status || error.code || error.error?.code);
+        if (attempt === 3 || ![429, 500, 502, 503, 504].includes(status)) break;
+        await new Promise((resolve) => setTimeout(resolve, attempt * 1000));
       }
-      await new Promise((resolve) => setTimeout(resolve, attempt * 1000));
     }
   }
-  if (!response) {
-    throw lastError || new Error('Gemini returned no response.');
-  }
-
-  const responseText = response.text?.trim() || '';
-  // Clean potential backticks if returned
-  const cleanedText = responseText.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
-  const parsed = JSON.parse(cleanedText);
-  if (image && parsed.image_relevant === false) {
-    const error = new Error('The uploaded image is not relevant to the selected disaster.');
-    error.code = 'IRRELEVANT_IMAGE';
-    throw error;
-  }
-  if (image && parsed.image_relevant !== true) {
-    throw new TypeError('Gemini did not verify the uploaded image.');
-  }
-  delete parsed.image_relevant;
-  validateGeminiAnalysisResult(parsed);
-  parsed.engine = 'Gemini 2.5 Flash';
-  return parsed;
-}
-
-const hasKeyword = (text, kw) => new RegExp(`(?:^|[^a-zA-ZáéíóúñÑ])${kw}(?:$|[^a-zA-ZáéíóúñÑ])`, 'i').test(text);
-
-/**
- * Heuristic Fallback Analysis Engine
- * Evaluates Tagalog and English disaster keywords, damage patterns, and scales.
- */
-function analyzeWithHeuristic({ disasterType, damageDescription, householdSize }) {
-  const text = (damageDescription || '')
-    .toLowerCase()
-    .replace(/\bno damage to the roof\b/g, ' ')
-    .replace(/\bwalang sira ang bubong\b/g, ' ');
-
-  // Keyword lexicons (English & Filipino / Tagalog)
-  const totalKeywords = ['wasak', 'guho', 'collapsed', 'washed away', 'anod', 'walang natira', 'total destruction', 'flattened', 'lipad lahat', 'lubog sa putik', 'abo lahat', 'sinunog', 'abo', 'lumubog'];
-  const severeKeywords = ['sira ang bubong', 'tinangay ang yero', 'bumagsak ang pader', 'chest deep', 'hanggang dibdib', 'hanggang bubong', 'malaking sira', 'patay ang pananim', 'wasak ang bangka', 'severe', 'major damage', 'lumipad ang yero'];
-  const moderateKeywords = ['bahagya', 'may sira', 'nabutas', 'tulo', 'nabasa', 'gutter', 'waist deep', 'hanggang bewang', 'knee deep', 'hanggang tuhod', 'tumbang puno', 'damaged roof', 'partial'];
-  
-  const agriKeywords = ['palay', 'sakahan', 'tanim', 'pananim', 'gulay', 'bukid', 'mais', 'talong', 'bangka', 'lambat', 'isda', 'fishpond', 'pig', 'baboy', 'manok', 'poultry', 'livestock', 'ani'];
-  const livelihoodKeywords = ['tindahan', 'sari-sari', 'paninda', 'talyer', 'tricycle', 'motor', 'kariton', 'pwesto', 'stocks', 'paninda sa palengke', 'equipment', 'sewing machine', 'freeze'];
-  const structuralKeywords = ['bubong', 'yero', 'pader', 'haligi', 'kisame', 'bintana', 'pinto', 'dingding', 'sahig', 'wall', 'roof', 'timber', 'post', 'ceiling', 'beam'];
-  const waterKeywords = ['baha', 'flood', 'tubig', 'putik', 'mud', 'inundation', 'agos', 'drainage'];
-
-  let severityScore = 30;
-  let severityLevel = 'Moderate';
-  let urgency = 'Standard';
-
-  if (totalKeywords.some(kw => hasKeyword(text, kw))) {
-    severityScore = 90;
-    severityLevel = 'Catastrophic';
-    urgency = 'Immediate Evacuation / Lifeline Need';
-  } else if (severeKeywords.some(kw => hasKeyword(text, kw))) {
-    severityScore = 75;
-    severityLevel = 'Severe';
-    urgency = 'High';
-  } else if (moderateKeywords.some(kw => hasKeyword(text, kw))) {
-    severityScore = 45;
-    severityLevel = 'Moderate';
-    urgency = 'Standard';
-  } else {
-    severityScore = 25;
-    severityLevel = 'Low';
-    urgency = 'Standard';
-  }
-
-  // Identify categories
-  const categories = [];
-  const recommendedAid = [];
-
-  if (structuralKeywords.some(kw => hasKeyword(text, kw))) {
-    categories.push('Structural & Roofing');
-    recommendedAid.push('structural');
-  }
-
-  if (waterKeywords.some(kw => hasKeyword(text, kw)) || disasterType.toLowerCase().includes('flood')) {
-    categories.push('Water Ingress & Flooding');
-    recommendedAid.push('general');
-  }
-
-  if (agriKeywords.some(kw => hasKeyword(text, kw))) {
-    categories.push('Agriculture & Fisheries');
-    recommendedAid.push('agricultural');
-  }
-
-  if (livelihoodKeywords.some(kw => hasKeyword(text, kw))) {
-    categories.push('Small Business & Livelihood');
-    recommendedAid.push('livelihood');
-  }
-
-  // Cost estimates in PHP
-  let costMin = 5000;
-  let costMax = 15000;
-
-  if (severityLevel === 'Catastrophic') {
-    costMin = 80000;
-    costMax = 250000;
-  } else if (severityLevel === 'Severe') {
-    costMin = 25000;
-    costMax = 75000;
-  } else if (severityLevel === 'Moderate') {
-    costMin = 10000;
-    costMax = 28000;
-  }
-
-  // Adjust slightly for household size
-  if (householdSize > 4) {
-    costMax = Math.round(costMax * 1.2);
-  }
-
-  const damageSummary = categories.length
-    ? `Initial intake identifies ${severityLevel.toLowerCase()} damage from ${disasterType}. Affected assets focus on ${categories.join(' and ')}. Urgent restoration is advised for family dwelling stability.`
-    : `Initial intake did not identify a supported damage category for ${disasterType}.`;
-
-  return {
-    engine: 'Heuristic Rule Analyzer (Gemini Ready)',
-    severity_level: severityLevel,
-    severity_score: severityScore,
-    damage_summary: damageSummary,
-    damage_categories: categories,
-    estimated_cost_min: costMin,
-    estimated_cost_max: costMax,
-    urgency: urgency,
-    recommended_aid_types: recommendedAid,
-    safety_precautions: [
-      'Mag-ingat sa mga nakabiting kawad ng kuryente at basang switch bago pumasok sa bahay.',
-      'Pakuluan ang tubig-inumin ng hindi bababa sa 3 minuto o gumamit ng water purification tablets.',
-      'Siyasatin ang katatagan ng kisame at mga pader bago payagan ang mga bata at matatanda sa loob.'
-    ],
-    suggested_actions: [
-      'Kumuha ng Barangay Certificate of Calamity / Indigency sa inyong Barangay Hall.',
-      'Kumuha ng malinaw na litrato ng mga nasirang bahagi ng bahay o pananim bago maglinis o mag-kumpuni.',
-      'I-print ang nakalakip na official disaster application slip at ipapirma sa Barangay Disaster Officer.'
-    ]
-  };
+  throw lastError || new Error('Gemini returned no response.');
 }
 
 /**
  * Match subsidies from the SQLite database based on analyzed damage characteristics
  */
 function attachDatabaseSubsidies(analysis, disasterType) {
-  const allSubsidies = db.prepare('SELECT subsidy_id AS id, * FROM subsidies').all();
+  const allSubsidies = getSubsidyCatalog();
 
   return attachSubsidyEligibility(analysis, disasterType, allSubsidies);
 }

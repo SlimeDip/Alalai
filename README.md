@@ -1,111 +1,99 @@
 # Alalai: Philippine Calamity Damage Assessment & Disaster Relief Portal
 
-A disaster risk reduction and social welfare web application built with **React**, **Node.js**, **Express**, and **SQLite**. Designed specifically for adult Filipino citizens and local disaster enumerators to analyze calamity damage from natural hazards (typhoons, floods, earthquakes, landslides, fires), match appropriate government subsidies, and generate editable, directly printable official disaster assistance intake sheets.
+Alalai is a disaster-assistance web application for Filipino residents and local
+disaster responders. It helps users document calamity damage, assess its severity,
+find potentially relevant government assistance programs, and prepare a printable
+official intake application.
 
----
+The application uses React and Vite for the frontend, Node.js and Express for the
+backend, SQLite for persistence, and Google Gemini for AI-assisted assessments.
 
-## Key Features
+## Features
 
-1. **AI-Powered Calamity Damage Assessment**
-   - Natural language damage evaluation accepting descriptions in Filipino/Tagalog, English, or regional dialects.
-   - Powered by Google Gemini (`@google/genai`) with an **intelligent rule-based heuristic fallback**, ensuring the system functions reliably with or without an active API key.
-   - Outputs severity level (Low, Moderate, Severe, Catastrophic), numeric severity scores (1-100), damage categorization, estimated repair costs in Philippine Pesos (₱), and urgent safety precautions.
+- **AI damage assessment** using a written damage report and optional JPG, PNG, or
+  WebP damage image.
+  - Supports English and Filipino/Tagalog descriptions.
+  - Returns severity, score, damage categories, estimated PHP costs, urgency,
+    safety precautions, suggested actions, and matched aid types.
+  - Rejects unrelated or non-damage images and fails explicitly when Gemini is
+    unavailable; it does not display fabricated fallback assessments.
+- **Manual damage checklist** for users who prefer guided inputs instead of
+  writing a full narrative.
+- **Verified subsidy catalog** loaded from `backend/data/subsidies.json`.
+  Programs include official source links, eligibility information, requirements,
+  application steps, and verification dates.
+- **Resident accounts and guest access** with password-based registration/login,
+  secure sessions, CSRF protection for state-changing requests, and rate-limited
+  authentication endpoints.
+- **Editable official application form** pre-filled from assessment results.
+  Users can edit applicant details, address, disaster information, damage
+  narrative, requested aid, and household members.
+- **Saved applications and recovery records** stored in SQLite for authenticated
+  residents, with search, reload, delete, and reprint actions.
+- **Direct print support** that removes application UI controls and renders a
+  clean, high-contrast intake sheet through print-specific CSS.
+- **Responsive bilingual interface** with English and Filipino UI translations,
+  mobile navigation, accessible touch targets, emergency hotlines, and a
+  responsive layout for phones, tablets, and desktops.
 
-2. **Philippine Government Subsidy Matching (Mockup & Real Data)**
-   - Pre-seeded SQLite database with major Philippine calamity relief programs:
-     - **DSWD Emergency Shelter Assistance (ESA) - Totally Damaged** (₱30,000 grant)
-     - **DSWD Emergency Shelter Assistance (ESA) - Partially Damaged** (₱10,000 repair assistance)
-     - **DSWD Assistance to Individuals in Crisis Situations (AICS)** (₱3,000 - ₱10,000 emergency cash aid)
-     - **Department of Agriculture (DA) SURE Calamity Aid & Loan** (₱25,000 zero-interest recovery loan/grant)
-     - **Pag-IBIG Calamity Loan Program** (Up to 80% accumulated savings at 5.95% interest)
-     - **Social Security System (SSS) Calamity Loan Assistance Program (CLAP)** (1-month salary equivalent)
-     - **Barangay & LGU Quick Response Relief & Vouchers** (₱2,000 - ₱5,000 groceries and building materials)
-     - **NDRRMC / DTI Pangkabuhayan sa Pagbangon at Ginhawa (PPG)** (₱8,000 - ₱15,000 micro-enterprise seed kit)
-
-3. **Editable Official Intake Slip & Direct Print (`window.print()`)**
-   - Formatted in accordance with standard Philippine disaster intake sheets (DSWD Family Access Card / NDRRMC Relief Intake Sheet).
-   - Allows users to **edit all fields directly**: Applicant personal info, Valid ID type & number, residence address (Purok, Barangay, Municipality, Province), disaster event, incident date, damage narrative, requested aid amount, and dynamic household members list.
-   - Single-click **"I-print ang Form (Direct Print)"** button optimized with `@media print` CSS: strips web chrome, banners, and buttons, rendering a clean, high-contrast, black-and-white or navy document ready for barangay stamp and signatures.
-
-4. **Designed for Filipino Adults & Seniors (Modern & Uncluttered)**
-   - **Modern Landing Page**: Welcoming home page featuring an official disaster readiness banner, quick emergency hotlines, and entry pathways to either **"Continue as Guest"** or **"Resident Login / Register"**.
-   - **Progressive 3-Step Wizard**: Instead of overwhelming users with a 15-field form all at once, intake is divided into clean, focused steps:
-     - *Step 1: Disaster Event & Location*
-     - *Step 2: Damage Narrative & One-Click Presets*
-     - *Step 3: Assessment Results & Matched Aid*
-   - **Fully Responsive (Mobile & Tablet Ready)**: Optimized touch targets (minimum 44px), responsive hamburger navigation drawer for smartphones/tablets, and stacked cards for small screens.
-   - **Strictly No Gradients & No Emojis**: Clean solid colors (`#1e3a8a` navy, `#0f172a` slate, `#e2e8f0` crisp borders) with formal `lucide-react` iconography.
-
-5. **Local SQLite Database**
-   - Stores subsidies catalog, assessment history, and editable applications with generated reference tracking numbers (`NDRRMC-PH-2026-XXXX`).
-
-6. **Guarded Image-Assisted Assessment**
-   - Optional JPG, PNG, or WebP damage photo upload (maximum 8 MB) alongside the written report.
-   - Gemini checks that the image visibly shows damage relevant to the selected disaster before using it for assessment.
-   - Rejects invalid files, unrelated images, screenshots, stock graphics, and ambiguous images; image requests fail closed if Gemini is unavailable.
-   - Uploaded images are held in memory for analysis and are not stored in SQLite.
-
----
-
-## Project Structure
+## Project structure
 
 ```text
 WebSysGroup12/
-├── .env.example                     # Environment template
-├── .gitignore                       # Git ignore rules for node_modules, SQLite, dist
-├── package.json                     # Root workspace scripts
-├── REQUIREMENTS.md                  # Comprehensive requirements document
-├── requirements.txt                 # Dependency specification
-├── README.md                        # Documentation
+├── package.json                  # Root development and build scripts
+├── README.md
 ├── backend/
-│   ├── .env.example
 │   ├── package.json
-│   ├── database.js                  # SQLite initialization & Philippine subsidy seed data
-│   ├── disaster_relief.db           # SQLite database file (created on startup)
-│   ├── server.js                    # Express app configuration & routing
+│   ├── server.js                 # Express app and API startup
+│   ├── database.js               # SQLite schema and migrations
+│   ├── disaster_relief.db        # Local database created/updated at runtime
+│   ├── data/
+│   │   ├── subsidies.json        # Verified subsidy catalog source
+│   │   ├── subsidies.template.json
+│   │   └── README.md             # Subsidy verification and maintenance guide
 │   ├── routes/
-│   │   ├── assessments.js           # Assessment endpoint & AI analyzer invocation
-│   │   ├── subsidies.js             # Subsidies listing & details endpoints
-│   │   └── applications.js          # CRUD operations for intake applications
+│   │   ├── auth.js               # Registration, login, logout, and sessions
+│   │   ├── assessments.js        # AI/manual assessment persistence
+│   │   ├── applications.js       # Saved application CRUD
+│   │   └── subsidies.js          # Read-only subsidy catalog API
 │   └── services/
-│       ├── aiService.js             # AI API template (Gemini SDK + Heuristic engine)
-│       └── README_AI_TEMPLATE.md    # Guide to configuring and customizing AI
+│       ├── aiService.js          # Gemini integration and response validation
+│       ├── subsidyCatalog.js     # Catalog loading and database synchronization
+│       └── subsidyMatcher.js     # Eligibility and aid matching
 └── frontend/
-    ├── index.html                   # HTML entry point with metadata
     ├── package.json
-    ├── vite.config.js               # Vite config with React plugin and backend proxy
+    ├── vite.config.js             # Vite config and API proxy
     └── src/
-        ├── main.jsx                 # React root renderer
-        ├── App.jsx                  # Main application orchestrator with tab routing
-        ├── index.css                # Solid-color accessible CSS with @media print rules
-        ├── utils/
-        │   └── translations.js      # English and Filipino UI translations
+        ├── App.jsx                # Main application flow and navigation
+        ├── index.css              # Responsive and print styles
+        ├── utils/translations.js  # English and Filipino translations
         └── components/
-            ├── Header.jsx           # Gov.ph header banner with emergency hotlines
-            ├── LandingPage.jsx      # Landing page and guest entry point
-            ├── AuthModal.jsx        # Resident login/register dialog
-            ├── DamageAssessmentForm.jsx  # Damage assessment input & AI results display
-            ├── SubsidyCatalog.jsx   # Directory of government subsidy programs
-            ├── OfficialApplicationView.jsx # Live editable official form & print layout
-            └── SavedApplicationsList.jsx   # Database record viewer & reprint manager
+            ├── Header.jsx
+            ├── LandingPage.jsx
+            ├── AuthModal.jsx
+            ├── DamageAssessmentForm.jsx
+            ├── SubsidyCatalog.jsx
+            ├── OfficialApplicationView.jsx
+            └── SavedApplicationsList.jsx
 ```
 
----
+## Requirements
 
-## Quick Start Guide
-
-### 1. Prerequisites
-- **Node.js**: v18.0.0 or higher (tested on Node.js v22.14.0)
-- **npm**: v9.0.0 or higher
+- Node.js 18 or newer
+- npm 9 or newer
 - A modern browser with JavaScript enabled
+- A Google Gemini API key for AI-assisted assessments
 
-### 2. Setup & Installation
-Run from the root directory:
+## Installation
+
+From the repository root:
+
 ```bash
-# Install root, backend, and frontend dependencies
 npm run install:all
 ```
-Or manually install each folder:
+
+To install manually:
+
 ```bash
 cd backend
 npm install
@@ -113,77 +101,69 @@ cd ../frontend
 npm install
 ```
 
-### 3. (Optional) Set your Gemini API Key
-By default, text-only assessments can use the built-in heuristic damage analyzer. Image-assisted
-assessments require Google Gemini:
-1. Copy `backend/.env.example` to either `backend/.env` or the repository root `.env`.
-2. Set your API key in that file:
-   ```env
-   PORT=5000
-   GEMINI_API_KEY=your_actual_gemini_api_key_here
-   ```
-3. Get an API key from [Google AI Studio](https://aistudio.google.com/).
+## Configuration
 
-Never commit `.env` files or an API key to source control.
+Create `backend/.env` and add:
 
-### 4. Running the Development Servers
-
-#### Terminal 1: Backend Server (Port 5000)
-```bash
-cd backend
-npm run dev
+```env
+PORT=5000
+GEMINI_API_KEY=your_actual_gemini_api_key_here
+# Optional: GEMINI_MODEL=gemini-3.8-flash
+# Optional: FRONTEND_ORIGIN=http://localhost:3000
 ```
 
-#### Terminal 2: Frontend Client (Port 3000)
+Get a Gemini key from [Google AI Studio](https://aistudio.google.com/). Never
+commit `.env` files or API keys to source control.
+
+The backend imports the verified subsidy catalog into SQLite on startup. Follow
+the instructions in [`backend/data/README.md`](backend/data/README.md) before
+adding or changing subsidy records.
+
+## Run locally
+
+Start the backend in one terminal:
+
 ```bash
-cd frontend
-npm run dev
+npm run backend
 ```
 
-Open `http://localhost:3000` in your browser. The Vite development server proxies
-requests under `/api` to the backend at `http://localhost:5000`.
-
-To verify that the backend is running, open
-`http://localhost:5000/api/health`.
-
-### Root scripts
-
-The following convenience scripts can be run from the repository root:
+Start the frontend in another terminal:
 
 ```bash
-npm run backend        # Start the backend in watch mode
-npm run frontend       # Start the Vite development server
-npm run build:frontend # Create a production frontend build in frontend/dist
+npm run frontend
+```
+
+Then open [http://localhost:3000](http://localhost:3000). The Vite development
+server proxies `/api` requests to `http://localhost:5000`.
+
+The backend health endpoint is available at
+[http://localhost:5000/api/health](http://localhost:5000/api/health).
+
+Root convenience scripts:
+
+```bash
 npm start              # Start only the backend
+npm run backend        # Start backend in watch mode
+npm run frontend       # Start Vite development server
+npm run build:frontend # Build frontend into frontend/dist
 ```
 
-### Production frontend build
+## Typical user flow
 
-The frontend is a Vite single-page application. Build it with:
+1. Continue as a guest or register/login as a resident.
+2. Select an AI assessment or the manual checklist.
+3. Enter the disaster, location, household, and damage information. Optionally
+   upload a clear damage photo under 8 MB.
+4. Review the validated assessment and matched subsidy programs.
+5. Select a program to pre-fill the official application.
+6. Edit the application, save it when logged in, and print the completed intake
+   form.
 
-```bash
-cd frontend
-npm run build
-```
+## Important notes
 
-The generated static files are written to `frontend/dist`. The backend currently
-serves the API only, so deploy the contents of `frontend/dist` using a static
-web server or hosting service and point its `/api` requests to the backend.
-
----
-
-## How to Test the Flow
-
-1. **Step 1 (Damage Assessment)**:
-   - Click one of the quick sample presets (e.g. *"Bagyo: Wasak na Bubong at Bahay"* or *"Baha: Lubog na Palayan at Pananim"*).
-   - Click **"Suriin ang Pinsala at Hanapin ang Ayuda (Analyze Damages)"**.
-   - Review the calculated damage severity score, estimated cost range in ₱, damage categories, safety reminders, and matched government subsidies.
-2. **Step 2 (Choose Subsidy & Pre-fill Form)**:
-   - Click **"Gamitin sa Aplikasyon (Apply Now)"** on any recommended subsidy (e.g., DSWD Emergency Shelter Assistance).
-3. **Step 3 (Edit Application & Direct Print)**:
-   - The application form is automatically pre-filled with the assessment data.
-   - Edit any field (Applicant Name, ID Number, Address, Household Members list, Requested Amount).
-   - Click **"I-save sa Rekord"** to save to the SQLite database.
-   - Click **"I-print ang Form (Direct Print)"** to open the print dialog. The print preview shows a formatted, clean Philippine Disaster Intake Slip with signature blocks.
-4. **Step 4 (Database Records)**:
-   - Switch to tab **4. Mga Na-save na Rekord** to view, search, reload, or delete saved applications.
+- AI results are advisory and do not guarantee eligibility or benefit approval.
+- Subsidy details must be verified against the linked official government source.
+- Assessment images are held in memory for analysis and are not stored in
+  SQLite.
+- The backend API serves API routes only; deploy `frontend/dist` separately
+  behind a static web server for production.
