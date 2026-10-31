@@ -153,7 +153,7 @@ body {
 .recovery-action-card p {
   min-height: 66px;
   color: var(--slate-600);
-  font-size: 14px;
+  font-size: 16px;
 }
 
 
@@ -473,7 +473,7 @@ body {
 }
 
 .bento-item-desc {
-  font-size: 13px;
+  font-size: 16px;
   color: var(--slate-600);
   margin-top: 4px;
 }
@@ -972,13 +972,13 @@ body {
 .auth-sheet-header h3 {
   margin: 3px 0 0;
   color: #17212b;
-  font-size: 22px;
+  font-size: 28px;
   letter-spacing: -.02em;
 }
 
 .auth-sheet-eyebrow {
   color: #8a96a3;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: .14em;
 }
@@ -1025,7 +1025,7 @@ body {
 
 .auth-primary-action,
 .auth-secondary-action {
-  min-height: 44px;
+  min-height: 52px;
   border-radius: 10px;
   font-size: 14px;
   font-weight: 750;
@@ -1064,14 +1064,14 @@ body {
   gap: 5px;
   margin-bottom: 6px;
   color: #778391;
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 700;
 }
 
 .auth-field input {
   width: 100%;
-  min-height: 42px;
-  padding: 10px 12px;
+  min-height: 50px;
+  padding: 12px 14px;
   border: 1px solid #e0e6eb;
   border-radius: 9px;
   background: #fff;
@@ -1095,7 +1095,17 @@ body {
   display: block;
   margin-top: 5px;
   color: #8a96a3;
-  font-size: 11px;
+  font-size: 13px;
+}
+
+.auth-sheet .form-section-label {
+  font-size: 15px;
+  letter-spacing: .06em;
+}
+
+.auth-sheet .auth-mode-toggle button {
+  padding: 12px;
+  font-size: 15px;
 }
 
 .profile-modal {
@@ -1176,6 +1186,59 @@ body {
   font-size: 14px;
 }
 
+.auth-sheet-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.auth-resize-btn {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: #f1f4f6;
+  color: #6b7785;
+  cursor: pointer;
+}
+
+.auth-resize-btn:hover,
+.auth-close-btn:hover {
+  background: #e5ebef;
+  color: #24313d;
+}
+
+.auth-sheet-expanded {
+  width: min(860px, calc(100vw - 32px));
+  max-width: 860px;
+  max-height: calc(100vh - 32px);
+}
+
+.auth-sheet-expanded .auth-form-body {
+  padding-top: 24px;
+  padding-bottom: 18px;
+}
+
+.auth-sheet-expanded .auth-form-body > .auth-field,
+.auth-sheet-expanded .auth-form-body > .auth-section,
+.auth-sheet-expanded .auth-form-body > .profile-section {
+  max-width: 790px;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.auth-sheet-expanded .auth-form-actions {
+  flex-direction: row-reverse;
+  justify-content: flex-start;
+}
+
+.auth-sheet-expanded .auth-primary-action,
+.auth-sheet-expanded .auth-secondary-action {
+  min-width: 170px;
+}
+
 @media (max-width: 560px) {
   .modal-overlay {
     align-items: flex-start;
@@ -1190,6 +1253,11 @@ body {
 
   .auth-sheet-header {
     padding: 20px 18px 15px;
+  }
+
+  .auth-sheet-expanded {
+    width: calc(100vw - 16px);
+    max-width: none;
   }
 
   .auth-sheet .error-banner,
