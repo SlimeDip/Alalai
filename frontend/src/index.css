@@ -952,7 +952,9 @@ body {
 }
 
 .auth-sheet {
-  max-width: 470px;
+  width: min(860px, calc(100vw - 32px));
+  max-width: 860px;
+  max-height: calc(100vh - 32px);
   padding: 0;
   overflow: hidden;
   background: #f8fafc;
@@ -1027,7 +1029,7 @@ body {
 .auth-secondary-action {
   min-height: 52px;
   border-radius: 10px;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 750;
   cursor: pointer;
 }
@@ -1076,7 +1078,7 @@ body {
   border-radius: 9px;
   background: #fff;
   color: #24313d;
-  font-size: 13px;
+  font-size: 16px;
   outline: 0;
   transition: border-color .15s, box-shadow .15s;
 }
@@ -1109,7 +1111,7 @@ body {
 }
 
 .profile-modal {
-  max-width: 680px;
+  max-width: 860px;
 }
 
 .auth-sheet .profile-section,
@@ -1186,56 +1188,31 @@ body {
   font-size: 14px;
 }
 
-.auth-sheet-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.auth-resize-btn {
-  display: grid;
-  width: 32px;
-  height: 32px;
-  place-items: center;
-  border: 0;
-  border-radius: 50%;
-  background: #f1f4f6;
-  color: #6b7785;
-  cursor: pointer;
-}
-
-.auth-resize-btn:hover,
 .auth-close-btn:hover {
   background: #e5ebef;
   color: #24313d;
 }
 
-.auth-sheet-expanded {
-  width: min(860px, calc(100vw - 32px));
-  max-width: 860px;
-  max-height: calc(100vh - 32px);
-}
-
-.auth-sheet-expanded .auth-form-body {
+.auth-sheet .auth-form-body {
   padding-top: 24px;
   padding-bottom: 18px;
 }
 
-.auth-sheet-expanded .auth-form-body > .auth-field,
-.auth-sheet-expanded .auth-form-body > .auth-section,
-.auth-sheet-expanded .auth-form-body > .profile-section {
+.auth-sheet .auth-form-body > .auth-field,
+.auth-sheet .auth-form-body > .auth-section,
+.auth-sheet .auth-form-body > .profile-section {
   max-width: 790px;
   margin-right: auto;
   margin-left: auto;
 }
 
-.auth-sheet-expanded .auth-form-actions {
+.auth-sheet .auth-form-actions {
   flex-direction: row-reverse;
   justify-content: flex-start;
 }
 
-.auth-sheet-expanded .auth-primary-action,
-.auth-sheet-expanded .auth-secondary-action {
+.auth-sheet .auth-primary-action,
+.auth-sheet .auth-secondary-action {
   min-width: 170px;
 }
 
@@ -1255,7 +1232,7 @@ body {
     padding: 20px 18px 15px;
   }
 
-  .auth-sheet-expanded {
+  .auth-sheet {
     width: calc(100vw - 16px);
     max-width: none;
   }

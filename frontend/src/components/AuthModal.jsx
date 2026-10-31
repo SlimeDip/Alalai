@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { User, Phone, MapPin, X, ArrowRight, UserCheck, Mail, Lock, Users, Maximize2, Minimize2 } from 'lucide-react';
+import { User, Phone, MapPin, X, ArrowRight, UserCheck, Mail, Lock, Users } from 'lucide-react';
 
 const emptyProfile = {
   firstName: '', middleName: '', lastName: '', mobile: '', email: '', password: '', province: '', cityMunicipality: '',
@@ -14,14 +14,12 @@ export default function AuthModal({
   const [formData, setFormData] = useState(emptyProfile);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
-  const [expanded, setExpanded] = useState(false);
   const isProfile = mode === 'profile';
 
   useEffect(() => {
     if (!isOpen) return;
     setMode(initialMode);
     setError('');
-    setExpanded(false);
     setFormData({ ...emptyProfile, ...(user && !user.isGuest ? {
       firstName: user.firstName || '', middleName: user.middleName || '', lastName: user.lastName || '',
       mobile: user.mobile || '', email: user.email || '',
@@ -64,18 +62,13 @@ export default function AuthModal({
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className={`modal-card auth-sheet ${isProfile ? 'profile-modal' : ''} ${expanded ? 'auth-sheet-expanded' : ''}`} onClick={(e) => e.stopPropagation()}>
+      <div className={`modal-card auth-sheet ${isProfile ? 'profile-modal' : ''}`} onClick={(e) => e.stopPropagation()}>
         <div className="auth-sheet-header">
           <div>
             <span className="auth-sheet-eyebrow">{isProfile ? 'ACCOUNT' : 'ALALAI'}</span>
             <h3>{isProfile ? 'Edit Profile' : mode === 'signup' ? 'Create Account' : 'Welcome back'}</h3>
           </div>
-          <div className="auth-sheet-header-actions">
-            <button type="button" className="auth-resize-btn" onClick={() => setExpanded((value) => !value)} aria-label={expanded ? 'Use compact view' : 'Expand form'}>
-              {expanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-            </button>
-            <button type="button" className="auth-close-btn" onClick={onClose} aria-label="Close"><X size={18} /></button>
-          </div>
+          <button type="button" className="auth-close-btn" onClick={onClose} aria-label="Close"><X size={18} /></button>
         </div>
 
         {error && <div className="error-banner" role="alert">{error}</div>}
