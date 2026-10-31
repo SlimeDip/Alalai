@@ -24,9 +24,10 @@ backend, SQLite for persistence, and Google Gemini for AI-assisted assessments.
   application steps, and verification dates.
 - **Resident accounts and guest access** with password-based sign up/sign in,
   secure sessions, CSRF protection for state-changing requests, and rate-limited
-  authentication endpoints. Residents can edit an autofill profile containing
-  contact details, address, household information, occupation, beneficiary
-  category, and ID details.
+  authentication endpoints. Residents sign up with separate first, middle, and
+  last name fields and can edit an autofill profile containing contact details,
+  address, household information, occupation, beneficiary category, and ID
+  details.
 - **Editable official application form** pre-filled from assessment results.
   Users can edit applicant details, address, disaster information, damage
   narrative, requested aid, and household members.

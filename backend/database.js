@@ -123,6 +123,9 @@ export function initDatabase() {
     CREATE TABLE IF NOT EXISTS users(
       user_id TEXT PRIMARY KEY,
       full_name TEXT NOT NULL,
+      first_name TEXT,
+      middle_name TEXT,
+      last_name TEXT,
       email TEXT UNIQUE NOT NULL,
       password_hash TEXT NOT NULL,
       mobile TEXT,
@@ -270,6 +273,9 @@ export function initDatabase() {
 
   const userColumns = tableColumns('users');
   const userProfileColumns = [
+    ['first_name', 'TEXT'],
+    ['middle_name', 'TEXT'],
+    ['last_name', 'TEXT'],
     ['mobile', 'TEXT'],
     ['province', 'TEXT'],
     ['city_municipality', 'TEXT'],

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { User, Phone, MapPin, X, ArrowRight, UserCheck, Mail, Lock, Users } from 'lucide-react';
 
 const emptyProfile = {
-  fullName: '', mobile: '', email: '', password: '', province: '', cityMunicipality: '',
+  firstName: '', middleName: '', lastName: '', mobile: '', email: '', password: '', province: '', cityMunicipality: '',
   barangay: '', purokStreet: '', householdSize: '', civilStatus: '', sex: '',
   birthDate: '', occupation: '', beneficiaryCategory: '', idNumber: '', spouseName: '', childrenCount: ''
 };
@@ -21,7 +21,8 @@ export default function AuthModal({
     setMode(initialMode);
     setError('');
     setFormData({ ...emptyProfile, ...(user && !user.isGuest ? {
-      fullName: user.name || '', mobile: user.mobile || '', email: user.email || '',
+      firstName: user.firstName || '', middleName: user.middleName || '', lastName: user.lastName || '',
+      mobile: user.mobile || '', email: user.email || '',
       province: user.province || '', cityMunicipality: user.cityMunicipality || '',
       barangay: user.barangay || '', purokStreet: user.purokStreet || '',
       householdSize: user.householdSize ?? '', civilStatus: user.civilStatus || '',
@@ -43,7 +44,9 @@ export default function AuthModal({
         await onProfileUpdate(formData);
       } else {
         await onAuth(mode, {
-          fullName: formData.fullName,
+          firstName: formData.firstName,
+          middleName: formData.middleName,
+          lastName: formData.lastName,
           email: formData.email,
           password: formData.password,
           mobile: formData.mobile
@@ -59,7 +62,7 @@ export default function AuthModal({
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+      <div className={`modal-card ${isProfile ? 'profile-modal' : ''}`} onClick={(e) => e.stopPropagation()}>
         <div className="modal-header-row">
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <UserCheck size={22} color="var(--primary)" />
@@ -82,10 +85,16 @@ export default function AuthModal({
         )}
 
         <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label className="form-label"><User size={15} /> Full name *</label>
-            <input type="text" name="fullName" required minLength="2" value={formData.fullName} onChange={update} className="form-input form-input-lg" />
-          </div>
+          {mode !== 'signin' && (
+            <div className="profile-section">
+              <p className="form-section-label"><User size={15} /> Name</p>
+              <div className="name-fields">
+                <input type="text" name="firstName" required minLength="2" placeholder="First name" value={formData.firstName} onChange={update} className="form-input" autoComplete="given-name" />
+                <input type="text" name="middleName" placeholder="Middle name (optional)" value={formData.middleName} onChange={update} className="form-input" autoComplete="additional-name" />
+                <input type="text" name="lastName" required minLength="2" placeholder="Last name" value={formData.lastName} onChange={update} className="form-input" autoComplete="family-name" />
+              </div>
+            </div>
+          )}
           {!isProfile && (
             <>
               <div className="form-group">

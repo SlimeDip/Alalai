@@ -27,9 +27,16 @@ const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const HASH_BYTES = 64;
 
 function publicUser(row) {
+  const legacyParts = (row.full_name || '').trim().split(/\s+/).filter(Boolean);
+  const firstName = row.first_name || legacyParts[0] || '';
+  const lastName = row.last_name || (legacyParts.length > 1 ? legacyParts[legacyParts.length - 1] : '');
+  const middleName = row.middle_name || (legacyParts.length > 2 ? legacyParts.slice(1, -1).join(' ') : '');
   return {
     id: row.user_id,
-    name: row.full_name,
+    name: row.full_name || [firstName, middleName, lastName].filter(Boolean).join(' '),
+    firstName,
+    middleName,
+    lastName,
     email: row.email,
     mobile: row.mobile || '',
     province: row.province || '',
@@ -184,11 +191,20 @@ export function requireAuthenticatedUser(req, res, next) {
 
 router.post('/register', registerLimiter, async (req, res) => {
   try {
-    const { fullName, email, password, mobile = '' } = req.body || {};
+    const {
+      firstName = '', middleName = '', lastName = '', fullName,
+      email, password, mobile = ''
+    } = req.body || {};
+    const normalizedFirstName = typeof firstName === 'string' ? firstName.trim() : '';
+    const normalizedMiddleName = typeof middleName === 'string' ? middleName.trim() : '';
+    const normalizedLastName = typeof lastName === 'string' ? lastName.trim() : '';
+    const composedName = [normalizedFirstName, normalizedMiddleName, normalizedLastName].filter(Boolean).join(' ');
+    const nameForCompatibility = composedName || (typeof fullName === 'string' ? fullName.trim() : '');
     if (
-      typeof fullName !== 'string'
-      || fullName.trim().length < 2
-      || fullName.trim().length > 120
+      nameForCompatibility.length < 2
+      || nameForCompatibility.length > 120
+      || (normalizedFirstName && normalizedFirstName.length < 2)
+      || (normalizedLastName && normalizedLastName.length < 2)
       || typeof email !== 'string'
       || email.trim().length > 254
       || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
@@ -212,16 +228,24 @@ router.post('/register', registerLimiter, async (req, res) => {
     const passwordHash = await hashPassword(password);
     const sessionToken = db.transaction(() => {
       db.prepare(`
-        INSERT INTO users (user_id, full_name, email, password_hash, mobile)
-        VALUES (?, ?, ?, ?, ?)
-      `).run(userId, fullName.trim(), normalizedEmail, passwordHash, mobile.trim());
+        INSERT INTO users (
+          user_id, full_name, first_name, middle_name, last_name, email, password_hash, mobile
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        userId, nameForCompatibility, normalizedFirstName, normalizedMiddleName,
+        normalizedLastName, normalizedEmail, passwordHash, mobile.trim()
+      );
       return createSession(userId);
     })();
     setSessionCookie(res, sessionToken);
 
     return res.status(201).json({
       success: true,
-      data: publicUser({ user_id: userId, full_name: fullName.trim(), email: normalizedEmail, mobile: mobile.trim() }),
+      data: publicUser({
+        user_id: userId, full_name: nameForCompatibility,
+        first_name: normalizedFirstName, middle_name: normalizedMiddleName,
+        last_name: normalizedLastName, email: normalizedEmail, mobile: mobile.trim()
+      }),
       csrfToken: csrfTokenFor(sessionToken)
     });
   } catch (error) {
@@ -273,7 +297,9 @@ router.patch('/me', requireAuthenticatedUser, (req, res) => {
   try {
     const body = req.body || {};
     const textFields = {
-      full_name: body.fullName,
+      first_name: body.firstName,
+      middle_name: body.middleName,
+      last_name: body.lastName,
       mobile: body.mobile,
       province: body.province,
       city_municipality: body.cityMunicipality,
@@ -287,14 +313,15 @@ router.patch('/me', requireAuthenticatedUser, (req, res) => {
       valid_id_number: body.idNumber,
       spouse_name: body.spouseName
     };
-    if (typeof textFields.full_name !== 'string' || textFields.full_name.trim().length < 2) {
-      return res.status(400).json({ success: false, error: 'Full name must be at least 2 characters.' });
+    if (typeof textFields.first_name !== 'string' || textFields.first_name.trim().length < 2
+      || typeof textFields.last_name !== 'string' || textFields.last_name.trim().length < 2) {
+      return res.status(400).json({ success: false, error: 'First and last names must be at least 2 characters.' });
     }
     if (typeof textFields.mobile !== 'string' || textFields.mobile.trim().length > 40) {
       return res.status(400).json({ success: false, error: 'Please provide a valid contact number.' });
     }
     for (const [field, value] of Object.entries(textFields)) {
-      if (field !== 'full_name' && field !== 'mobile' && value != null && typeof value !== 'string') {
+      if (field !== 'mobile' && value != null && typeof value !== 'string') {
         return res.status(400).json({ success: false, error: 'Profile fields must contain text values.' });
       }
     }
@@ -310,7 +337,8 @@ router.patch('/me', requireAuthenticatedUser, (req, res) => {
     }
     db.prepare(`
       UPDATE users SET
-        full_name = @full_name, mobile = @mobile, province = @province,
+        full_name = @full_name, first_name = @first_name, middle_name = @middle_name,
+        last_name = @last_name, mobile = @mobile, province = @province,
         city_municipality = @city_municipality, barangay = @barangay,
         purok_street = @purok_street, household_size = @household_size,
         civil_status = @civil_status, sex = @sex, birth_date = @birth_date,
@@ -320,6 +348,8 @@ router.patch('/me', requireAuthenticatedUser, (req, res) => {
       WHERE user_id = @user_id
     `).run({
       ...Object.fromEntries(Object.entries(textFields).map(([key, value]) => [key, value?.trim() || ''])),
+      full_name: [textFields.first_name, textFields.middle_name, textFields.last_name]
+        .filter(Boolean).join(' '),
       household_size: householdSize,
       children_count: childrenCount,
       user_id: req.user.user_id

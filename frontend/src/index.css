@@ -936,9 +936,53 @@ body {
   border-radius: 24px;
   max-width: 500px;
   width: 100%;
-  padding: 28px;
+  max-height: calc(100vh - 32px);
+  padding: 24px;
   border: 1px solid var(--slate-200);
   box-shadow: 0 16px 36px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-card form {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 2px 6px 2px 2px;
+  scrollbar-gutter: stable;
+}
+
+.profile-modal {
+  max-width: 680px;
+}
+
+.profile-modal .profile-section,
+.profile-modal .form-section-label {
+  background: var(--slate-50);
+  border: 1px solid var(--slate-200);
+  border-radius: 12px;
+}
+
+.profile-modal .profile-section {
+  padding: 12px;
+  margin-bottom: 14px;
+}
+
+.profile-modal .profile-section .form-section-label {
+  border: 0;
+  padding: 0;
+  margin: 0 0 10px;
+  background: transparent;
+}
+
+.profile-modal form > .form-section-label {
+  padding: 10px 12px;
+  margin-top: 16px;
+}
+
+.name-fields {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr 1fr;
+  gap: 8px;
 }
 
 .auth-mode-toggle {
@@ -986,6 +1030,23 @@ body {
   background: #fef2f2;
   color: #b91c1c;
   font-size: 14px;
+}
+
+@media (max-width: 560px) {
+  .modal-overlay {
+    align-items: flex-start;
+    padding: 8px;
+  }
+
+  .modal-card {
+    max-height: calc(100vh - 16px);
+    padding: 18px;
+    border-radius: 18px;
+  }
+
+  .name-fields {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* BUTTON HELPERS */
