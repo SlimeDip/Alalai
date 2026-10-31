@@ -62,18 +62,13 @@ export default function AuthModal({
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className={`modal-card ${isProfile ? 'profile-modal' : ''}`} onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header-row">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <UserCheck size={22} color="var(--primary)" />
-            <div>
-              <h3>{isProfile ? 'Edit your profile' : mode === 'signup' ? 'Create your account' : 'Sign in'}</h3>
-              <p style={{ fontSize: 14, color: 'var(--slate-500)' }}>
-                {isProfile ? 'Keep these details ready for future applications.' : 'Your saved details will autofill your forms.'}
-              </p>
-            </div>
+      <div className={`modal-card auth-sheet ${isProfile ? 'profile-modal' : ''}`} onClick={(e) => e.stopPropagation()}>
+        <div className="auth-sheet-header">
+          <div>
+            <span className="auth-sheet-eyebrow">{isProfile ? 'ACCOUNT' : 'ALALAI'}</span>
+            <h3>{isProfile ? 'Edit Profile' : mode === 'signup' ? 'Create Account' : 'Welcome back'}</h3>
           </div>
-          <button type="button" className="icon-btn" onClick={onClose}><X size={20} /></button>
+          <button type="button" className="auth-close-btn" onClick={onClose} aria-label="Close"><X size={18} /></button>
         </div>
 
         {error && <div className="error-banner" role="alert">{error}</div>}
@@ -84,79 +79,78 @@ export default function AuthModal({
           </div>
         )}
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="auth-form">
+          <div className="auth-form-body">
           {mode !== 'signin' && (
             <div className="profile-section">
-              <p className="form-section-label"><User size={15} /> Name</p>
+              <p className="form-section-label"><User size={15} /> Personal information</p>
               <div className="name-fields">
-                <input type="text" name="firstName" required minLength="2" placeholder="First name" value={formData.firstName} onChange={update} className="form-input" autoComplete="given-name" />
-                <input type="text" name="middleName" placeholder="Middle name (optional)" value={formData.middleName} onChange={update} className="form-input" autoComplete="additional-name" />
-                <input type="text" name="lastName" required minLength="2" placeholder="Last name" value={formData.lastName} onChange={update} className="form-input" autoComplete="family-name" />
+                <label className="auth-field"><span>First name *</span><input type="text" name="firstName" required minLength="2" placeholder="First name" value={formData.firstName} onChange={update} autoComplete="given-name" /></label>
+                <label className="auth-field"><span>Middle name</span><input type="text" name="middleName" placeholder="Optional" value={formData.middleName} onChange={update} autoComplete="additional-name" /></label>
+                <label className="auth-field"><span>Last name *</span><input type="text" name="lastName" required minLength="2" placeholder="Last name" value={formData.lastName} onChange={update} autoComplete="family-name" /></label>
               </div>
             </div>
           )}
           {!isProfile && (
             <>
-              <div className="form-group">
-                <label className="form-label"><Mail size={15} /> Email *</label>
-                <input type="email" name="email" required value={formData.email} onChange={update} className="form-input" autoComplete="email" />
+              <div className="auth-field">
+                <label><Mail size={14} /> Email address *</label>
+                <input type="email" name="email" required value={formData.email} onChange={update} autoComplete="email" />
               </div>
-              <div className="form-group">
-                <label className="form-label"><Lock size={15} /> Password *</label>
-                <input type="password" name="password" required minLength="12" value={formData.password} onChange={update} className="form-input" autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} />
+              <div className="auth-field">
+                <label><Lock size={14} /> Password *</label>
+                <input type="password" name="password" required minLength="12" value={formData.password} onChange={update} autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} />
                 {mode === 'signup' && <small>Use at least 12 characters.</small>}
               </div>
             </>
           )}
-          {isProfile && <div className="form-group"><label className="form-label"><Mail size={15} /> Email</label><input type="email" value={formData.email} className="form-input" disabled /></div>}
-          <div className="form-group">
-            <label className="form-label"><Phone size={15} /> Contact number *</label>
-            <input type="tel" name="mobile" required value={formData.mobile} onChange={update} className="form-input" />
+          {isProfile && <div className="auth-field"><label><Mail size={14} /> Email address</label><input type="email" value={formData.email} disabled /></div>}
+          <div className="auth-field">
+            <label><Phone size={14} /> Contact number *</label>
+            <input type="tel" name="mobile" required value={formData.mobile} onChange={update} />
           </div>
 
           {(isProfile || mode === 'signup') && (
             <>
               <p className="form-section-label"><MapPin size={15} /> Address</p>
               <div className="form-grid">
-                <input type="text" name="province" placeholder="Province" value={formData.province} onChange={update} className="form-input" />
-                <input type="text" name="cityMunicipality" placeholder="City / Municipality" value={formData.cityMunicipality} onChange={update} className="form-input" />
+                <label className="auth-field"><span>Province</span><input type="text" name="province" placeholder="Add province" value={formData.province} onChange={update} /></label>
+                <label className="auth-field"><span>City / Municipality</span><input type="text" name="cityMunicipality" placeholder="Add city" value={formData.cityMunicipality} onChange={update} /></label>
               </div>
               <div className="form-grid">
-                <input type="text" name="barangay" placeholder="Barangay" value={formData.barangay} onChange={update} className="form-input" />
-                <input type="text" name="purokStreet" placeholder="Purok / Street" value={formData.purokStreet} onChange={update} className="form-input" />
+                <label className="auth-field"><span>Barangay</span><input type="text" name="barangay" placeholder="Add barangay" value={formData.barangay} onChange={update} /></label>
+                <label className="auth-field"><span>Purok / Street</span><input type="text" name="purokStreet" placeholder="Add street" value={formData.purokStreet} onChange={update} /></label>
               </div>
               {isProfile && (
                 <>
                   <p className="form-section-label"><Users size={15} /> Household and eligibility details</p>
                   <div className="form-grid">
-                    <input type="number" min="1" name="householdSize" placeholder="Household size" value={formData.householdSize} onChange={update} className="form-input" />
-                    <input type="number" min="0" name="childrenCount" placeholder="Number of children" value={formData.childrenCount} onChange={update} className="form-input" />
+                    <label className="auth-field"><span>Household size</span><input type="number" min="1" name="householdSize" placeholder="Add size" value={formData.householdSize} onChange={update} /></label>
+                    <label className="auth-field"><span>Number of children</span><input type="number" min="0" name="childrenCount" placeholder="Add count" value={formData.childrenCount} onChange={update} /></label>
                   </div>
                   <div className="form-grid">
-                    <input type="text" name="civilStatus" placeholder="Civil status" value={formData.civilStatus} onChange={update} className="form-input" />
-                    <input type="text" name="sex" placeholder="Sex" value={formData.sex} onChange={update} className="form-input" />
+                    <label className="auth-field"><span>Civil status</span><input type="text" name="civilStatus" placeholder="Add status" value={formData.civilStatus} onChange={update} /></label>
+                    <label className="auth-field"><span>Sex</span><input type="text" name="sex" placeholder="Add sex" value={formData.sex} onChange={update} /></label>
                   </div>
                   <div className="form-grid">
-                    <input type="text" name="occupation" placeholder="Occupation / livelihood" value={formData.occupation} onChange={update} className="form-input" />
-                    <input type="text" name="beneficiaryCategory" placeholder="Beneficiary category" value={formData.beneficiaryCategory} onChange={update} className="form-input" />
+                    <label className="auth-field"><span>Occupation / livelihood</span><input type="text" name="occupation" placeholder="Add occupation" value={formData.occupation} onChange={update} /></label>
+                    <label className="auth-field"><span>Beneficiary category</span><input type="text" name="beneficiaryCategory" placeholder="Add category" value={formData.beneficiaryCategory} onChange={update} /></label>
                   </div>
                   <div className="form-grid">
-                    <input type="text" name="idNumber" placeholder="Valid ID number" value={formData.idNumber} onChange={update} className="form-input" />
-                    <input type="text" name="spouseName" placeholder="Spouse name (optional)" value={formData.spouseName} onChange={update} className="form-input" />
+                    <label className="auth-field"><span>Valid ID number</span><input type="text" name="idNumber" placeholder="Add ID number" value={formData.idNumber} onChange={update} /></label>
+                    <label className="auth-field"><span>Spouse name</span><input type="text" name="spouseName" placeholder="Optional" value={formData.spouseName} onChange={update} /></label>
                   </div>
-                  <div className="form-grid">
-                    <input type="date" name="birthDate" aria-label="Birth date" value={formData.birthDate} onChange={update} className="form-input" />
-                  </div>
+                  <label className="auth-field"><span>Birth date</span><input type="date" name="birthDate" aria-label="Birth date" value={formData.birthDate} onChange={update} /></label>
                 </>
               )}
             </>
           )}
-
-          <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <button type="submit" disabled={saving} className="btn btn-primary btn-lg" style={{ width: '100%' }}>
-              {saving ? 'Saving...' : isProfile ? 'Save profile' : mode === 'signup' ? 'Create account' : 'Sign in'} <ArrowRight size={16} />
+          </div>
+          <div className="auth-form-actions">
+            <button type="submit" disabled={saving} className="auth-primary-action">
+              {saving ? 'Saving...' : isProfile ? 'Save changes' : mode === 'signup' ? 'Create account' : 'Sign in'} <ArrowRight size={16} />
             </button>
-            {!isProfile && <button type="button" className="btn btn-secondary btn-lg" style={{ width: '100%' }} onClick={() => { onContinueAsGuest(); onClose(); }}>Continue as Guest</button>}
+            {!isProfile && <button type="button" className="auth-secondary-action" onClick={() => { onContinueAsGuest(); onClose(); }}>Continue as Guest</button>}
           </div>
         </form>
       </div>
