@@ -1,39 +1,60 @@
-import React, { useState } from 'react';
-import { User, Phone, MapPin, X, ArrowRight, UserCheck, FileText } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { User, Phone, MapPin, X, ArrowRight, UserCheck, Mail, Lock, Users } from 'lucide-react';
 
-export default function AuthModal({ isOpen, onClose, onLogin, onContinueAsGuest, t = (k) => k }) {
-  const [formData, setFormData] = useState({
-    name: '',
-    mobile: '',
-    province: '',
-    cityMunicipality: '',
-    barangay: '',
-    idNumber: ''
-  });
+const emptyProfile = {
+  fullName: '', mobile: '', email: '', password: '', province: '', cityMunicipality: '',
+  barangay: '', purokStreet: '', householdSize: '', civilStatus: '', sex: '',
+  birthDate: '', occupation: '', beneficiaryCategory: '', idNumber: '', spouseName: '', childrenCount: ''
+};
+
+export default function AuthModal({
+  isOpen, onClose, onAuth, onProfileUpdate, onContinueAsGuest, user, csrfToken, initialMode = 'signin', t = (k) => k
+}) {
+  const [mode, setMode] = useState(initialMode);
+  const [formData, setFormData] = useState(emptyProfile);
+  const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
+  const isProfile = mode === 'profile';
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setMode(initialMode);
+    setError('');
+    setFormData({ ...emptyProfile, ...(user && !user.isGuest ? {
+      fullName: user.name || '', mobile: user.mobile || '', email: user.email || '',
+      province: user.province || '', cityMunicipality: user.cityMunicipality || '',
+      barangay: user.barangay || '', purokStreet: user.purokStreet || '',
+      householdSize: user.householdSize ?? '', civilStatus: user.civilStatus || '',
+      sex: user.sex || '', birthDate: user.birthDate || '', occupation: user.occupation || '',
+      beneficiaryCategory: user.beneficiaryCategory || '', idNumber: user.idNumber || '',
+      spouseName: user.spouseName || '', childrenCount: user.childrenCount ?? ''
+    } : {}) });
+  }, [isOpen, initialMode, user]);
 
   if (!isOpen) return null;
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = (e) => {
+  const update = (e) => setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.name.trim()) {
-      alert(t('pleaseEnterName') && t('pleaseEnterName') !== 'pleaseEnterName' ? t('pleaseEnterName') : 'Please enter your full name.');
-      return;
+    setError('');
+    setSaving(true);
+    try {
+      if (isProfile) {
+        await onProfileUpdate(formData);
+      } else {
+        await onAuth(mode, {
+          fullName: formData.fullName,
+          email: formData.email,
+          password: formData.password,
+          mobile: formData.mobile
+        });
+      }
+      onClose();
+    } catch (requestError) {
+      setError(requestError.message || 'Unable to save your details.');
+    } finally {
+      setSaving(false);
     }
-    onLogin({
-      name: formData.name,
-      mobile: formData.mobile,
-      province: formData.province,
-      cityMunicipality: formData.cityMunicipality,
-      barangay: formData.barangay,
-      idNumber: formData.idNumber,
-      isGuest: false
-    });
-    onClose();
   };
 
   return (
@@ -43,92 +64,90 @@ export default function AuthModal({ isOpen, onClose, onLogin, onContinueAsGuest,
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <UserCheck size={22} color="var(--primary)" />
             <div>
-              <h3>{t('authTitle')}</h3>
-              <p style={{ fontSize: 14, color: 'var(--slate-500)' }}>{t('authSubtitle')}</p>
+              <h3>{isProfile ? 'Edit your profile' : mode === 'signup' ? 'Create your account' : 'Sign in'}</h3>
+              <p style={{ fontSize: 14, color: 'var(--slate-500)' }}>
+                {isProfile ? 'Keep these details ready for future applications.' : 'Your saved details will autofill your forms.'}
+              </p>
             </div>
           </div>
-          <button type="button" className="icon-btn" onClick={onClose}>
-            <X size={20} />
-          </button>
+          <button type="button" className="icon-btn" onClick={onClose}><X size={20} /></button>
         </div>
+
+        {error && <div className="error-banner" role="alert">{error}</div>}
+        {!isProfile && (
+          <div className="auth-mode-toggle" role="tablist">
+            <button type="button" className={mode === 'signin' ? 'active' : ''} onClick={() => setMode('signin')}>Sign in</button>
+            <button type="button" className={mode === 'signup' ? 'active' : ''} onClick={() => setMode('signup')}>Sign up</button>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label className="form-label">
-              <User size={15} /> {t('fullName')} *
-            </label>
-            <input type="text" name="name" required value={formData.name} onChange={handleChange} className="form-input form-input-lg" />
+            <label className="form-label"><User size={15} /> Full name *</label>
+            <input type="text" name="fullName" required minLength="2" value={formData.fullName} onChange={update} className="form-input form-input-lg" />
           </div>
-
+          {!isProfile && (
+            <>
+              <div className="form-group">
+                <label className="form-label"><Mail size={15} /> Email *</label>
+                <input type="email" name="email" required value={formData.email} onChange={update} className="form-input" autoComplete="email" />
+              </div>
+              <div className="form-group">
+                <label className="form-label"><Lock size={15} /> Password *</label>
+                <input type="password" name="password" required minLength="12" value={formData.password} onChange={update} className="form-input" autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} />
+                {mode === 'signup' && <small>Use at least 12 characters.</small>}
+              </div>
+            </>
+          )}
+          {isProfile && <div className="form-group"><label className="form-label"><Mail size={15} /> Email</label><input type="email" value={formData.email} className="form-input" disabled /></div>}
           <div className="form-group">
-            <label className="form-label">
-              <Phone size={15} /> {t('phone')}
-            </label>
-            <input type="tel" name="mobile" value={formData.mobile} onChange={handleChange} className="form-input" />
+            <label className="form-label"><Phone size={15} /> Contact number *</label>
+            <input type="tel" name="mobile" required value={formData.mobile} onChange={update} className="form-input" />
           </div>
 
-          <div className="form-group">
-            <label className="form-label">
-              <FileText size={15} /> {t('idNumber')}
-            </label>
-            <input
-              type="text"
-              name="idNumber"
-              placeholder={t('idNumber')}
-              aria-label={t('idNumber')}
-              value={formData.idNumber}
-              onChange={handleChange}
-              className="form-input"
-            />
-          </div>
-
-          <div className="form-grid">
-            <div className="form-group">
-              <input
-                type="text"
-                name="province"
-                placeholder={t('province') !== 'province' ? t('province') : 'Province'}
-                aria-label={t('province') !== 'province' ? t('province') : 'Province'}
-                value={formData.province}
-                onChange={handleChange}
-                className="form-input"
-              />
-            </div>
-            <div className="form-group">
-              <input
-                type="text"
-                name="cityMunicipality"
-                placeholder={t('city') !== 'city' ? t('city') : 'City / Municipality'}
-                aria-label={t('city') !== 'city' ? t('city') : 'City or Municipality'}
-                value={formData.cityMunicipality}
-                onChange={handleChange}
-                className="form-input"
-              />
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">
-              <MapPin size={15} /> {t('barangay') !== 'barangay' ? t('barangay') : 'Barangay'}
-            </label>
-            <input
-              type="text"
-              name="barangay"
-              aria-label={t('barangay') !== 'barangay' ? t('barangay') : 'Barangay'}
-              value={formData.barangay}
-              onChange={handleChange}
-              className="form-input"
-            />
-          </div>
+          {(isProfile || mode === 'signup') && (
+            <>
+              <p className="form-section-label"><MapPin size={15} /> Address</p>
+              <div className="form-grid">
+                <input type="text" name="province" placeholder="Province" value={formData.province} onChange={update} className="form-input" />
+                <input type="text" name="cityMunicipality" placeholder="City / Municipality" value={formData.cityMunicipality} onChange={update} className="form-input" />
+              </div>
+              <div className="form-grid">
+                <input type="text" name="barangay" placeholder="Barangay" value={formData.barangay} onChange={update} className="form-input" />
+                <input type="text" name="purokStreet" placeholder="Purok / Street" value={formData.purokStreet} onChange={update} className="form-input" />
+              </div>
+              {isProfile && (
+                <>
+                  <p className="form-section-label"><Users size={15} /> Household and eligibility details</p>
+                  <div className="form-grid">
+                    <input type="number" min="1" name="householdSize" placeholder="Household size" value={formData.householdSize} onChange={update} className="form-input" />
+                    <input type="number" min="0" name="childrenCount" placeholder="Number of children" value={formData.childrenCount} onChange={update} className="form-input" />
+                  </div>
+                  <div className="form-grid">
+                    <input type="text" name="civilStatus" placeholder="Civil status" value={formData.civilStatus} onChange={update} className="form-input" />
+                    <input type="text" name="sex" placeholder="Sex" value={formData.sex} onChange={update} className="form-input" />
+                  </div>
+                  <div className="form-grid">
+                    <input type="text" name="occupation" placeholder="Occupation / livelihood" value={formData.occupation} onChange={update} className="form-input" />
+                    <input type="text" name="beneficiaryCategory" placeholder="Beneficiary category" value={formData.beneficiaryCategory} onChange={update} className="form-input" />
+                  </div>
+                  <div className="form-grid">
+                    <input type="text" name="idNumber" placeholder="Valid ID number" value={formData.idNumber} onChange={update} className="form-input" />
+                    <input type="text" name="spouseName" placeholder="Spouse name (optional)" value={formData.spouseName} onChange={update} className="form-input" />
+                  </div>
+                  <div className="form-grid">
+                    <input type="date" name="birthDate" aria-label="Birth date" value={formData.birthDate} onChange={update} className="form-input" />
+                  </div>
+                </>
+              )}
+            </>
+          )}
 
           <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%' }}>
-              {t('authSubmit')}
-              <ArrowRight size={16} />
+            <button type="submit" disabled={saving} className="btn btn-primary btn-lg" style={{ width: '100%' }}>
+              {saving ? 'Saving...' : isProfile ? 'Save profile' : mode === 'signup' ? 'Create account' : 'Sign in'} <ArrowRight size={16} />
             </button>
-            <button type="button" className="btn btn-secondary btn-lg" style={{ width: '100%' }} onClick={() => { onContinueAsGuest(); onClose(); }}>
-              {t('continueAsGuest')}
-            </button>
+            {!isProfile && <button type="button" className="btn btn-secondary btn-lg" style={{ width: '100%' }} onClick={() => { onContinueAsGuest(); onClose(); }}>Continue as Guest</button>}
           </div>
         </form>
       </div>

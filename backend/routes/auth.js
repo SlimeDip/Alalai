@@ -27,7 +27,25 @@ const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const HASH_BYTES = 64;
 
 function publicUser(row) {
-  return { id: row.user_id, name: row.full_name, email: row.email };
+  return {
+    id: row.user_id,
+    name: row.full_name,
+    email: row.email,
+    mobile: row.mobile || '',
+    province: row.province || '',
+    cityMunicipality: row.city_municipality || '',
+    barangay: row.barangay || '',
+    purokStreet: row.purok_street || '',
+    householdSize: row.household_size ?? '',
+    civilStatus: row.civil_status || '',
+    sex: row.sex || '',
+    birthDate: row.birth_date || '',
+    occupation: row.occupation || '',
+    beneficiaryCategory: row.beneficiary_category || '',
+    idNumber: row.valid_id_number || '',
+    spouseName: row.spouse_name || '',
+    childrenCount: row.children_count ?? ''
+  };
 }
 
 function setSessionCookie(res, token) {
@@ -119,7 +137,7 @@ export function requireAuthenticatedUser(req, res, next) {
     }
 
     const session = db.prepare(`
-      SELECT users.user_id, users.full_name, users.email, auth_sessions.created_at
+      SELECT users.*, auth_sessions.created_at
       FROM auth_sessions
       JOIN users ON users.user_id = auth_sessions.user_id
       WHERE auth_sessions.token_hash = ?
@@ -149,7 +167,8 @@ export function requireAuthenticatedUser(req, res, next) {
     req.user = {
       user_id: session.user_id,
       name: session.full_name,
-      email: session.email
+      email: session.email,
+      ...publicUser(session)
     };
     req.csrfToken = csrfTokenFor(token);
     if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method)
@@ -165,7 +184,7 @@ export function requireAuthenticatedUser(req, res, next) {
 
 router.post('/register', registerLimiter, async (req, res) => {
   try {
-    const { fullName, email, password } = req.body || {};
+    const { fullName, email, password, mobile = '' } = req.body || {};
     if (
       typeof fullName !== 'string'
       || fullName.trim().length < 2
@@ -173,6 +192,8 @@ router.post('/register', registerLimiter, async (req, res) => {
       || typeof email !== 'string'
       || email.trim().length > 254
       || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
+      || typeof mobile !== 'string'
+      || mobile.trim().length > 40
       || typeof password !== 'string'
       || password.length < 12
       || password.length > 128
@@ -191,16 +212,16 @@ router.post('/register', registerLimiter, async (req, res) => {
     const passwordHash = await hashPassword(password);
     const sessionToken = db.transaction(() => {
       db.prepare(`
-        INSERT INTO users (user_id, full_name, email, password_hash)
-        VALUES (?, ?, ?, ?)
-      `).run(userId, fullName.trim(), normalizedEmail, passwordHash);
+        INSERT INTO users (user_id, full_name, email, password_hash, mobile)
+        VALUES (?, ?, ?, ?, ?)
+      `).run(userId, fullName.trim(), normalizedEmail, passwordHash, mobile.trim());
       return createSession(userId);
     })();
     setSessionCookie(res, sessionToken);
 
     return res.status(201).json({
       success: true,
-      data: publicUser({ user_id: userId, full_name: fullName.trim(), email: normalizedEmail }),
+      data: publicUser({ user_id: userId, full_name: fullName.trim(), email: normalizedEmail, mobile: mobile.trim() }),
       csrfToken: csrfTokenFor(sessionToken)
     });
   } catch (error) {
@@ -240,15 +261,75 @@ router.post('/login', loginLimiter, async (req, res) => {
 });
 
 router.get('/me', requireAuthenticatedUser, (req, res) => {
+  const user = db.prepare('SELECT * FROM users WHERE user_id = ?').get(req.user.user_id);
   res.json({
     success: true,
-    data: publicUser({
-      user_id: req.user.user_id,
-      full_name: req.user.name,
-      email: req.user.email
-    }),
+    data: publicUser(user),
     csrfToken: req.csrfToken
   });
+});
+
+router.patch('/me', requireAuthenticatedUser, (req, res) => {
+  try {
+    const body = req.body || {};
+    const textFields = {
+      full_name: body.fullName,
+      mobile: body.mobile,
+      province: body.province,
+      city_municipality: body.cityMunicipality,
+      barangay: body.barangay,
+      purok_street: body.purokStreet,
+      civil_status: body.civilStatus,
+      sex: body.sex,
+      birth_date: body.birthDate,
+      occupation: body.occupation,
+      beneficiary_category: body.beneficiaryCategory,
+      valid_id_number: body.idNumber,
+      spouse_name: body.spouseName
+    };
+    if (typeof textFields.full_name !== 'string' || textFields.full_name.trim().length < 2) {
+      return res.status(400).json({ success: false, error: 'Full name must be at least 2 characters.' });
+    }
+    if (typeof textFields.mobile !== 'string' || textFields.mobile.trim().length > 40) {
+      return res.status(400).json({ success: false, error: 'Please provide a valid contact number.' });
+    }
+    for (const [field, value] of Object.entries(textFields)) {
+      if (field !== 'full_name' && field !== 'mobile' && value != null && typeof value !== 'string') {
+        return res.status(400).json({ success: false, error: 'Profile fields must contain text values.' });
+      }
+    }
+    const householdSize = body.householdSize === '' || body.householdSize == null
+      ? null
+      : Number(body.householdSize);
+    const childrenCount = body.childrenCount === '' || body.childrenCount == null
+      ? null
+      : Number(body.childrenCount);
+    if ((householdSize != null && (!Number.isInteger(householdSize) || householdSize < 1 || householdSize > 100))
+      || (childrenCount != null && (!Number.isInteger(childrenCount) || childrenCount < 0 || childrenCount > 100))) {
+      return res.status(400).json({ success: false, error: 'Household and children counts must be valid numbers.' });
+    }
+    db.prepare(`
+      UPDATE users SET
+        full_name = @full_name, mobile = @mobile, province = @province,
+        city_municipality = @city_municipality, barangay = @barangay,
+        purok_street = @purok_street, household_size = @household_size,
+        civil_status = @civil_status, sex = @sex, birth_date = @birth_date,
+        occupation = @occupation, beneficiary_category = @beneficiary_category,
+        valid_id_number = @valid_id_number, spouse_name = @spouse_name,
+        children_count = @children_count, updated_at = CURRENT_TIMESTAMP
+      WHERE user_id = @user_id
+    `).run({
+      ...Object.fromEntries(Object.entries(textFields).map(([key, value]) => [key, value?.trim() || ''])),
+      household_size: householdSize,
+      children_count: childrenCount,
+      user_id: req.user.user_id
+    });
+    const user = db.prepare('SELECT * FROM users WHERE user_id = ?').get(req.user.user_id);
+    return res.json({ success: true, data: publicUser(user) });
+  } catch (error) {
+    console.error('Error updating user profile:', error);
+    return res.status(500).json({ success: false, error: 'Unable to update profile.' });
+  }
 });
 
 router.post('/logout', requireAuthenticatedUser, (req, res) => {

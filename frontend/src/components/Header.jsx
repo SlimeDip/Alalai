@@ -6,6 +6,7 @@ export default function Header({
   onNavigate,
   user,
   onOpenLogin,
+  onOpenProfile,
   onLogout,
   onContinueAsGuest,
   lang,
@@ -79,7 +80,7 @@ export default function Header({
 
           {user && !user.isGuest ? (
             <div className="nav-user-cluster">
-              <button type="button" className="btn-pill-dark" onClick={() => handleNavClick('application')}>
+              <button type="button" className="btn-pill-dark" onClick={onOpenProfile}>
                 <User size={14} />
                 <span>{(user?.name || '').split(' ')[0] || t('guest')}</span>
               </button>
