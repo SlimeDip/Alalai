@@ -1328,7 +1328,7 @@ body {
 }
 
 .landing-faq {
-  background: var(--slate-50);
+  background: var(--white);
   border: 1px solid var(--slate-200);
   border-radius: var(--radius-lg);
   padding: 28px;
@@ -1352,22 +1352,103 @@ body {
   margin-top: 4px;
 }
 
-.landing-faq-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 18px;
+.landing-faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-.faq-item h3 {
+.faq-item {
+  border: 1px solid var(--slate-200);
+  border-radius: 16px;
+  background: var(--white);
+  overflow: hidden;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.faq-item.open {
+  border-color: rgba(2, 132, 199, 0.35);
+  box-shadow: 0 0 0 1px rgba(2, 132, 199, 0.08);
+}
+
+.faq-question {
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  cursor: pointer;
+  text-align: left;
+  color: var(--slate-900);
+  font: inherit;
+}
+
+.faq-question-text {
   font-size: 15px;
   font-weight: 700;
-  margin-bottom: 6px;
+  line-height: 1.5;
+  flex: 1;
 }
 
-.faq-item p {
+.faq-chevron {
+  color: var(--primary);
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.faq-item.open .faq-chevron {
+  transform: rotate(180deg);
+}
+
+.faq-answer {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.28s ease;
+}
+
+.faq-item.open .faq-answer {
+  grid-template-rows: 1fr;
+}
+
+.faq-answer-inner {
+  overflow: hidden;
+}
+
+.faq-answer p {
   font-size: 14px;
   color: var(--slate-600);
-  line-height: 1.5;
+  line-height: 1.6;
+  padding: 0 20px 18px;
+}
+
+@media (max-width: 640px) {
+  .landing-faq {
+    padding: 18px 16px;
+  }
+
+  .landing-faq-header {
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .landing-faq-header h2 {
+    font-size: 18px;
+  }
+
+  .faq-question {
+    padding: 16px 14px;
+  }
+
+  .faq-question-text {
+    font-size: 14px;
+  }
+
+  .faq-answer p {
+    padding: 0 14px 16px;
+  }
 }
 
 .brand-block {
