@@ -1,8 +1,10 @@
-import React from 'react';
-import { HelpCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import { ChevronDown, HelpCircle } from 'lucide-react';
 import RecoveryDashboard from './RecoveryDashboard';
 
 export default function LandingPage({ onStartAssessment, t }) {
+  const [openItems, setOpenItems] = useState([]);
+
   const faqs = [
     { q: t('faq1Q'), a: t('faq1A') },
     { q: t('faq2Q'), a: t('faq2A') },
@@ -11,6 +13,14 @@ export default function LandingPage({ onStartAssessment, t }) {
     { q: t('faq5Q'), a: t('faq5A') },
     { q: t('faq6Q'), a: t('faq6A') }
   ];
+
+  const toggleItem = (idx) => {
+    setOpenItems((current) =>
+      current.includes(idx)
+        ? current.filter((item) => item !== idx)
+        : [...current, idx]
+    );
+  };
 
   return (
     <div className="landing-simple">
@@ -37,13 +47,32 @@ export default function LandingPage({ onStartAssessment, t }) {
             <p>{t('faqSubtitle')}</p>
           </div>
         </div>
-        <div className="landing-faq-grid">
-          {faqs.map((item, idx) => (
-            <article key={idx} className="faq-item">
-              <h3>{item.q}</h3>
-              <p>{item.a}</p>
-            </article>
-          ))}
+        <div className="landing-faq-list">
+          {faqs.map((item, idx) => {
+            const isOpen = openItems.includes(idx);
+            const panelId = `faq-panel-${idx}`;
+
+            return (
+              <article key={idx} className={`faq-item ${isOpen ? 'open' : ''}`}>
+                <button
+                  type="button"
+                  className="faq-question"
+                  onClick={() => toggleItem(idx)}
+                  aria-expanded={isOpen}
+                  aria-controls={panelId}
+                >
+                  <span className="faq-question-text">{item.q}</span>
+                  <ChevronDown className="faq-chevron" size={18} aria-hidden />
+                </button>
+
+                <div id={panelId} className="faq-answer" aria-hidden={!isOpen}>
+                  <div className="faq-answer-inner">
+                    <p>{item.a}</p>
+                  </div>
+                </div>
+              </article>
+            );
+          })}
         </div>
       </section>
     </div>
