@@ -49,7 +49,20 @@ export default function AuthModal({
           lastName: formData.lastName,
           email: formData.email,
           password: formData.password,
-          mobile: formData.mobile
+          mobile: formData.mobile,
+          province: formData.province,
+          cityMunicipality: formData.cityMunicipality,
+          barangay: formData.barangay,
+          purokStreet: formData.purokStreet,
+          householdSize: formData.householdSize,
+          civilStatus: formData.civilStatus,
+          sex: formData.sex,
+          birthDate: formData.birthDate,
+          occupation: formData.occupation,
+          beneficiaryCategory: formData.beneficiaryCategory,
+          idNumber: formData.idNumber,
+          spouseName: formData.spouseName,
+          childrenCount: formData.childrenCount
         });
       }
       onClose();
@@ -106,14 +119,14 @@ export default function AuthModal({
           )}
           {isProfile && <div className="auth-field"><label><Mail size={14} /> Email address</label><input type="email" value={formData.email} disabled /></div>}
           <div className="auth-field">
-            <label><Phone size={14} /> Contact number *</label>
-            <input type="tel" name="mobile" required value={formData.mobile} onChange={update} />
+            <label><Phone size={14} /> Contact number{isProfile ? ' *' : ''}</label>
+            <input type="tel" name="mobile" required={isProfile} value={formData.mobile} onChange={update} />
           </div>
 
           {(isProfile || mode === 'signup') && (
             <>
               <div className="auth-section">
-                <p className="form-section-label"><MapPin size={15} /> Address</p>
+                <p className="form-section-label"><MapPin size={15} /> Address {!isProfile && '(Optional)'}</p>
                 <div className="form-grid">
                   <label className="auth-field"><span>Province</span><input type="text" name="province" placeholder="Add province" value={formData.province} onChange={update} /></label>
                   <label className="auth-field"><span>City / Municipality</span><input type="text" name="cityMunicipality" placeholder="Add city" value={formData.cityMunicipality} onChange={update} /></label>
@@ -123,9 +136,9 @@ export default function AuthModal({
                   <label className="auth-field"><span>Purok / Street</span><input type="text" name="purokStreet" placeholder="Add street" value={formData.purokStreet} onChange={update} /></label>
                 </div>
               </div>
-              {isProfile && (
+              {(isProfile || mode === 'signup') && (
                 <div className="auth-section">
-                  <p className="form-section-label"><Users size={15} /> Household and eligibility details</p>
+                  <p className="form-section-label"><Users size={15} /> Household and eligibility details {!isProfile && '(Optional)'}</p>
                   <div className="form-grid">
                     <label className="auth-field"><span>Household size</span><input type="number" min="1" name="householdSize" placeholder="Add size" value={formData.householdSize} onChange={update} /></label>
                     <label className="auth-field"><span>Number of children</span><input type="number" min="0" name="childrenCount" placeholder="Add count" value={formData.childrenCount} onChange={update} /></label>

@@ -193,13 +193,25 @@ router.post('/register', registerLimiter, async (req, res) => {
   try {
     const {
       firstName = '', middleName = '', lastName = '', fullName,
-      email, password, mobile = ''
+      email, password, mobile = '', province = '', cityMunicipality = '',
+      barangay = '', purokStreet = '', householdSize = '', civilStatus = '',
+      sex = '', birthDate = '', occupation = '', beneficiaryCategory = '',
+      idNumber = '', spouseName = '', childrenCount = ''
     } = req.body || {};
     const normalizedFirstName = typeof firstName === 'string' ? firstName.trim() : '';
     const normalizedMiddleName = typeof middleName === 'string' ? middleName.trim() : '';
     const normalizedLastName = typeof lastName === 'string' ? lastName.trim() : '';
     const composedName = [normalizedFirstName, normalizedMiddleName, normalizedLastName].filter(Boolean).join(' ');
     const nameForCompatibility = composedName || (typeof fullName === 'string' ? fullName.trim() : '');
+    const optionalTextFields = {
+      mobile, province, cityMunicipality, barangay, purokStreet, civilStatus,
+      sex, birthDate, occupation, beneficiaryCategory, idNumber, spouseName
+    };
+    const normalizedOptionalTextFields = Object.fromEntries(
+      Object.entries(optionalTextFields).map(([field, value]) => [field, typeof value === 'string' ? value.trim() : value])
+    );
+    const normalizedHouseholdSize = householdSize === '' || householdSize == null ? null : Number(householdSize);
+    const normalizedChildrenCount = childrenCount === '' || childrenCount == null ? null : Number(childrenCount);
     if (
       nameForCompatibility.length < 2
       || nameForCompatibility.length > 120
@@ -208,8 +220,11 @@ router.post('/register', registerLimiter, async (req, res) => {
       || typeof email !== 'string'
       || email.trim().length > 254
       || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
-      || typeof mobile !== 'string'
-      || mobile.trim().length > 40
+      || Object.values(normalizedOptionalTextFields).some((value) => typeof value !== 'string' || value.length > 120)
+      || (normalizedHouseholdSize != null
+        && (!Number.isInteger(normalizedHouseholdSize) || normalizedHouseholdSize < 1 || normalizedHouseholdSize > 100))
+      || (normalizedChildrenCount != null
+        && (!Number.isInteger(normalizedChildrenCount) || normalizedChildrenCount < 0 || normalizedChildrenCount > 100))
       || typeof password !== 'string'
       || password.length < 12
       || password.length > 128
@@ -229,11 +244,21 @@ router.post('/register', registerLimiter, async (req, res) => {
     const sessionToken = db.transaction(() => {
       db.prepare(`
         INSERT INTO users (
-          user_id, full_name, first_name, middle_name, last_name, email, password_hash, mobile
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          user_id, full_name, first_name, middle_name, last_name, email, password_hash,
+          mobile, province, city_municipality, barangay, purok_street, household_size,
+          civil_status, sex, birth_date, occupation, beneficiary_category,
+          valid_id_number, spouse_name, children_count
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).run(
         userId, nameForCompatibility, normalizedFirstName, normalizedMiddleName,
-        normalizedLastName, normalizedEmail, passwordHash, mobile.trim()
+        normalizedLastName, normalizedEmail, passwordHash,
+        normalizedOptionalTextFields.mobile, normalizedOptionalTextFields.province,
+        normalizedOptionalTextFields.cityMunicipality, normalizedOptionalTextFields.barangay,
+        normalizedOptionalTextFields.purokStreet, normalizedHouseholdSize,
+        normalizedOptionalTextFields.civilStatus, normalizedOptionalTextFields.sex,
+        normalizedOptionalTextFields.birthDate, normalizedOptionalTextFields.occupation,
+        normalizedOptionalTextFields.beneficiaryCategory, normalizedOptionalTextFields.idNumber,
+        normalizedOptionalTextFields.spouseName, normalizedChildrenCount
       );
       return createSession(userId);
     })();
@@ -244,7 +269,21 @@ router.post('/register', registerLimiter, async (req, res) => {
       data: publicUser({
         user_id: userId, full_name: nameForCompatibility,
         first_name: normalizedFirstName, middle_name: normalizedMiddleName,
-        last_name: normalizedLastName, email: normalizedEmail, mobile: mobile.trim()
+        last_name: normalizedLastName, email: normalizedEmail,
+        mobile: normalizedOptionalTextFields.mobile,
+        province: normalizedOptionalTextFields.province,
+        city_municipality: normalizedOptionalTextFields.cityMunicipality,
+        barangay: normalizedOptionalTextFields.barangay,
+        purok_street: normalizedOptionalTextFields.purokStreet,
+        household_size: normalizedHouseholdSize,
+        civil_status: normalizedOptionalTextFields.civilStatus,
+        sex: normalizedOptionalTextFields.sex,
+        birth_date: normalizedOptionalTextFields.birthDate,
+        occupation: normalizedOptionalTextFields.occupation,
+        beneficiary_category: normalizedOptionalTextFields.beneficiaryCategory,
+        valid_id_number: normalizedOptionalTextFields.idNumber,
+        spouse_name: normalizedOptionalTextFields.spouseName,
+        children_count: normalizedChildrenCount
       }),
       csrfToken: csrfTokenFor(sessionToken)
     });
