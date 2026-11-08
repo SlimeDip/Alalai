@@ -22,9 +22,12 @@ backend, SQLite for persistence, and Google Gemini for AI-assisted assessments.
 - **Verified subsidy catalog** loaded from `backend/data/subsidies.json`.
   Programs include official source links, eligibility information, requirements,
   application steps, and verification dates.
-- **Resident accounts and guest access** with password-based registration/login,
+- **Resident accounts and guest access** with password-based sign up/sign in,
   secure sessions, CSRF protection for state-changing requests, and rate-limited
-  authentication endpoints.
+  authentication endpoints. Residents sign up with separate first, middle, and
+  last name fields and can edit an autofill profile containing contact details,
+  address, household information, occupation, beneficiary category, and ID
+  details.
 - **Editable official application form** pre-filled from assessment results.
   Users can edit applicant details, address, disaster information, damage
   narrative, requested aid, and household members.

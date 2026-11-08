@@ -83,7 +83,8 @@ export default function DamageAssessmentForm({ user, t, lang = 'en', onSelectSub
         contactNumber: user.mobile || prev.contactNumber,
         province: user.province || prev.province,
         cityMunicipality: user.cityMunicipality || prev.cityMunicipality,
-        barangay: user.barangay || prev.barangay
+        barangay: user.barangay || prev.barangay,
+        householdSize: user.householdSize || prev.householdSize
       }));
     }
   }, [user]);

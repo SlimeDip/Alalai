@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Header from './components/Header';
 import LandingPage from './components/LandingPage';
 import AuthModal from './components/AuthModal';
@@ -39,22 +39,71 @@ export default function App() {
       return { isGuest: true, name: 'Guest' };
     }
   });
+  const [csrfToken, setCsrfToken] = useState('');
+  const [authModalMode, setAuthModalMode] = useState('signin');
 
   const [selectedApplicationData, setSelectedApplicationData] = useState(null);
 
-  const handleLogin = (userData) => {
-    setUser(userData);
+  useEffect(() => {
+    fetch('/api/auth/me', { credentials: 'include' })
+      .then(async (response) => {
+        if (!response.ok) return null;
+        return response.json();
+      })
+      .then((result) => {
+        if (result?.success) {
+          setUser(result.data);
+          setCsrfToken(result.csrfToken || '');
+          localStorage.setItem('alalai_user', JSON.stringify(result.data));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleAuth = async (mode, credentials) => {
+    const response = await fetch(`/api/auth/${mode === 'signup' ? 'register' : 'login'}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(credentials)
+    });
+    const result = await response.json();
+    if (!response.ok || !result.success) throw new Error(result.error || 'Unable to authenticate.');
+    setUser(result.data);
+    setCsrfToken(result.csrfToken || '');
     try {
-      localStorage.setItem('alalai_user', JSON.stringify(userData));
+      localStorage.setItem('alalai_user', JSON.stringify(result.data));
     } catch {}
   };
 
-  const handleLogout = () => {
-    const guestUser = { isGuest: true, name: lang === 'tl' ? 'Bisita' : 'Guest' };
-    setUser(guestUser);
+  const handleProfileUpdate = async (profile) => {
+    const response = await fetch('/api/auth/me', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
+      credentials: 'include',
+      body: JSON.stringify(profile)
+    });
+    const result = await response.json();
+    if (!response.ok || !result.success) throw new Error(result.error || 'Unable to update profile.');
+    setUser(result.data);
+    localStorage.setItem('alalai_user', JSON.stringify(result.data));
+  };
+
+  const handleLogout = async () => {
     try {
-      localStorage.removeItem('alalai_user');
-    } catch {}
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: { 'X-CSRF-Token': csrfToken },
+        credentials: 'include'
+      });
+    } finally {
+      setCsrfToken('');
+      const guestUser = { isGuest: true, name: lang === 'tl' ? 'Bisita' : 'Guest' };
+      setUser(guestUser);
+      try {
+        localStorage.removeItem('alalai_user');
+      } catch {}
+    }
   };
 
   const handleContinueAsGuest = () => {
@@ -90,7 +139,8 @@ export default function App() {
           activeTab={activeTab}
           onNavigate={setActiveTab}
           user={user}
-          onOpenLogin={() => setAuthModalOpen(true)}
+          onOpenLogin={() => { setAuthModalMode('signin'); setAuthModalOpen(true); }}
+          onOpenProfile={() => { setAuthModalMode('profile'); setAuthModalOpen(true); }}
           onLogout={handleLogout}
           onContinueAsGuest={handleContinueAsGuest}
           lang={lang}
@@ -159,8 +209,12 @@ export default function App() {
       <AuthModal
         isOpen={authModalOpen}
         onClose={() => setAuthModalOpen(false)}
-        onLogin={handleLogin}
+        onAuth={handleAuth}
+        onProfileUpdate={handleProfileUpdate}
         onContinueAsGuest={handleContinueAsGuest}
+        user={user}
+        csrfToken={csrfToken}
+        initialMode={authModalMode}
         t={t}
       />
     </div>

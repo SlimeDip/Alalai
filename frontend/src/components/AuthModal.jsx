@@ -1,134 +1,171 @@
-import React, { useState } from 'react';
-import { User, Phone, MapPin, X, ArrowRight, UserCheck, FileText } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { User, Phone, MapPin, X, ArrowRight, UserCheck, Mail, Lock, Users } from 'lucide-react';
 
-export default function AuthModal({ isOpen, onClose, onLogin, onContinueAsGuest, t = (k) => k }) {
-  const [formData, setFormData] = useState({
-    name: '',
-    mobile: '',
-    province: '',
-    cityMunicipality: '',
-    barangay: '',
-    idNumber: ''
-  });
+const emptyProfile = {
+  firstName: '', middleName: '', lastName: '', mobile: '', email: '', password: '', province: '', cityMunicipality: '',
+  barangay: '', purokStreet: '', householdSize: '', civilStatus: '', sex: '',
+  birthDate: '', occupation: '', beneficiaryCategory: '', idNumber: '', spouseName: '', childrenCount: ''
+};
+
+export default function AuthModal({
+  isOpen, onClose, onAuth, onProfileUpdate, onContinueAsGuest, user, csrfToken, initialMode = 'signin', t = (k) => k
+}) {
+  const [mode, setMode] = useState(initialMode);
+  const [formData, setFormData] = useState(emptyProfile);
+  const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
+  const isProfile = mode === 'profile';
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setMode(initialMode);
+    setError('');
+    setFormData({ ...emptyProfile, ...(user && !user.isGuest ? {
+      firstName: user.firstName || '', middleName: user.middleName || '', lastName: user.lastName || '',
+      mobile: user.mobile || '', email: user.email || '',
+      province: user.province || '', cityMunicipality: user.cityMunicipality || '',
+      barangay: user.barangay || '', purokStreet: user.purokStreet || '',
+      householdSize: user.householdSize ?? '', civilStatus: user.civilStatus || '',
+      sex: user.sex || '', birthDate: user.birthDate || '', occupation: user.occupation || '',
+      beneficiaryCategory: user.beneficiaryCategory || '', idNumber: user.idNumber || '',
+      spouseName: user.spouseName || '', childrenCount: user.childrenCount ?? ''
+    } : {}) });
+  }, [isOpen, initialMode, user]);
 
   if (!isOpen) return null;
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = (e) => {
+  const update = (e) => setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.name.trim()) {
-      alert(t('pleaseEnterName') && t('pleaseEnterName') !== 'pleaseEnterName' ? t('pleaseEnterName') : 'Please enter your full name.');
-      return;
+    setError('');
+    setSaving(true);
+    try {
+      if (isProfile) {
+        await onProfileUpdate(formData);
+      } else {
+        await onAuth(mode, {
+          firstName: formData.firstName,
+          middleName: formData.middleName,
+          lastName: formData.lastName,
+          email: formData.email,
+          password: formData.password,
+          mobile: formData.mobile,
+          province: formData.province,
+          cityMunicipality: formData.cityMunicipality,
+          barangay: formData.barangay,
+          purokStreet: formData.purokStreet,
+          householdSize: formData.householdSize,
+          civilStatus: formData.civilStatus,
+          sex: formData.sex,
+          birthDate: formData.birthDate,
+          occupation: formData.occupation,
+          beneficiaryCategory: formData.beneficiaryCategory,
+          idNumber: formData.idNumber,
+          spouseName: formData.spouseName,
+          childrenCount: formData.childrenCount
+        });
+      }
+      onClose();
+    } catch (requestError) {
+      setError(requestError.message || 'Unable to save your details.');
+    } finally {
+      setSaving(false);
     }
-    onLogin({
-      name: formData.name,
-      mobile: formData.mobile,
-      province: formData.province,
-      cityMunicipality: formData.cityMunicipality,
-      barangay: formData.barangay,
-      idNumber: formData.idNumber,
-      isGuest: false
-    });
-    onClose();
   };
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header-row">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <UserCheck size={22} color="var(--primary)" />
-            <div>
-              <h3>{t('authTitle')}</h3>
-              <p style={{ fontSize: 14, color: 'var(--slate-500)' }}>{t('authSubtitle')}</p>
-            </div>
+      <div className={`modal-card auth-sheet ${isProfile ? 'profile-modal' : ''}`} onClick={(e) => e.stopPropagation()}>
+        <div className="auth-sheet-header">
+          <div>
+            <span className="auth-sheet-eyebrow">{isProfile ? 'ACCOUNT' : 'ALALAI'}</span>
+            <h3>{isProfile ? 'Edit Profile' : mode === 'signup' ? 'Create Account' : 'Welcome back'}</h3>
           </div>
-          <button type="button" className="icon-btn" onClick={onClose}>
-            <X size={20} />
-          </button>
+          <button type="button" className="auth-close-btn" onClick={onClose} aria-label="Close"><X size={18} /></button>
         </div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label className="form-label">
-              <User size={15} /> {t('fullName')} *
-            </label>
-            <input type="text" name="name" required value={formData.name} onChange={handleChange} className="form-input form-input-lg" />
+        {error && <div className="error-banner" role="alert">{error}</div>}
+        {!isProfile && (
+          <div className="auth-mode-toggle" role="tablist">
+            <button type="button" className={mode === 'signin' ? 'active' : ''} onClick={() => setMode('signin')}>Sign in</button>
+            <button type="button" className={mode === 'signup' ? 'active' : ''} onClick={() => setMode('signup')}>Sign up</button>
           </div>
+        )}
 
-          <div className="form-group">
-            <label className="form-label">
-              <Phone size={15} /> {t('phone')}
-            </label>
-            <input type="tel" name="mobile" value={formData.mobile} onChange={handleChange} className="form-input" />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">
-              <FileText size={15} /> {t('idNumber')}
-            </label>
-            <input
-              type="text"
-              name="idNumber"
-              placeholder={t('idNumber')}
-              aria-label={t('idNumber')}
-              value={formData.idNumber}
-              onChange={handleChange}
-              className="form-input"
-            />
-          </div>
-
-          <div className="form-grid">
-            <div className="form-group">
-              <input
-                type="text"
-                name="province"
-                placeholder={t('province') !== 'province' ? t('province') : 'Province'}
-                aria-label={t('province') !== 'province' ? t('province') : 'Province'}
-                value={formData.province}
-                onChange={handleChange}
-                className="form-input"
-              />
+        <form onSubmit={handleSubmit} className="auth-form">
+          <div className="auth-form-body">
+          {mode !== 'signin' && (
+            <div className="profile-section">
+              <p className="form-section-label"><User size={15} /> Personal information</p>
+              <div className="name-fields">
+                <label className="auth-field"><span>First name *</span><input type="text" name="firstName" required minLength="2" placeholder="First name" value={formData.firstName} onChange={update} autoComplete="given-name" /></label>
+                <label className="auth-field"><span>Middle name</span><input type="text" name="middleName" placeholder="Optional" value={formData.middleName} onChange={update} autoComplete="additional-name" /></label>
+                <label className="auth-field"><span>Last name *</span><input type="text" name="lastName" required minLength="2" placeholder="Last name" value={formData.lastName} onChange={update} autoComplete="family-name" /></label>
+              </div>
             </div>
-            <div className="form-group">
-              <input
-                type="text"
-                name="cityMunicipality"
-                placeholder={t('city') !== 'city' ? t('city') : 'City / Municipality'}
-                aria-label={t('city') !== 'city' ? t('city') : 'City or Municipality'}
-                value={formData.cityMunicipality}
-                onChange={handleChange}
-                className="form-input"
-              />
-            </div>
+          )}
+          {!isProfile && (
+            <>
+              <div className="auth-field">
+                <label><Mail size={14} /> Email address *</label>
+                <input type="email" name="email" required value={formData.email} onChange={update} autoComplete="email" />
+              </div>
+              <div className="auth-field">
+                <label><Lock size={14} /> Password *</label>
+                <input type="password" name="password" required minLength="12" value={formData.password} onChange={update} autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} />
+                {mode === 'signup' && <small>Use at least 12 characters.</small>}
+              </div>
+            </>
+          )}
+          {isProfile && <div className="auth-field"><label><Mail size={14} /> Email address</label><input type="email" value={formData.email} disabled /></div>}
+          <div className="auth-field">
+            <label><Phone size={14} /> Contact number{isProfile ? ' *' : ''}</label>
+            <input type="tel" name="mobile" required={isProfile} value={formData.mobile} onChange={update} />
           </div>
 
-          <div className="form-group">
-            <label className="form-label">
-              <MapPin size={15} /> {t('barangay') !== 'barangay' ? t('barangay') : 'Barangay'}
-            </label>
-            <input
-              type="text"
-              name="barangay"
-              aria-label={t('barangay') !== 'barangay' ? t('barangay') : 'Barangay'}
-              value={formData.barangay}
-              onChange={handleChange}
-              className="form-input"
-            />
+          {(isProfile || mode === 'signup') && (
+            <>
+              <div className="auth-section">
+                <p className="form-section-label"><MapPin size={15} /> Address {!isProfile && '(Optional)'}</p>
+                <div className="form-grid">
+                  <label className="auth-field"><span>Province</span><input type="text" name="province" placeholder="Add province" value={formData.province} onChange={update} /></label>
+                  <label className="auth-field"><span>City / Municipality</span><input type="text" name="cityMunicipality" placeholder="Add city" value={formData.cityMunicipality} onChange={update} /></label>
+                </div>
+                <div className="form-grid">
+                  <label className="auth-field"><span>Barangay</span><input type="text" name="barangay" placeholder="Add barangay" value={formData.barangay} onChange={update} /></label>
+                  <label className="auth-field"><span>Purok / Street</span><input type="text" name="purokStreet" placeholder="Add street" value={formData.purokStreet} onChange={update} /></label>
+                </div>
+              </div>
+              {(isProfile || mode === 'signup') && (
+                <div className="auth-section">
+                  <p className="form-section-label"><Users size={15} /> Household and eligibility details {!isProfile && '(Optional)'}</p>
+                  <div className="form-grid">
+                    <label className="auth-field"><span>Household size</span><input type="number" min="1" name="householdSize" placeholder="Add size" value={formData.householdSize} onChange={update} /></label>
+                    <label className="auth-field"><span>Number of children</span><input type="number" min="0" name="childrenCount" placeholder="Add count" value={formData.childrenCount} onChange={update} /></label>
+                  </div>
+                  <div className="form-grid">
+                    <label className="auth-field"><span>Civil status</span><input type="text" name="civilStatus" placeholder="Add status" value={formData.civilStatus} onChange={update} /></label>
+                    <label className="auth-field"><span>Sex</span><input type="text" name="sex" placeholder="Add sex" value={formData.sex} onChange={update} /></label>
+                  </div>
+                  <div className="form-grid">
+                    <label className="auth-field"><span>Occupation / livelihood</span><input type="text" name="occupation" placeholder="Add occupation" value={formData.occupation} onChange={update} /></label>
+                    <label className="auth-field"><span>Beneficiary category</span><input type="text" name="beneficiaryCategory" placeholder="Add category" value={formData.beneficiaryCategory} onChange={update} /></label>
+                  </div>
+                  <div className="form-grid">
+                    <label className="auth-field"><span>Valid ID number</span><input type="text" name="idNumber" placeholder="Add ID number" value={formData.idNumber} onChange={update} /></label>
+                    <label className="auth-field"><span>Spouse name</span><input type="text" name="spouseName" placeholder="Optional" value={formData.spouseName} onChange={update} /></label>
+                  </div>
+                  <label className="auth-field"><span>Birth date</span><input type="date" name="birthDate" aria-label="Birth date" value={formData.birthDate} onChange={update} /></label>
+                </div>
+              )}
+            </>
+          )}
           </div>
-
-          <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%' }}>
-              {t('authSubmit')}
-              <ArrowRight size={16} />
+          <div className="auth-form-actions">
+            <button type="submit" disabled={saving} className="auth-primary-action">
+              {saving ? 'Saving...' : isProfile ? 'Save changes' : mode === 'signup' ? 'Create account' : 'Sign in'} <ArrowRight size={16} />
             </button>
-            <button type="button" className="btn btn-secondary btn-lg" style={{ width: '100%' }} onClick={() => { onContinueAsGuest(); onClose(); }}>
-              {t('continueAsGuest')}
-            </button>
+            {!isProfile && <button type="button" className="auth-secondary-action" onClick={() => { onContinueAsGuest(); onClose(); }}>Continue as Guest</button>}
           </div>
         </form>
       </div>

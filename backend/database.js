@@ -123,8 +123,25 @@ export function initDatabase() {
     CREATE TABLE IF NOT EXISTS users(
       user_id TEXT PRIMARY KEY,
       full_name TEXT NOT NULL,
+      first_name TEXT,
+      middle_name TEXT,
+      last_name TEXT,
       email TEXT UNIQUE NOT NULL,
       password_hash TEXT NOT NULL,
+      mobile TEXT,
+      province TEXT,
+      city_municipality TEXT,
+      barangay TEXT,
+      purok_street TEXT,
+      household_size INTEGER,
+      civil_status TEXT,
+      sex TEXT,
+      birth_date TEXT,
+      occupation TEXT,
+      beneficiary_category TEXT,
+      valid_id_number TEXT,
+      spouse_name TEXT,
+      children_count INTEGER,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
@@ -253,6 +270,32 @@ export function initDatabase() {
   const subsidyColumns = tableColumns('subsidies');
   if (!subsidyColumns.includes('source_url')) db.exec('ALTER TABLE subsidies ADD COLUMN source_url TEXT');
   if (!subsidyColumns.includes('last_verified_on')) db.exec('ALTER TABLE subsidies ADD COLUMN last_verified_on TEXT');
+
+  const userColumns = tableColumns('users');
+  const userProfileColumns = [
+    ['first_name', 'TEXT'],
+    ['middle_name', 'TEXT'],
+    ['last_name', 'TEXT'],
+    ['mobile', 'TEXT'],
+    ['province', 'TEXT'],
+    ['city_municipality', 'TEXT'],
+    ['barangay', 'TEXT'],
+    ['purok_street', 'TEXT'],
+    ['household_size', 'INTEGER'],
+    ['civil_status', 'TEXT'],
+    ['sex', 'TEXT'],
+    ['birth_date', 'TEXT'],
+    ['occupation', 'TEXT'],
+    ['beneficiary_category', 'TEXT'],
+    ['valid_id_number', 'TEXT'],
+    ['spouse_name', 'TEXT'],
+    ['children_count', 'INTEGER']
+  ];
+  for (const [columnName, columnDefinition] of userProfileColumns) {
+    if (!userColumns.includes(columnName)) {
+      db.exec(`ALTER TABLE users ADD COLUMN ${columnName} ${columnDefinition}`);
+    }
+  }
 
   if (tableExists('recovery_cases')) {
     const columns = tableColumns('recovery_cases');
