@@ -1,7 +1,12 @@
 import Database from 'better-sqlite3';
-import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { migrateOwnershipV2 } from './services/ownershipMigration.js';
+import {
+  ensureSubsidyCatalogStatusColumn,
+  importSubsidyCatalog
+} from './services/subsidyImporter.js';
+import { validatePrivateDocumentStorageForStartup } from './services/privateStorageStartup.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -117,6 +122,7 @@ function migrateLegacyAssessments() {
 
 // Initialize database schema
 export function initDatabase() {
+  validatePrivateDocumentStorageForStartup();
   migrateColumnNames();
 
   db.exec(`
@@ -173,7 +179,9 @@ export function initDatabase() {
       contact_info TEXT NOT NULL,
       application_steps TEXT NOT NULL, -- JSON array
       source_url TEXT,
-      last_verified_on TEXT
+      last_verified_on TEXT,
+      catalog_status TEXT NOT NULL DEFAULT 'CUSTOM'
+        CHECK (catalog_status IN ('CUSTOM', 'ACTIVE_SEED', 'ARCHIVED_SEED'))
     );
 
     CREATE TABLE IF NOT EXISTS recovery_cases (
@@ -238,10 +246,20 @@ export function initDatabase() {
       reference_number TEXT UNIQUE NOT NULL,
       applicant_name TEXT NOT NULL,
       applicant_age INTEGER,
+      birth_date TEXT,
+      sex TEXT,
       civil_status TEXT,
       contact_number TEXT,
       valid_id_type TEXT,
       valid_id_number TEXT,
+      occupation TEXT,
+      beneficiary_category TEXT,
+      representative_name TEXT,
+      representative_relationship TEXT,
+      representative_contact TEXT,
+      barangay_certificate_reference TEXT,
+      spouse_name TEXT,
+      children_count TEXT,
       province TEXT NOT NULL,
       city_municipality TEXT NOT NULL,
       barangay TEXT NOT NULL,
@@ -256,20 +274,146 @@ export function initDatabase() {
       estimated_damage_php REAL,
       requested_amount_php REAL,
       declared_needs TEXT,
+      rsbsa_number TEXT,
+      agricultural_activity TEXT,
+      farm_fishery_location TEXT,
+      land_tenure TEXT,
+      pcic_policy_number TEXT,
       sworn_attestation INTEGER DEFAULT 1,
       status TEXT DEFAULT 'DRAFT', -- DRAFT, SUBMITTED, UNDER_REVIEW, APPROVED
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
+    CREATE TABLE IF NOT EXISTS tracked_applications (
+      tracked_application_id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+      case_id TEXT NOT NULL REFERENCES recovery_cases(case_id) ON DELETE CASCADE,
+      application_id TEXT REFERENCES applications(application_id) ON DELETE SET NULL,
+      program_name TEXT NOT NULL,
+      agency_source TEXT NOT NULL DEFAULT '',
+      status TEXT NOT NULL DEFAULT 'PREPARED'
+        CHECK (status IN ('PREPARED', 'SUBMITTED', 'FOLLOW_UP_NEEDED', 'DECISION_RECEIVED')),
+      submitted_on TEXT,
+      reference_number TEXT NOT NULL DEFAULT '',
+      notes TEXT NOT NULL DEFAULT '',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE (application_id, program_name)
+    );
+
+    CREATE TABLE IF NOT EXISTS tracked_application_history (
+      history_sequence INTEGER PRIMARY KEY AUTOINCREMENT,
+      history_id TEXT NOT NULL UNIQUE,
+      tracked_application_id TEXT NOT NULL
+        REFERENCES tracked_applications(tracked_application_id) ON DELETE CASCADE,
+      previous_status TEXT,
+      new_status TEXT NOT NULL
+        CHECK (new_status IN ('PREPARED', 'SUBMITTED', 'FOLLOW_UP_NEEDED', 'DECISION_RECEIVED')),
+      note TEXT NOT NULL DEFAULT '',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS follow_up_reminders (
+      reminder_id TEXT PRIMARY KEY,
+      tracked_application_id TEXT NOT NULL
+        REFERENCES tracked_applications(tracked_application_id) ON DELETE CASCADE,
+      user_id TEXT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+      reminder_date TEXT NOT NULL,
+      note TEXT NOT NULL DEFAULT '',
+      state TEXT NOT NULL DEFAULT 'ACTIVE'
+        CHECK (state IN ('ACTIVE', 'COMPLETED', 'DISMISSED')),
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS aid_ledger (
+      aid_id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+      case_id TEXT NOT NULL REFERENCES recovery_cases(case_id) ON DELETE CASCADE,
+      tracked_application_id TEXT
+        REFERENCES tracked_applications(tracked_application_id) ON DELETE SET NULL,
+      aid_type TEXT NOT NULL CHECK (aid_type IN ('CASH', 'IN_KIND')),
+      assistance_description TEXT NOT NULL DEFAULT '',
+      amount_php REAL,
+      quantity TEXT NOT NULL DEFAULT '',
+      estimated_value_php REAL,
+      source TEXT NOT NULL,
+      received_on TEXT NOT NULL,
+      notes TEXT NOT NULL DEFAULT '',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      CHECK (
+        (aid_type = 'CASH' AND amount_php > 0 AND estimated_value_php IS NULL)
+        OR
+        (aid_type = 'IN_KIND' AND amount_php IS NULL
+          AND (estimated_value_php IS NULL OR estimated_value_php >= 0))
+      )
+    );
+
+    CREATE TABLE IF NOT EXISTS recovery_documents (
+      document_id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+      case_id TEXT NOT NULL REFERENCES recovery_cases(case_id) ON DELETE CASCADE,
+      application_id TEXT REFERENCES applications(application_id) ON DELETE SET NULL,
+      original_filename TEXT NOT NULL,
+      stored_name TEXT NOT NULL UNIQUE,
+      media_type TEXT NOT NULL,
+      file_size INTEGER NOT NULL CHECK (file_size > 0),
+      category TEXT NOT NULL DEFAULT 'OTHER'
+        CHECK (category IN ('DAMAGE_PHOTO', 'IDENTITY', 'RECEIPT', 'SUPPORTING', 'OTHER')),
+      description TEXT NOT NULL DEFAULT '',
+      uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS recovery_document_cleanup (
+      document_id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      stored_name TEXT NOT NULL,
+      tombstone_name TEXT NOT NULL,
+      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS document_lifecycle_operations (
+      operation_id TEXT PRIMARY KEY,
+      operation_type TEXT NOT NULL CHECK (operation_type IN ('UPLOAD', 'DELETE')),
+      state TEXT NOT NULL CHECK (state IN (
+        'UPLOAD_PENDING', 'UPLOAD_FILE_WRITTEN', 'UPLOAD_METADATA_INSERTED',
+        'DELETE_REQUESTED', 'DELETE_TOMBSTONE_LINKED', 'DELETE_ORIGINAL_REMOVED'
+      )),
+      document_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      case_id TEXT NOT NULL,
+      application_id TEXT,
+      stored_name TEXT NOT NULL,
+      tombstone_name TEXT,
+      document_json TEXT NOT NULL,
+      file_device TEXT,
+      file_inode TEXT,
+      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE (operation_type, document_id)
+    );
+
     CREATE INDEX IF NOT EXISTS idx_loss_records_case_id ON loss_records(case_id);
     CREATE INDEX IF NOT EXISTS idx_recovery_plans_case_id ON recovery_plans(case_id);
+    CREATE INDEX IF NOT EXISTS idx_tracked_applications_user_case
+      ON tracked_applications(user_id, case_id);
+    CREATE INDEX IF NOT EXISTS idx_tracked_application_history_id
+      ON tracked_application_history(tracked_application_id, history_sequence);
+    CREATE INDEX IF NOT EXISTS idx_follow_up_reminders_owner_date
+      ON follow_up_reminders(user_id, state, reminder_date);
+    CREATE INDEX IF NOT EXISTS idx_aid_ledger_owner_case_date
+      ON aid_ledger(user_id, case_id, received_on);
+    CREATE INDEX IF NOT EXISTS idx_recovery_documents_owner_case
+      ON recovery_documents(user_id, case_id, uploaded_at);
 
   `);
 
   const subsidyColumns = tableColumns('subsidies');
   if (!subsidyColumns.includes('source_url')) db.exec('ALTER TABLE subsidies ADD COLUMN source_url TEXT');
   if (!subsidyColumns.includes('last_verified_on')) db.exec('ALTER TABLE subsidies ADD COLUMN last_verified_on TEXT');
+  ensureSubsidyCatalogStatusColumn(db);
 
   const userColumns = tableColumns('users');
   const userProfileColumns = [
@@ -321,6 +465,28 @@ export function initDatabase() {
   }
 
   const applicationColumns = tableColumns('applications');
+  const applicationDetailColumns = [
+    ['birth_date', 'TEXT'],
+    ['sex', 'TEXT'],
+    ['occupation', 'TEXT'],
+    ['beneficiary_category', 'TEXT'],
+    ['representative_name', 'TEXT'],
+    ['representative_relationship', 'TEXT'],
+    ['representative_contact', 'TEXT'],
+    ['barangay_certificate_reference', 'TEXT'],
+    ['spouse_name', 'TEXT'],
+    ['children_count', 'TEXT'],
+    ['rsbsa_number', 'TEXT'],
+    ['agricultural_activity', 'TEXT'],
+    ['farm_fishery_location', 'TEXT'],
+    ['land_tenure', 'TEXT'],
+    ['pcic_policy_number', 'TEXT']
+  ];
+  for (const [columnName, columnDefinition] of applicationDetailColumns) {
+    if (!applicationColumns.includes(columnName)) {
+      db.exec(`ALTER TABLE applications ADD COLUMN ${columnName} ${columnDefinition}`);
+    }
+  }
   if (!applicationColumns.includes('case_id')) {
     db.exec('ALTER TABLE applications ADD COLUMN case_id TEXT REFERENCES recovery_cases(case_id) ON DELETE SET NULL');
   }
@@ -333,80 +499,29 @@ export function initDatabase() {
   db.exec('CREATE INDEX IF NOT EXISTS idx_loss_records_case_id ON loss_records(case_id)');
   db.exec('CREATE INDEX IF NOT EXISTS idx_recovery_plans_case_id ON recovery_plans(case_id)');
 
-  if (!db.prepare('SELECT 1 FROM auth_ownership_migrations WHERE version = 1').get()) {
-    db.transaction(() => {
-      db.prepare('UPDATE recovery_cases SET user_id = NULL').run();
-      db.prepare('UPDATE applications SET user_id = NULL').run();
-      db.prepare('INSERT INTO auth_ownership_migrations (version) VALUES (1)').run();
-    })();
-  }
-
   migrateLegacyAssessments();
 
-  // Subsidies are intentionally not seeded. Import verified records from the template.
-  db.prepare('DELETE FROM subsidies WHERE source_url IS NULL OR last_verified_on IS NULL').run();
-  importVerifiedSubsidies();
-}
-
-function importVerifiedSubsidies() {
-  const dataPath = path.join(__dirname, 'data', 'subsidies.json');
-  if (!fs.existsSync(dataPath)) return;
-  let records;
-  try {
-    records = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
-  } catch (error) {
-    console.error('Unable to read backend/data/subsidies.json:', error.message);
-    return;
-  }
-  if (!Array.isArray(records)) {
-    console.error('backend/data/subsidies.json must contain an array.');
-    return;
-  }
-
-  const insert = db.prepare(`
-    INSERT INTO subsidies (
-      subsidy_id, agency, title, short_description, details, max_amount_php,
-      amount_display, disaster_categories, damage_types, min_severity,
-      requirements, contact_info, application_steps, source_url, last_verified_on
-    ) VALUES (
-      @id, @agency, @title, @short_description, @details, @max_amount_php,
-      @amount_display, @disaster_categories, @damage_types, @min_severity,
-      @requirements, @contact_info, @application_steps, @source_url, @last_verified_on
-    )
-  `);
-  const importRecords = db.transaction((items) => {
-    db.prepare('DELETE FROM subsidies').run();
-    for (const item of items) {
-      if (
-        !item.id
-        || item.id === 'replace-with-stable-program-id'
-        || !item.title
-        || !item.agency
-        || !item.source_url
-        || item.source_url.includes('.example')
-        || !item.last_verified_on
-        || item.last_verified_on === 'YYYY-MM-DD'
-      ) {
-        throw new Error('Every subsidy must include id, agency, title, source_url, and last_verified_on.');
-      }
-      insert.run({
-        ...item,
-        // SQLite uses zero only for sorting/filtering when the official source
-        // does not publish a universal amount. The UI shows amount_display.
-        max_amount_php: item.max_amount_php == null ? 0 : item.max_amount_php,
-        disaster_categories: JSON.stringify(item.disaster_categories || []),
-        damage_types: JSON.stringify(item.damage_types || []),
-        requirements: JSON.stringify(item.requirements || []),
-        application_steps: JSON.stringify(item.application_steps || [])
-      });
+  // Version 1 is intentionally left untouched; its former blanket reset must never run again.
+  const ownershipMigration = migrateOwnershipV2(db);
+  if (ownershipMigration.applied) {
+    if (ownershipMigration.repairedCases || ownershipMigration.repairedApplications) {
+      console.warn(
+        `[ownership migration v2] Cleared dangling user references: `
+        + `${ownershipMigration.repairedCases} recovery case(s), `
+        + `${ownershipMigration.repairedApplications} application(s).`
+      );
     }
-  });
-  try {
-    importRecords(records);
-    console.log(`Imported ${records.length} verified subsidy program(s) from backend/data/subsidies.json.`);
-  } catch (error) {
-    console.error('Unable to import verified subsidies:', error.message);
+    if (ownershipMigration.conflictingOwnership || ownershipMigration.unresolvedOwnership) {
+      console.warn(
+        `[ownership migration v2] Preserved ownership values and case links for `
+        + `${ownershipMigration.conflictingOwnership} application/case pair(s) with different owners `
+        + `and ${ownershipMigration.unresolvedOwnership} pair(s) with one owner missing. `
+        + 'No ownership was inferred or reconciled.'
+      );
+    }
   }
+
+  importSubsidyCatalog(db, path.join(__dirname, 'data', 'subsidies.json'));
 }
 
 export default db;

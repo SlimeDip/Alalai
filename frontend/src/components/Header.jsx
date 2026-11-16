@@ -22,9 +22,14 @@ export default function Header({
 
   const navItems = [
     { id: 'landing', label: t('home') },
+    { id: 'dashboard', label: t('dashboard') },
     { id: 'assessment', label: t('assessment') },
+    { id: 'cases', label: t('recoveryCasesNav') },
     { id: 'subsidies', label: t('subsidies') },
-    { id: 'saved', label: t('records') }
+    { id: 'saved', label: t('records') },
+    { id: 'tracker', label: t('trackerNav') },
+    { id: 'aid', label: t('aidLedgerNav') },
+    { id: 'vault', label: t('documentVaultNav') }
   ];
 
   return (

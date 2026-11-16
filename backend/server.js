@@ -6,6 +6,10 @@ import { initDatabase } from './database.js';
 import authRouter, { requireAuthenticatedUser } from './routes/auth.js';
 import assessmentsRouter from './routes/assessments.js';
 import applicationsRouter from './routes/applications.js';
+import trackerRouter from './routes/tracker.js';
+import aidRouter from './routes/aid.js';
+import documentsRouter from './routes/documents.js';
+import packetsRouter from './routes/packets.js';
 import subsidiesRouter from './routes/subsidies.js';
 import { isGeminiConfigured } from './services/aiService.js';
 
@@ -20,7 +24,7 @@ const frontendOrigin = process.env.FRONTEND_ORIGIN || 'http://localhost:3000';
 app.use(cors({
   origin: (origin, callback) => callback(null, !origin || origin === frontendOrigin),
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
 }));
 app.use(express.json());
 
@@ -29,6 +33,10 @@ app.use('/api/auth', authRouter);
 app.use('/api/assessments', assessmentsRouter);
 app.use('/api/subsidies', subsidiesRouter);
 app.use('/api/applications', requireAuthenticatedUser, applicationsRouter);
+app.use('/api/tracker', requireAuthenticatedUser, trackerRouter);
+app.use('/api/aid', requireAuthenticatedUser, aidRouter);
+app.use('/api/documents', requireAuthenticatedUser, documentsRouter);
+app.use('/api/packets', requireAuthenticatedUser, packetsRouter);
 
 app.use((error, req, res, next) => {
   if (error instanceof SyntaxError && error.status === 400 && Object.hasOwn(error, 'body')) {
@@ -58,7 +66,7 @@ app.get('/', (req, res) => {
 // Return upload and other middleware errors as JSON for the frontend.
 app.use((error, req, res, next) => {
   if (error instanceof multer.MulterError) {
-    return res.status(400).json({ success: false, error: 'Image upload failed: ' + error.message });
+    return res.status(400).json({ success: false, error: 'File upload failed: ' + error.message });
   }
   if (error) {
     console.error('Unhandled API error:', error);

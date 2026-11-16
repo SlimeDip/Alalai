@@ -1,12 +1,18 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import Header from './components/Header';
 import LandingPage from './components/LandingPage';
+import RecoveryDashboard from './components/RecoveryDashboard';
 import AuthModal from './components/AuthModal';
 import DamageAssessmentForm from './components/DamageAssessmentForm';
 import SubsidyCatalog from './components/SubsidyCatalog';
 import OfficialApplicationView from './components/OfficialApplicationView';
 import SavedApplicationsList from './components/SavedApplicationsList';
+import ApplicationTracker from './components/ApplicationTracker';
+import AidLedger from './components/AidLedger';
+import DocumentVault from './components/DocumentVault';
+import RecoveryCaseWorkspace from './components/RecoveryCaseWorkspace';
 import { translations } from './utils/translations';
+import { createCaseApplicationContext } from './utils/recoveryCaseWorkspace';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('landing');
@@ -43,6 +49,8 @@ export default function App() {
   const [authModalMode, setAuthModalMode] = useState('signin');
 
   const [selectedApplicationData, setSelectedApplicationData] = useState(null);
+  const [applicationFormVersion, setApplicationFormVersion] = useState(0);
+  const [workflowCaseId, setWorkflowCaseId] = useState('');
 
   useEffect(() => {
     fetch('/api/auth/me', { credentials: 'include' })
@@ -117,8 +125,19 @@ export default function App() {
       subsidy,
       assessment,
       applicant,
+      caseId: assessment?.case_id ?? null,
+      caseLabel: assessment
+        ? [
+          assessment.disaster_type,
+          [assessment.barangay, assessment.city_municipality, assessment.province]
+            .filter(Boolean)
+            .join(', '),
+          assessment.incident_date
+        ].filter(Boolean).join(' — ')
+        : '',
       returnTab
     });
+    setApplicationFormVersion((version) => version + 1);
     setActiveTab('application');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -128,8 +147,66 @@ export default function App() {
       fullRecord: savedItem,
       returnTab: 'saved'
     });
+    setApplicationFormVersion((version) => version + 1);
     setActiveTab('application');
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleSelectCaseRelatedApplication = (savedItem) => {
+    setSelectedApplicationData({
+      fullRecord: savedItem,
+      returnTab: 'cases'
+    });
+    setApplicationFormVersion((version) => version + 1);
+    setActiveTab('application');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handlePrepareApplicationFromCase = (recoveryCase) => {
+    setSelectedApplicationData(createCaseApplicationContext(recoveryCase));
+    setApplicationFormVersion((version) => version + 1);
+    setActiveTab('application');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDashboardPrepareApplication = (recoveryCase) => {
+    setSelectedApplicationData({
+      ...createCaseApplicationContext(recoveryCase),
+      returnTab: 'dashboard'
+    });
+    setApplicationFormVersion((version) => version + 1);
+    setActiveTab('application');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDashboardOpenApplication = (savedItem) => {
+    setSelectedApplicationData({
+      fullRecord: savedItem,
+      returnTab: 'dashboard'
+    });
+    setApplicationFormVersion((version) => version + 1);
+    setActiveTab('application');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleNavigateToCaseWorkflow = (tab, caseId) => {
+    setWorkflowCaseId(caseId || '');
+    setActiveTab(tab);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const dashboardProps = {
+    user,
+    onStartCase: () => setActiveTab('assessment'),
+    onOpenLogin: () => { setAuthModalMode('signin'); setAuthModalOpen(true); },
+    onOpenCases: (caseId) => handleNavigateToCaseWorkflow('cases', caseId),
+    onPrepareApplication: handleDashboardPrepareApplication,
+    onOpenApplication: handleDashboardOpenApplication,
+    onOpenTracker: (caseId) => handleNavigateToCaseWorkflow('tracker', caseId),
+    onOpenAidLedger: (caseId) => handleNavigateToCaseWorkflow('aid', caseId),
+    onOpenVault: (caseId) => handleNavigateToCaseWorkflow('vault', caseId),
+    t,
+    lang
   };
 
   return (
@@ -137,7 +214,10 @@ export default function App() {
       <div className="app-main-canvas">
         <Header
           activeTab={activeTab}
-          onNavigate={setActiveTab}
+          onNavigate={(tab) => {
+            setWorkflowCaseId('');
+            setActiveTab(tab);
+          }}
           user={user}
           onOpenLogin={() => { setAuthModalMode('signin'); setAuthModalOpen(true); }}
           onOpenProfile={() => { setAuthModalMode('profile'); setAuthModalOpen(true); }}
@@ -155,13 +235,27 @@ export default function App() {
                 setActiveTab('assessment');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
+              user={user}
+              onOpenLogin={dashboardProps.onOpenLogin}
+              onOpenCases={dashboardProps.onOpenCases}
+              onPrepareApplication={dashboardProps.onPrepareApplication}
+              onOpenApplication={dashboardProps.onOpenApplication}
+              onOpenTracker={dashboardProps.onOpenTracker}
+              onOpenAidLedger={dashboardProps.onOpenAidLedger}
+              onOpenVault={dashboardProps.onOpenVault}
+              lang={lang}
               t={t}
             />
+          )}
+
+          {activeTab === 'dashboard' && (
+            <RecoveryDashboard key={user?.id || user?.user_id || 'guest'} {...dashboardProps} />
           )}
 
           <div style={{ display: activeTab === 'assessment' ? 'block' : 'none' }}>
             <DamageAssessmentForm
               user={user}
+              csrfToken={csrfToken}
               t={t}
               lang={lang}
               onSelectSubsidyForApplication={handleSelectSubsidyForApplication}
@@ -179,14 +273,18 @@ export default function App() {
 
           <div style={{ display: activeTab === 'application' ? 'block' : 'none' }}>
             <OfficialApplicationView
+              key={applicationFormVersion}
               initialData={selectedApplicationData}
               user={user}
+              csrfToken={csrfToken}
               t={t}
               lang={lang}
               onBack={() => setActiveTab(selectedApplicationData?.returnTab || 'subsidies')}
               backLabel={
                 selectedApplicationData?.returnTab === 'assessment'
                   ? t('backToAssessment')
+                  : selectedApplicationData?.returnTab === 'cases'
+                  ? t('backToCases')
                   : selectedApplicationData?.returnTab === 'saved'
                   ? (t('backToSaved') || 'Back to Saved Applications')
                   : t('backToSubsidies')
@@ -196,7 +294,58 @@ export default function App() {
           </div>
 
           {activeTab === 'saved' && (
-            <SavedApplicationsList onSelectApplication={handleSelectSavedApplication} t={t} lang={lang} />
+            <SavedApplicationsList
+              onSelectApplication={handleSelectSavedApplication}
+              user={user}
+              csrfToken={csrfToken}
+              t={t}
+              lang={lang}
+            />
+          )}
+
+          {activeTab === 'cases' && (
+            <RecoveryCaseWorkspace
+              key={user?.id || user?.user_id || 'guest'}
+              user={user}
+              initialCaseId={workflowCaseId}
+              onOpenLogin={() => { setAuthModalMode('signin'); setAuthModalOpen(true); }}
+              onStartAssessment={() => setActiveTab('assessment')}
+              onPrepareApplication={handlePrepareApplicationFromCase}
+              onOpenApplication={handleSelectCaseRelatedApplication}
+              onNavigateToWorkflow={handleNavigateToCaseWorkflow}
+              t={t}
+              lang={lang}
+            />
+          )}
+
+          {activeTab === 'tracker' && (
+            <ApplicationTracker
+              user={user}
+              csrfToken={csrfToken}
+              initialCaseId={workflowCaseId}
+              onOpenLogin={() => { setAuthModalMode('signin'); setAuthModalOpen(true); }}
+              t={t}
+            />
+          )}
+
+          {activeTab === 'aid' && (
+            <AidLedger
+              user={user}
+              csrfToken={csrfToken}
+              initialCaseId={workflowCaseId}
+              onOpenLogin={() => { setAuthModalMode('signin'); setAuthModalOpen(true); }}
+              t={t}
+            />
+          )}
+
+          {activeTab === 'vault' && (
+            <DocumentVault
+              user={user}
+              csrfToken={csrfToken}
+              initialCaseId={workflowCaseId}
+              onOpenLogin={() => { setAuthModalMode('signin'); setAuthModalOpen(true); }}
+              t={t}
+            />
           )}
         </main>
 

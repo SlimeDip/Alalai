@@ -15,6 +15,7 @@ frontend/node_modules/
 backend/*.db
 backend/*.db-wal
 backend/*.db-shm
+backend/private-documents/
 
 # Environment Variables
 .env
