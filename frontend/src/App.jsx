@@ -56,7 +56,7 @@ export default function App() {
     fetch('/api/auth/me', { credentials: 'include' })
       .then(async (response) => {
         if (!response.ok) return null;
-        return response.json();
+        return response.json().catch(() => null);
       })
       .then((result) => {
         if (result?.success) {
@@ -75,7 +75,7 @@ export default function App() {
       credentials: 'include',
       body: JSON.stringify(credentials)
     });
-    const result = await response.json();
+    const result = await response.json().catch(() => ({}));
     if (!response.ok || !result.success) throw new Error(result.error || 'Unable to authenticate.');
     setUser(result.data);
     setCsrfToken(result.csrfToken || '');
@@ -91,7 +91,7 @@ export default function App() {
       credentials: 'include',
       body: JSON.stringify(profile)
     });
-    const result = await response.json();
+    const result = await response.json().catch(() => ({}));
     if (!response.ok || !result.success) throw new Error(result.error || 'Unable to update profile.');
     setUser(result.data);
     localStorage.setItem('alalai_user', JSON.stringify(result.data));
@@ -235,15 +235,7 @@ export default function App() {
                 setActiveTab('assessment');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
-              user={user}
               onOpenLogin={dashboardProps.onOpenLogin}
-              onOpenCases={dashboardProps.onOpenCases}
-              onPrepareApplication={dashboardProps.onPrepareApplication}
-              onOpenApplication={dashboardProps.onOpenApplication}
-              onOpenTracker={dashboardProps.onOpenTracker}
-              onOpenAidLedger={dashboardProps.onOpenAidLedger}
-              onOpenVault={dashboardProps.onOpenVault}
-              lang={lang}
               t={t}
             />
           )}

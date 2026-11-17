@@ -14,7 +14,7 @@ export default function SubsidyCatalog({ onSelectSubsidyForApplication, t, lang 
     const loadSubsidies = async () => {
       try {
         const response = await fetch('/api/subsidies');
-        const payload = await response.json();
+        const payload = await response.json().catch(() => ({}));
         if (!response.ok || !payload.success || !Array.isArray(payload.subsidies)) {
           throw new Error(payload.error || 'Unable to load subsidy programs.');
         }
@@ -67,7 +67,6 @@ export default function SubsidyCatalog({ onSelectSubsidyForApplication, t, lang 
           {t('subsidiesTitle')}
         </h2>
         <p className="card-subheading-lg">{t('subsidiesSubtitle')}</p>
-        <p role="note" className="subsidy-catalog-disclaimer">{t('catalogDisclaimer')}</p>
         <div className="form-group" style={{ marginTop: 20, maxWidth: 480 }}>
           <label className="form-label"><Search size={15} /> {t('searchReliefPrograms')}</label>
           <input
@@ -109,7 +108,6 @@ export default function SubsidyCatalog({ onSelectSubsidyForApplication, t, lang 
               return (
               <div key={sub.id} className="subsidy-card">
                 <div>
-                  <span className="subsidy-catalog-label">{t('generalCatalogEntry')}</span>
                   <span className="subsidy-agency">{sub.agency}</span>
                   <h3 style={{ fontSize: 17, fontWeight: 700, margin: '5px 0 6px' }}>{sub.title}</h3>
                   <p style={{ fontSize: 14, color: 'var(--slate-600)', marginBottom: 10 }}>{program.purpose}</p>
@@ -152,7 +150,6 @@ export default function SubsidyCatalog({ onSelectSubsidyForApplication, t, lang 
                 <X size={20} />
               </button>
             </div>
-            <span className="subsidy-catalog-label">{t('generalCatalogEntry')}</span>
             {selectedModalSubsidy.agency && (
               <p className="subsidy-agency">{selectedModalSubsidy.agency}</p>
             )}

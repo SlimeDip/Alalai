@@ -1,4 +1,6 @@
-import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+import pdfLib from 'pdf-lib';
+
+const { PDFDocument, StandardFonts, rgb } = pdfLib;
 
 const PAGE_WIDTH = 595.28;
 const PAGE_HEIGHT = 841.89;

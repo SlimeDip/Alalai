@@ -1,19 +1,10 @@
 import React, { useState } from 'react';
 import { ChevronDown, HelpCircle } from 'lucide-react';
-import RecoveryDashboard from './RecoveryDashboard';
 
 export default function LandingPage({
   onStartAssessment,
-  user,
   onOpenLogin,
-  onOpenCases,
-  onPrepareApplication,
-  onOpenApplication,
-  onOpenTracker,
-  onOpenAidLedger,
-  onOpenVault,
   t,
-  lang
 }) {
   const [openItems, setOpenItems] = useState([]);
 
@@ -47,22 +38,15 @@ export default function LandingPage({
 
         <p className="landing-lead">{t('landingSubtitle')}</p>
 
+        <div className="landing-cta-row">
+          <button type="button" className="btn btn-primary btn-lg" onClick={onStartAssessment}>
+            {t('startNewCase')}
+          </button>
+          <button type="button" className="btn btn-secondary btn-lg" onClick={onOpenLogin}>
+            {t('login')}
+          </button>
+        </div>
       </section>
-
-      <RecoveryDashboard
-        key={user?.id || user?.user_id || 'guest'}
-        user={user}
-        onStartCase={onStartAssessment}
-        onOpenLogin={onOpenLogin}
-        onOpenCases={onOpenCases}
-        onPrepareApplication={onPrepareApplication}
-        onOpenApplication={onOpenApplication}
-        onOpenTracker={onOpenTracker}
-        onOpenAidLedger={onOpenAidLedger}
-        onOpenVault={onOpenVault}
-        t={t}
-        lang={lang}
-      />
 
       <section className="landing-faq">
         <div className="landing-faq-header">
