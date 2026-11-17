@@ -50,10 +50,19 @@ GEMINI_API_KEY=your_gemini_api_key_here
   - `subsidies`: Catalog of Philippine disaster relief programs (DSWD ESA, DSWD AICS, DA SURE, Pag-IBIG, SSS, LGU).
   - `assessments`: Damage reports, severity scoring, cost ranges (PHP), and AI assessment logs.
   - `applications`: Official printable intake applications with editable fields and reference tracking numbers (`NDRRMC-PH-2026-XXXX`).
+  - `tracked_applications`, `tracked_application_history`, and `follow_up_reminders`: Private, user-reported program tracking and in-app reminders.
+  - `aid_ledger`: Separately records assistance a household reports actually receiving, without changing application status or eligibility.
+  - `recovery_documents`: Private file metadata for recovery-case documents; the file bytes are stored outside public directories.
 
 ---
 
 ## 6. How to Run the Application
+
+The document vault requires a private writable directory that persists across
+server restarts. It defaults to `backend/private-documents`; set
+`PRIVATE_DOCUMENTS_DIR` to a protected persistent volume in deployment. Do not
+enable vault uploads on an ephemeral filesystem that cannot retain private
+files.
 
 ### Option A: Running Backend and Frontend in separate terminals
 

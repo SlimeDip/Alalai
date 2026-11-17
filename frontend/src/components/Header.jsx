@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, X, LogOut, LogIn, User, Moon, Sun, Minus, Plus } from 'lucide-react';
+import { Menu, X, LogOut, LogIn, User, Moon, Sun, Minus, Plus, ChevronDown } from 'lucide-react';
 
 export default function Header({
   activeTab,
@@ -14,8 +14,6 @@ export default function Header({
   t
 }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  
-  // --- ADDED: Theme and Font Size State ---
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [fontSize, setFontSize] = useState(16);
 
@@ -34,7 +32,6 @@ export default function Header({
     document.documentElement.style.fontSize = `${initialSize}px`;
   }, []);
 
-  // Theme Toggle Function
   const toggleTheme = () => {
     setIsDarkMode((prev) => {
       const newTheme = !prev;
@@ -49,12 +46,10 @@ export default function Header({
     });
   };
 
-  // Font Size Change Function (with Console Log and Direct HTML Scaling)
   const changeFontSize = (step) => {
     setFontSize((prev) => {
       const newSize = Math.max(14, Math.min(24, prev + step));
       
-      console.log(`Pinindot ang font button! Bagong size: ${newSize}px`);
       document.documentElement.style.setProperty('--base-font-size', `${newSize}px`);
       document.documentElement.style.fontSize = `${newSize}px`;
       
@@ -62,19 +57,31 @@ export default function Header({
       return newSize;
     });
   };
-  // --- END ADDED LOGIC ---
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
 
   const handleNavClick = (tab) => {
     onNavigate(tab);
     setMobileMenuOpen(false);
+    setMoreMenuOpen(false);
   };
 
-  const navItems = [
+  const primaryNavItems = [
     { id: 'landing', label: t('home') },
+    { id: 'dashboard', label: t('dashboard') },
     { id: 'assessment', label: t('assessment') },
-    { id: 'subsidies', label: t('subsidies') },
-    { id: 'saved', label: t('records') }
+    { id: 'subsidies', label: t('subsidies') }
   ];
+
+  const secondaryNavItems = [
+    { id: 'cases', label: t('recoveryCasesNav') },
+    { id: 'saved', label: t('records') },
+    { id: 'tracker', label: t('trackerNav') },
+    { id: 'aid', label: t('aidLedgerNav') },
+    { id: 'vault', label: t('documentVaultNav') }
+  ];
+
+  const navItems = [...primaryNavItems, ...secondaryNavItems];
+  const secondaryTabActive = secondaryNavItems.some((item) => activeTab === item.id);
 
   return (
     <header className="no-print">
@@ -97,7 +104,7 @@ export default function Header({
         </div>
 
         <div className="navbar-links">
-          {navItems.map((item) => (
+          {primaryNavItems.map((item) => (
             <button
               key={item.id}
               type="button"
@@ -107,10 +114,36 @@ export default function Header({
               {item.label}
             </button>
           ))}
+          <div className="navbar-more">
+            <button
+              type="button"
+              className={`navbar-link navbar-more-toggle ${secondaryTabActive ? 'active' : ''}`}
+              onClick={() => setMoreMenuOpen(!moreMenuOpen)}
+              aria-expanded={moreMenuOpen}
+              aria-haspopup="menu"
+            >
+              {t('more')}
+              <ChevronDown size={15} aria-hidden="true" />
+            </button>
+            {moreMenuOpen && (
+              <div className="navbar-more-menu" role="menu">
+                {secondaryNavItems.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    role="menuitem"
+                    className={`navbar-more-item ${activeTab === item.id ? 'active' : ''}`}
+                    onClick={() => handleNavClick(item.id)}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="navbar-cta">
-          {/* --- ADDED: Accessibility Controls (Desktop) --- */}
           <div className="flex items-center gap-2 mr-2 hidden md:flex" style={{ gap: '8px', marginRight: '12px' }}>
             <div className="lang-toggle" style={{ margin: 0 }}>
               <button 
@@ -213,7 +246,6 @@ export default function Header({
               ))}
             </div>
             <div className="mobile-drawer-footer">
-              {/* --- ADDED: Accessibility Controls (Mobile) --- */}
               <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', justifyContent: 'space-between' }}>
                 <div className="lang-toggle" style={{ margin: 0, flex: 1 }}>
                   <button onClick={() => changeFontSize(-2)} className="lang-btn" type="button" style={{ width: '50%' }}>

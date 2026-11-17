@@ -22,6 +22,7 @@ import {
   X,
 } from 'lucide-react';
 import { runDamageAssessment } from '../utils/assessmentApi';
+import { getAssessmentEligibilityModel } from '../utils/subsidyPresentation';
 
 const DISASTERS = [
   { value: 'Typhoon', icon: Wind, titleKey: 'disasterTyphoon', descKey: 'disasterTyphoonDesc' },
@@ -51,7 +52,7 @@ const COST_TIERS = [
   { value: 'over100', labelKey: 'estOver100k' }
 ];
 
-export default function DamageAssessmentForm({ user, t, lang = 'en', onSelectSubsidyForApplication, onViewReliefOptions }) {
+export default function DamageAssessmentForm({ user, csrfToken, t, lang = 'en', onSelectSubsidyForApplication, onViewReliefOptions }) {
   const [currentStep, setCurrentStep] = useState(1);
   const [inputMethod, setInputMethod] = useState(null);
 
@@ -183,7 +184,7 @@ export default function DamageAssessmentForm({ user, t, lang = 'en', onSelectSub
         ...assessmentPayload,
         incidentDate: formData.incidentDate,
         damageImage
-      });
+      }, csrfToken);
       setResult(assessment);
       goStep(3);
     } catch (err) {
@@ -226,6 +227,8 @@ export default function DamageAssessmentForm({ user, t, lang = 'en', onSelectSub
     setFormData((prev) => ({ ...prev, disasterType: '', damageDescription: '' }));
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  const eligibility = getAssessmentEligibilityModel(result);
 
   return (
     <div>
@@ -555,39 +558,81 @@ export default function DamageAssessmentForm({ user, t, lang = 'en', onSelectSub
           </div>
 
           <div style={{ marginTop: 28 }}>
-            <h3 className="card-heading-lg">{t('subsidiesTitle')}</h3>
-            <p className="card-subheading-lg">{t('subsidiesSubtitle')}</p>
+            <h3 className="card-heading-lg">{t('screeningResultsTitle')}</h3>
+            <p className="card-subheading-lg">{t('screeningResultsSubtitle')}</p>
+            <p role="note" className="subsidy-screening-disclaimer">
+              {t('screeningDisclaimer')}
+            </p>
 
-            <div className="subsidy-grid">
-              {(result.matched_subsidies || []).slice(0, 8).map((sub) => (
-                <div key={sub.id} className={`subsidy-card ${sub.is_top_match ? 'top-match' : ''}`}>
-                  <div>
-                    {sub.is_top_match && <span className="top-match-tag">{t('recommended')}</span>}
-                    <h4 style={{ fontSize: 17, fontWeight: 700, margin: '8px 0 6px' }}>{sub.title}</h4>
-                    <p style={{ fontSize: 14, color: 'var(--slate-600)', marginBottom: 10 }}>{sub.short_description}</p>
-                    <div className="subsidy-amount">
-                      {Number(sub.amount_display) > 0 ? `₱${Number(sub.amount_display).toLocaleString()}` : t('amountVaries')}
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    className="btn btn-primary"
-                    style={{ width: '100%', marginTop: 16 }}
-                    onClick={() =>
-                      onSelectSubsidyForApplication({
-                        subsidy: sub,
-                        assessment: result,
-                        applicant: formData,
-                        returnTab: 'assessment'
-                      })
-                    }
+            {eligibility.state === 'empty' ? (
+              <p className="field-help">{t('noScreeningResults')}</p>
+            ) : (
+              <div className="subsidy-grid">
+                {eligibility.programs.map((sub, index) => (
+                  <article
+                    key={sub.id || `${sub.title || 'program'}-${index}`}
+                    className={`subsidy-card subsidy-screening-card subsidy-screening-card--${sub.outcomeClass}`}
                   >
-                    {t('applySubsidyBtn')}
-                    <ArrowRight size={15} />
-                  </button>
-                </div>
-              ))}
-            </div>
+                    <div>
+                      <span className={`subsidy-outcome subsidy-outcome--${sub.outcomeClass}`}>
+                        {t(`screeningOutcome${sub.outcomeKey.charAt(0).toUpperCase()}${sub.outcomeKey.slice(1)}`)}
+                      </span>
+                      <h4 style={{ fontSize: 17, fontWeight: 700, margin: '8px 0 6px' }}>
+                        {sub.title || t('programTitleUnavailable')}
+                      </h4>
+                      {sub.short_description && (
+                        <p style={{ fontSize: 14, color: 'var(--slate-600)', marginBottom: 10 }}>
+                          {sub.short_description}
+                        </p>
+                      )}
+                      <div className="subsidy-amount">
+                        {Number(sub.amount_display) > 0
+                          ? `₱${Number(sub.amount_display).toLocaleString()}`
+                          : t('amountVaries')}
+                      </div>
+                      <div className="subsidy-screening-details">
+                        <div>
+                          <strong>{t('screeningReasons')}</strong>
+                          {sub.reasons.length
+                            ? <ul>{sub.reasons.map((reason, reasonIndex) => <li key={reasonIndex}>{reason}</li>)}</ul>
+                            : <p>{t('screeningDetailsNotReturned')}</p>}
+                        </div>
+                        <div>
+                          <strong>{t('screeningMissingInformation')}</strong>
+                          {sub.missingInformation.length
+                            ? <ul>{sub.missingInformation.map((item, itemIndex) => <li key={itemIndex}>{item}</li>)}</ul>
+                            : <p>{t('screeningDetailsNotReturned')}</p>}
+                        </div>
+                        <div>
+                          <strong>{t('screeningRestrictions')}</strong>
+                          {sub.restrictions.length
+                            ? <ul>{sub.restrictions.map((item, itemIndex) => <li key={itemIndex}>{item}</li>)}</ul>
+                            : <p>{t('screeningDetailsNotReturned')}</p>}
+                        </div>
+                      </div>
+                    </div>
+                    {sub.outcomeKey !== 'noCurrentMatch' && (
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        style={{ width: '100%', marginTop: 16 }}
+                        onClick={() =>
+                          onSelectSubsidyForApplication({
+                            subsidy: sub,
+                            assessment: result,
+                            applicant: formData,
+                            returnTab: 'assessment'
+                          })
+                        }
+                      >
+                        {t('applySubsidyBtn')}
+                        <ArrowRight size={15} />
+                      </button>
+                    )}
+                  </article>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -189,6 +189,11 @@ export function requireAuthenticatedUser(req, res, next) {
   }
 }
 
+export function optionalAuthenticatedUser(req, res, next) {
+  if (!getSessionToken(req)) return next();
+  return requireAuthenticatedUser(req, res, next);
+}
+
 router.post('/register', registerLimiter, async (req, res) => {
   try {
     const {

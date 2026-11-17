@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Layers, ArrowRight, Search, SlidersHorizontal, X, ExternalLink, CheckCircle2, ListChecks } from 'lucide-react';
+import { getCatalogProgramPresentation } from '../utils/subsidyPresentation';
 
 export default function SubsidyCatalog({ onSelectSubsidyForApplication, t, lang = 'en' }) {
   const [subsidies, setSubsidies] = useState([]);
@@ -13,7 +14,7 @@ export default function SubsidyCatalog({ onSelectSubsidyForApplication, t, lang 
     const loadSubsidies = async () => {
       try {
         const response = await fetch('/api/subsidies');
-        const payload = await response.json();
+        const payload = await response.json().catch(() => ({}));
         if (!response.ok || !payload.success || !Array.isArray(payload.subsidies)) {
           throw new Error(payload.error || 'Unable to load subsidy programs.');
         }
@@ -54,6 +55,9 @@ export default function SubsidyCatalog({ onSelectSubsidyForApplication, t, lang 
     ].join(' ').toLowerCase();
     return categoryMatches && (!query || searchable.includes(query));
   });
+  const selectedProgram = selectedModalSubsidy
+    ? getCatalogProgramPresentation(selectedModalSubsidy)
+    : null;
 
   return (
     <div>
@@ -99,16 +103,20 @@ export default function SubsidyCatalog({ onSelectSubsidyForApplication, t, lang 
           </p>
         )}
         <div className="subsidy-grid" style={{ marginTop: 20 }}>
-            {filtered.map((sub) => (
+            {filtered.map((sub) => {
+              const program = getCatalogProgramPresentation(sub);
+              return (
               <div key={sub.id} className="subsidy-card">
                 <div>
                   <span className="subsidy-agency">{sub.agency}</span>
                   <h3 style={{ fontSize: 17, fontWeight: 700, margin: '5px 0 6px' }}>{sub.title}</h3>
-                  <p style={{ fontSize: 14, color: 'var(--slate-600)', marginBottom: 10 }}>{sub.short_description}</p>
+                  <p style={{ fontSize: 14, color: 'var(--slate-600)', marginBottom: 10 }}>{program.purpose}</p>
                   <div className="subsidy-amount">
                     {Number(sub.amount_display) > 0 ? `₱${Number(sub.amount_display).toLocaleString()}` : t('amountVaries')}
                   </div>
-                  <p className="subsidy-meta">Verified: {sub.last_verified_on}</p>
+                  {program.lastReviewedOn && (
+                    <p className="subsidy-meta">{t('catalogLastReviewed')}: {program.lastReviewedOn}</p>
+                  )}
                 </div>
                 <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
                   <button type="button" className="btn btn-secondary btn-sm" style={{ flex: 1 }} onClick={() => setSelectedModalSubsidy(sub)}>
@@ -125,7 +133,11 @@ export default function SubsidyCatalog({ onSelectSubsidyForApplication, t, lang 
                   </button>
                 </div>
               </div>
-            ))}
+              );
+            })}
+            {!isLoading && !loadError && filtered.length === 0 && subsidies.length > 0 && (
+              <p className="field-help">{t('noProgramsMatchFilter')}</p>
+            )}
         </div>
       </div>
 
@@ -138,30 +150,52 @@ export default function SubsidyCatalog({ onSelectSubsidyForApplication, t, lang 
                 <X size={20} />
               </button>
             </div>
+            {selectedModalSubsidy.agency && (
+              <p className="subsidy-agency">{selectedModalSubsidy.agency}</p>
+            )}
             <div className="subsidy-amount">
               {Number(selectedModalSubsidy.amount_display) > 0
                 ? `₱${Number(selectedModalSubsidy.amount_display).toLocaleString()}`
                 : t('amountVaries')}
             </div>
-            <p style={{ fontSize: 15, marginTop: 10 }}>{selectedModalSubsidy.details}</p>
-            <p className="subsidy-channel">{selectedModalSubsidy.application_channel}</p>
+            <h4>{t('programPurpose')}</h4>
+            <p style={{ fontSize: 15, marginTop: 10 }}>
+              {selectedProgram.purpose || t('programDetailsUnavailable')}
+            </p>
+            {selectedModalSubsidy.details && selectedModalSubsidy.details !== selectedProgram.purpose && (
+              <>
+                <h4>{t('programDescription')}</h4>
+                <p style={{ fontSize: 15, marginTop: 10 }}>{selectedModalSubsidy.details}</p>
+              </>
+            )}
+            {selectedModalSubsidy.application_channel && (
+              <p className="subsidy-channel">{selectedModalSubsidy.application_channel}</p>
+            )}
             <div className="subsidy-detail-columns">
               <div>
-                <h4><CheckCircle2 size={15} /> Prepare</h4>
+                <h4><CheckCircle2 size={15} /> {t('programRequirements')}</h4>
                 <ul>
-                  {selectedModalSubsidy.requirements.map((item) => <li key={item}>{item}</li>)}
+                  {selectedProgram.requirements.length
+                    ? selectedProgram.requirements.map((item, index) => <li key={`${item}-${index}`}>{item}</li>)
+                    : <li>{t('programDetailsUnavailable')}</li>}
                 </ul>
               </div>
               <div>
-                <h4><ListChecks size={15} /> How to apply</h4>
+                <h4><ListChecks size={15} /> {t('programApplicationSteps')}</h4>
                 <ol>
-                  {selectedModalSubsidy.application_steps.map((item) => <li key={item}>{item}</li>)}
+                  {selectedProgram.applicationSteps.length
+                    ? selectedProgram.applicationSteps.map((item, index) => <li key={`${item}-${index}`}>{item}</li>)
+                    : <li>{t('programDetailsUnavailable')}</li>}
                 </ol>
               </div>
             </div>
-            <a className="subsidy-source-link" href={selectedModalSubsidy.source_url} target="_blank" rel="noreferrer">
-              Open official source <ExternalLink size={14} />
-            </a>
+            {selectedProgram.sourceUrl ? (
+              <a className="subsidy-source-link" href={selectedProgram.sourceUrl} target="_blank" rel="noreferrer">
+                {t('openProgramSource')} <ExternalLink size={14} />
+              </a>
+            ) : (
+              <p className="field-help">{t('programSourceUnavailable')}</p>
+            )}
             <div style={{ marginTop: 20, display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
               <button type="button" className="btn btn-secondary" onClick={() => setSelectedModalSubsidy(null)}>
                 {t('close')}
