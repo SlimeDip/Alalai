@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, X, LogOut, LogIn, User } from 'lucide-react';
+import { Menu, X, LogOut, LogIn, User, ChevronDown } from 'lucide-react';
 
 export default function Header({
   activeTab,
@@ -14,18 +14,31 @@ export default function Header({
   t
 }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
 
   const handleNavClick = (tab) => {
     onNavigate(tab);
     setMobileMenuOpen(false);
+    setMoreMenuOpen(false);
   };
 
-  const navItems = [
+  const primaryNavItems = [
     { id: 'landing', label: t('home') },
+    { id: 'dashboard', label: t('dashboard') },
     { id: 'assessment', label: t('assessment') },
-    { id: 'subsidies', label: t('subsidies') },
-    { id: 'saved', label: t('records') }
+    { id: 'subsidies', label: t('subsidies') }
   ];
+
+  const secondaryNavItems = [
+    { id: 'cases', label: t('recoveryCasesNav') },
+    { id: 'saved', label: t('records') },
+    { id: 'tracker', label: t('trackerNav') },
+    { id: 'aid', label: t('aidLedgerNav') },
+    { id: 'vault', label: t('documentVaultNav') }
+  ];
+
+  const navItems = [...primaryNavItems, ...secondaryNavItems];
+  const secondaryTabActive = secondaryNavItems.some((item) => activeTab === item.id);
 
   return (
     <header className="no-print">
@@ -48,7 +61,7 @@ export default function Header({
         </div>
 
         <div className="navbar-links">
-          {navItems.map((item) => (
+          {primaryNavItems.map((item) => (
             <button
               key={item.id}
               type="button"
@@ -58,6 +71,33 @@ export default function Header({
               {item.label}
             </button>
           ))}
+          <div className="navbar-more">
+            <button
+              type="button"
+              className={`navbar-link navbar-more-toggle ${secondaryTabActive ? 'active' : ''}`}
+              onClick={() => setMoreMenuOpen(!moreMenuOpen)}
+              aria-expanded={moreMenuOpen}
+              aria-haspopup="menu"
+            >
+              {t('more')}
+              <ChevronDown size={15} aria-hidden="true" />
+            </button>
+            {moreMenuOpen && (
+              <div className="navbar-more-menu" role="menu">
+                {secondaryNavItems.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    role="menuitem"
+                    className={`navbar-more-item ${activeTab === item.id ? 'active' : ''}`}
+                    onClick={() => handleNavClick(item.id)}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="navbar-cta">

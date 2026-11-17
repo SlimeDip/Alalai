@@ -11,10 +11,20 @@ const stringFields = [
   'assessment_id',
   'case_id',
   'applicant_name',
+  'birth_date',
+  'sex',
   'civil_status',
   'contact_number',
   'valid_id_type',
   'valid_id_number',
+  'occupation',
+  'beneficiary_category',
+  'representative_name',
+  'representative_relationship',
+  'representative_contact',
+  'barangay_certificate_reference',
+  'spouse_name',
+  'children_count',
   'province',
   'city_municipality',
   'barangay',
@@ -24,6 +34,11 @@ const stringFields = [
   'damage_level',
   'damage_summary',
   'declared_needs',
+  'rsbsa_number',
+  'agricultural_activity',
+  'farm_fishery_location',
+  'land_tenure',
+  'pcic_policy_number',
   'status'
 ];
 
@@ -96,7 +111,7 @@ function validateApplicationPayload(body, { existing = null, userId } = {}) {
   }
 
   const numericFields = {
-    applicant_age: { defaultValue: 35, integer: true },
+    applicant_age: { defaultValue: null, integer: true, optional: true },
     household_members_count: { defaultValue: 1, integer: true, minimum: 1 },
     estimated_damage_php: { defaultValue: 0 },
     requested_amount_php: { defaultValue: 0 }
@@ -106,6 +121,10 @@ function validateApplicationPayload(body, { existing = null, userId } = {}) {
     const value = body[field] !== undefined
       ? body[field]
       : existing?.[field] ?? config.defaultValue;
+    if (config.optional && (value == null || value === '')) {
+      numbers[field] = null;
+      continue;
+    }
     const parsed = parseNumber(value, field, config);
     if (parsed.error) return parsed;
     if (field === 'applicant_age' && parsed.value > 120) {
@@ -132,9 +151,12 @@ function validateApplicationPayload(body, { existing = null, userId } = {}) {
   )) {
     return { error: 'applied_subsidies must be an array of non-empty subsidy IDs or titles.' };
   }
+  const existingSubsidies = existing
+    ? JSON.parse(existing.applied_subsidies || '[]')
+    : [];
   for (const selection of subsidies) {
     const reference = selection.trim();
-    if (!findSubsidy(reference)) {
+    if (!findSubsidy(reference) && !existingSubsidies.includes(reference)) {
       return { error: `Unknown subsidy reference: ${reference}.` };
     }
   }
@@ -149,12 +171,10 @@ function validateApplicationPayload(body, { existing = null, userId } = {}) {
     };
   }
 
-  const attestation = body.sworn_attestation !== undefined
-    ? body.sworn_attestation
-    : existing?.sworn_attestation ?? 1;
-  if (![true, false, 0, 1].includes(attestation)) {
-    return { error: 'sworn_attestation must be a boolean or 0/1.' };
+  if (body.sworn_attestation !== true && body.sworn_attestation !== 1) {
+    return { error: 'sworn_attestation must be explicitly confirmed before saving.' };
   }
+  const attestation = 1;
 
   const optionalStrings = {};
   for (const field of stringFields) {
@@ -168,15 +188,23 @@ function validateApplicationPayload(body, { existing = null, userId } = {}) {
     }
   }
 
-  const caseId = (body.case_id !== undefined || body.assessment_id !== undefined)
-    ? (body.case_id || body.assessment_id || null)
+  if (body.assessment_id !== undefined) {
+    if (body.case_id === undefined) {
+      return { error: 'Use case_id to identify a recovery case; assessment_id is not accepted.' };
+    }
+    if (
+      body.assessment_id != null
+      && body.assessment_id !== ''
+      && body.assessment_id !== body.case_id
+    ) {
+      return { error: 'case_id and assessment_id must refer to the same recovery case.' };
+    }
+  }
+  const caseId = body.case_id !== undefined
+    ? (body.case_id || null)
     : existing?.case_id ?? null;
-  if (
-    body.case_id != null
-    && body.assessment_id != null
-    && body.case_id !== body.assessment_id
-  ) {
-    return { error: 'case_id and assessment_id must refer to the same recovery case.' };
+  if (typeof caseId === 'string' && caseId.startsWith('APP-')) {
+    return { error: 'case_id must identify a recovery case, not an application.' };
   }
   if (caseId && !db.prepare(`
     SELECT 1 FROM recovery_cases WHERE case_id = ? AND user_id = ?
@@ -197,6 +225,21 @@ function validateApplicationPayload(body, { existing = null, userId } = {}) {
       sworn_attestation: attestation ? 1 : 0,
       status: requestedStatus,
       case_id: caseId,
+      birth_date: optionalStrings.birth_date ?? '',
+      sex: optionalStrings.sex ?? '',
+      occupation: optionalStrings.occupation ?? '',
+      beneficiary_category: optionalStrings.beneficiary_category ?? '',
+      representative_name: optionalStrings.representative_name ?? '',
+      representative_relationship: optionalStrings.representative_relationship ?? '',
+      representative_contact: optionalStrings.representative_contact ?? '',
+      barangay_certificate_reference: optionalStrings.barangay_certificate_reference ?? '',
+      spouse_name: optionalStrings.spouse_name ?? '',
+      children_count: optionalStrings.children_count ?? '',
+      rsbsa_number: optionalStrings.rsbsa_number ?? '',
+      agricultural_activity: optionalStrings.agricultural_activity ?? '',
+      farm_fishery_location: optionalStrings.farm_fishery_location ?? '',
+      land_tenure: optionalStrings.land_tenure ?? '',
+      pcic_policy_number: optionalStrings.pcic_policy_number ?? '',
       disaster_type: optionalStrings.disaster_type || 'Typhoon',
       incident_date: optionalStrings.incident_date || new Date().toISOString().split('T')[0],
       damage_level: optionalStrings.damage_level || 'Moderate',
@@ -233,20 +276,26 @@ router.post('/', (req, res) => {
     const insert = db.prepare(`
       INSERT INTO applications (
         application_id, case_id, user_id, reference_number, applicant_name, applicant_age,
-        civil_status, contact_number, valid_id_type, valid_id_number,
+        birth_date, sex, civil_status, contact_number, valid_id_type, valid_id_number,
+        occupation, beneficiary_category, representative_name, representative_relationship,
+        representative_contact, barangay_certificate_reference, spouse_name, children_count,
         province, city_municipality, barangay, purok_street,
         household_members_count, household_members_detail,
         disaster_type, incident_date, damage_level, damage_summary,
         applied_subsidies, estimated_damage_php, requested_amount_php,
-        declared_needs, sworn_attestation, status
+        declared_needs, rsbsa_number, agricultural_activity, farm_fishery_location,
+        land_tenure, pcic_policy_number, sworn_attestation, status
       ) VALUES (
         @application_id, @case_id, @user_id, @reference_number, @applicant_name, @applicant_age,
-        @civil_status, @contact_number, @valid_id_type, @valid_id_number,
+        @birth_date, @sex, @civil_status, @contact_number, @valid_id_type, @valid_id_number,
+        @occupation, @beneficiary_category, @representative_name, @representative_relationship,
+        @representative_contact, @barangay_certificate_reference, @spouse_name, @children_count,
         @province, @city_municipality, @barangay, @purok_street,
         @household_members_count, @household_members_detail,
         @disaster_type, @incident_date, @damage_level, @damage_summary,
         @applied_subsidies, @estimated_damage_php, @requested_amount_php,
-        @declared_needs, @sworn_attestation, @status
+        @declared_needs, @rsbsa_number, @agricultural_activity, @farm_fishery_location,
+        @land_tenure, @pcic_policy_number, @sworn_attestation, @status
       )
     `);
 
@@ -310,10 +359,20 @@ router.put('/:id', (req, res) => {
         case_id = @case_id,
         applicant_name = @applicant_name,
         applicant_age = @applicant_age,
+        birth_date = @birth_date,
+        sex = @sex,
         civil_status = @civil_status,
         contact_number = @contact_number,
         valid_id_type = @valid_id_type,
         valid_id_number = @valid_id_number,
+        occupation = @occupation,
+        beneficiary_category = @beneficiary_category,
+        representative_name = @representative_name,
+        representative_relationship = @representative_relationship,
+        representative_contact = @representative_contact,
+        barangay_certificate_reference = @barangay_certificate_reference,
+        spouse_name = @spouse_name,
+        children_count = @children_count,
         province = @province,
         city_municipality = @city_municipality,
         barangay = @barangay,
@@ -328,6 +387,11 @@ router.put('/:id', (req, res) => {
         estimated_damage_php = @estimated_damage_php,
         requested_amount_php = @requested_amount_php,
         declared_needs = @declared_needs,
+        rsbsa_number = @rsbsa_number,
+        agricultural_activity = @agricultural_activity,
+        farm_fishery_location = @farm_fishery_location,
+        land_tenure = @land_tenure,
+        pcic_policy_number = @pcic_policy_number,
         sworn_attestation = @sworn_attestation,
         status = @status,
         updated_at = CURRENT_TIMESTAMP

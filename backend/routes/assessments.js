@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import multer from 'multer';
 import db from '../database.js';
 import { analyzeDisasterDamage } from '../services/aiService.js';
-import { requireAuthenticatedUser } from './auth.js';
+import { optionalAuthenticatedUser, requireAuthenticatedUser } from './auth.js';
 
 const router = express.Router();
 const upload = multer({
@@ -47,6 +47,7 @@ function formatRecoveryCase(row) {
 
   return {
     id: row.case_id,
+    case_id: row.case_id,
     applicant_name: row.applicant_name,
     contact_number: row.contact_number,
     province: row.province,
@@ -73,7 +74,7 @@ function formatRecoveryCase(row) {
 }
 
 // Run damage assessment through Gemini and save the verified result to SQLite
-router.post('/', upload.single('damageImage'), async (req, res) => {
+router.post('/', optionalAuthenticatedUser, upload.single('damageImage'), async (req, res) => {
   try {
     if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
       return res.status(400).json({
@@ -266,6 +267,7 @@ router.post('/', upload.single('damageImage'), async (req, res) => {
       assessmentId,
       data: {
         id: assessmentId,
+        case_id: assessmentId,
         disaster_type: disasterType,
         incident_date: incidentDate,
         location,

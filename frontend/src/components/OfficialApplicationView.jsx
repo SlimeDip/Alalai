@@ -14,11 +14,22 @@ import {
   Calendar,
   AlertTriangle
 } from 'lucide-react';
-import { readSavedApplications, writeSavedApplications } from '../utils/applicationStorage';
+import {
+  saveBrowserApplication,
+  saveAccountApplication
+} from '../utils/applicationStorage';
+import { fetchCaseDocuments } from '../utils/documentApi';
+import { fetchOwnedRecoveryCases } from '../utils/trackerApi';
+import {
+  createApplicationFormData,
+  getApplicationDocuments,
+  getAttachmentChecklist
+} from '../utils/applicationForm';
 
 export default function OfficialApplicationView({
   initialData,
   user,
+  csrfToken,
   onSavedSuccess,
   onBack,
   backLabel,
@@ -26,121 +37,69 @@ export default function OfficialApplicationView({
   lang = 'en'
 }) {
   const [activeView, setActiveView] = useState('editor'); // 'editor' | 'preview'
-  const [formData, setFormData] = useState({
-    id: '',
-    reference_number: '',
-    applicant_name: '',
-    applicant_age: '',
-    birth_date: '',
-    sex: '',
-    civil_status: 'Kasal (Married)',
-    contact_number: '',
-    valid_id_type: 'Philippine National ID (PhilSys)',
-    valid_id_number: '',
-    province: '',
-    city_municipality: '',
-    barangay: '',
-    purok_street: '',
-    household_members_count: 1,
-    occupation: '',
-    beneficiary_category: '',
-    representative_name: '',
-    representative_relationship: '',
-    representative_contact: '',
-    barangay_certificate_reference: '',
-    spouse_name: 'N/A',
-    children_count: '0',
-    disaster_type: '',
-    incident_date: new Date().toISOString().split('T')[0],
-    damage_level: '',
-    damage_summary: '',
-    applied_subsidies: [],
-    estimated_damage_php: 0,
-    requested_amount_php: 0,
-    declared_needs: '',
-    rsbsa_number: '',
-    agricultural_activity: '',
-    farm_fishery_location: '',
-    land_tenure: '',
-    pcic_policy_number: '',
-    sworn_attestation: true,
-    status: 'DRAFT'
-  });
+  const [formData, setFormData] = useState(() => createApplicationFormData(initialData, user));
 
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState('');
+  const [saveError, setSaveError] = useState('');
+  const [recoveryCases, setRecoveryCases] = useState([]);
+  const [casesLoading, setCasesLoading] = useState(false);
+  const [casesError, setCasesError] = useState('');
+  const [caseDocuments, setCaseDocuments] = useState([]);
+  const [documentsLoading, setDocumentsLoading] = useState(false);
+  const [documentsError, setDocumentsError] = useState('');
+  const isAccountUser = Boolean(user && !user.isGuest);
 
-  // Auto-fill from incoming data or logged-in user
   useEffect(() => {
-    if (initialData) {
-      const record = initialData.fullRecord || {};
-      const applicant = initialData.applicant || record;
-      const assessment = initialData.assessment || record.ai_response || record;
-      const subsidy = initialData.subsidy || {};
-      const recordSubsidies = Array.isArray(record.applied_subsidies)
-        ? record.applied_subsidies
-        : typeof record.applied_subsidies === 'string'
-          ? JSON.parse(record.applied_subsidies || '[]')
-          : [];
-      const selectedSubsidies = subsidy.title
-        ? [subsidy.title]
-        : recordSubsidies;
-      const estimatedDamage = assessment.estimated_cost_max
-        ?? record.estimated_damage_php
-        ?? 0;
-
-      setFormData((prev) => ({
-        ...prev,
-        id: record.id || prev.id,
-        reference_number: record.reference_number || prev.reference_number,
-        applicant_name: applicant.applicantName || applicant.applicant_name || user?.name || prev.applicant_name,
-        applicant_age: applicant.applicantAge ?? applicant.applicant_age ?? prev.applicant_age,
-        sex: applicant.sex || user?.sex || prev.sex,
-        birth_date: applicant.birthDate || applicant.birth_date || user?.birthDate || prev.birth_date,
-        civil_status: applicant.civilStatus || applicant.civil_status || user?.civilStatus || prev.civil_status,
-        valid_id_type: applicant.validIdType || applicant.valid_id_type || prev.valid_id_type,
-        valid_id_number: applicant.idNumber || applicant.valid_id_number || user?.idNumber || prev.valid_id_number,
-        contact_number: applicant.contactNumber || applicant.contact_number || user?.mobile || prev.contact_number,
-        province: applicant.province || user?.province || prev.province,
-        city_municipality: applicant.cityMunicipality || applicant.city_municipality || user?.cityMunicipality || prev.city_municipality,
-        barangay: applicant.barangay || user?.barangay || prev.barangay,
-        purok_street: applicant.purokStreet || applicant.purok_street || user?.purokStreet || prev.purok_street,
-        household_members_count: applicant.householdSize ?? applicant.household_members_count ?? user?.householdSize ?? prev.household_members_count,
-        spouse_name: applicant.spouseName || applicant.spouse_name || user?.spouseName || prev.spouse_name,
-        children_count: applicant.childrenCount ?? applicant.children_count ?? user?.childrenCount ?? prev.children_count,
-        occupation: applicant.occupation || user?.occupation || record.occupation || prev.occupation,
-        beneficiary_category: applicant.beneficiaryCategory || user?.beneficiaryCategory || record.beneficiary_category || prev.beneficiary_category,
-        representative_name: record.representative_name || prev.representative_name,
-        representative_relationship: record.representative_relationship || prev.representative_relationship,
-        representative_contact: record.representative_contact || prev.representative_contact,
-        barangay_certificate_reference: record.barangay_certificate_reference || prev.barangay_certificate_reference,
-        disaster_type: applicant.disasterType || applicant.disaster_type || assessment.disaster_type || prev.disaster_type,
-        incident_date: applicant.incidentDate || applicant.incident_date || prev.incident_date,
-        damage_level: assessment.severity_level || assessment.damage_level || prev.damage_level,
-        damage_summary: assessment.damage_summary || applicant.damageDescription || prev.damage_summary,
-        estimated_damage_php: estimatedDamage,
-        requested_amount_php: subsidy.max_amount_php ?? record.requested_amount_php ?? prev.requested_amount_php,
-        declared_needs: record.declared_needs
-          || (assessment.recommended_aid_types || assessment.damage_categories || []).join(', ')
-          || prev.declared_needs,
-        rsbsa_number: applicant.rsbsaNumber || applicant.rsbsa_number || record.rsbsa_number || prev.rsbsa_number,
-        agricultural_activity: applicant.agriculturalActivity || applicant.agricultural_activity || record.agricultural_activity || prev.agricultural_activity,
-        farm_fishery_location: applicant.farmFisheryLocation || applicant.farm_fishery_location || record.farm_fishery_location || prev.farm_fishery_location,
-        land_tenure: applicant.landTenure || applicant.land_tenure || record.land_tenure || prev.land_tenure,
-        pcic_policy_number: applicant.pcicPolicyNumber || applicant.pcic_policy_number || record.pcic_policy_number || prev.pcic_policy_number,
-        applied_subsidies: selectedSubsidies.length ? selectedSubsidies : prev.applied_subsidies
-      }));
-    } else if (user && !user.isGuest) {
-      setFormData((prev) => ({
-        ...prev,
-        applicant_name: user.name || prev.applicant_name,
-        contact_number: user.mobile || prev.contact_number,
-        province: user.province || prev.province,
-        city_municipality: user.cityMunicipality || prev.city_municipality,
-        barangay: user.barangay || prev.barangay
-      }));
+    let active = true;
+    if (!isAccountUser) {
+      setRecoveryCases([]);
+      setCasesError('');
+      setCasesLoading(false);
+      return () => { active = false; };
     }
-  }, [initialData, user]);
+
+    setCasesLoading(true);
+    setCasesError('');
+    fetchOwnedRecoveryCases()
+      .then((cases) => {
+        if (active) setRecoveryCases(cases);
+      })
+      .catch((error) => {
+        if (active) setCasesError(error.message);
+      })
+      .finally(() => {
+        if (active) setCasesLoading(false);
+      });
+
+    return () => { active = false; };
+  }, [isAccountUser, user]);
+
+  useEffect(() => {
+    let active = true;
+    if (!isAccountUser || !formData.case_id) {
+      setCaseDocuments([]);
+      setDocumentsError('');
+      setDocumentsLoading(false);
+      return () => { active = false; };
+    }
+
+    setCaseDocuments([]);
+    setDocumentsError('');
+    setDocumentsLoading(true);
+    fetchCaseDocuments(formData.case_id)
+      .then((documents) => {
+        if (active) setCaseDocuments(documents);
+      })
+      .catch((error) => {
+        if (active) setDocumentsError(error.message);
+      })
+      .finally(() => {
+        if (active) setDocumentsLoading(false);
+      });
+
+    return () => { active = false; };
+  }, [formData.case_id, isAccountUser, user]);
 
   const hasAgriculturalProgram = formData.applied_subsidies.some((program) =>
     /sure|crop insurance|pcic|agricultural|farm|fish/i.test(program)
@@ -150,7 +109,9 @@ export default function OfficialApplicationView({
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value,
+      [name]: name === 'case_id'
+        ? (value || null)
+        : type === 'checkbox' ? checked : value,
       ...(name === 'birth_date' && value
         ? { applicant_age: Math.max(0, Math.floor((Date.now() - new Date(`${value}T00:00:00`).getTime()) / 31557600000)) }
         : {}),
@@ -161,6 +122,14 @@ export default function OfficialApplicationView({
   };
 
   const handleDownloadPdfOrPrint = () => {
+    if (!formData.sworn_attestation) {
+      setSaveError(t('attestationRequired'));
+      return;
+    }
+    if (documentsLoading || documentsError) {
+      setSaveError(documentsError || t('documentsStillLoading'));
+      return;
+    }
     window.print();
   };
 
@@ -170,31 +139,47 @@ export default function OfficialApplicationView({
   };
 
   const handleSaveToDatabase = async () => {
+    if (!formData.sworn_attestation) {
+      setSaveError(t('attestationRequired'));
+      return;
+    }
     setSaving(true);
     setSaveSuccess('');
+    setSaveError('');
     try {
-      const id = formData.id || `LOCAL-${Date.now().toString(36).toUpperCase()}`;
-      const referenceNumber = formData.reference_number || `AL-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}`;
-      const savedApplication = {
+      const application = {
         ...formData,
-        id,
-        reference_number: referenceNumber,
-        status: 'DRAFT',
-        saved_at: new Date().toISOString(),
+        status: formData.status || 'DRAFT',
         applicant_name: formData.applicant_name || user?.name || 'Guest'
       };
-      const existing = readSavedApplications().filter((item) => item.id !== id);
-      writeSavedApplications([savedApplication, ...existing]);
-      setFormData((prev) => ({ ...prev, id, reference_number: referenceNumber, status: 'DRAFT' }));
-      setSaveSuccess(`${t('recordSaved')} ${referenceNumber}`);
+      let savedApplication;
+      if (user && !user.isGuest) {
+        savedApplication = await saveAccountApplication(application, csrfToken);
+      } else {
+        savedApplication = saveBrowserApplication(application);
+      }
+      setFormData((prev) => ({
+        ...prev,
+        id: savedApplication.id,
+        reference_number: savedApplication.reference_number,
+        case_id: savedApplication.case_id,
+        status: savedApplication.status
+      }));
+      const savedMessage = user && !user.isGuest ? 'recordSavedAccount' : 'recordSavedBrowser';
+      setSaveSuccess(`${t(savedMessage)} ${savedApplication.reference_number}`);
       if (onSavedSuccess) onSavedSuccess(savedApplication);
     } catch (err) {
-      console.error(err);
-      alert('May aberya sa pag-save: ' + err.message);
+      setSaveError(err.message);
     } finally {
       setSaving(false);
     }
   };
+
+  const caseDocumentsForApplication = getApplicationDocuments(caseDocuments, formData.id);
+  const attachmentChecklist = getAttachmentChecklist(caseDocumentsForApplication);
+  const selectedCaseExists = recoveryCases.some(
+    (recoveryCase) => recoveryCase.case_id === formData.case_id
+  );
 
   return (
     <div>
@@ -251,6 +236,11 @@ export default function OfficialApplicationView({
             <strong>{saveSuccess}</strong>
           </div>
         )}
+        {saveError && (
+          <div role="alert" style={{ backgroundColor: '#fff1f2', border: '1px solid #fecdd3', color: '#9f1239', padding: '10px 14px', borderRadius: 10, marginTop: 14, fontSize: 14 }}>
+            {saveError}
+          </div>
+        )}
       </div>
 
       {/* VIEW 1: CLEAN RESPONSIVE FORM EDITOR */}
@@ -259,6 +249,43 @@ export default function OfficialApplicationView({
           <div className="application-form-heading">
             <span>ALALAI COMMUNITY DISASTER ASSISTANCE</span>
             <strong>{t('applicantDetailsSection')}</strong>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label" htmlFor="application-recovery-case">
+              {t('recoveryCaseLink')}
+            </label>
+            <select
+              id="application-recovery-case"
+              name="case_id"
+              value={formData.case_id || ''}
+              onChange={handleChange}
+              className="form-select"
+            >
+              <option value="">{t('noRecoveryCase')}</option>
+              {formData.case_id && !selectedCaseExists && (
+                <option value={formData.case_id}>
+                  {initialData?.caseLabel || `${t('savedCaseReference')}: ${formData.case_id}`}
+                </option>
+              )}
+              {recoveryCases
+                .filter((recoveryCase) => recoveryCase.case_id)
+                .map((recoveryCase) => (
+                  <option key={recoveryCase.case_id} value={recoveryCase.case_id}>
+                    {[
+                      recoveryCase.disaster_type,
+                      [recoveryCase.barangay, recoveryCase.city_municipality, recoveryCase.province]
+                        .filter(Boolean)
+                        .join(', '),
+                      recoveryCase.incident_date
+                    ].filter(Boolean).join(' — ')}
+                  </option>
+                ))}
+            </select>
+            <p className="field-help">{t('recoveryCaseLinkHelp')}</p>
+            {casesLoading && <p className="field-help">{t('loadingRecoveryCases')}</p>}
+            {casesError && <p role="alert" className="field-help">{casesError}</p>}
+            {!isAccountUser && <p className="field-help">{t('guestCaseLinkNotice')}</p>}
           </div>
 
           <h3 className="application-section-heading">
@@ -553,6 +580,24 @@ export default function OfficialApplicationView({
             />
           </div>
 
+          <div className="form-group" style={{ marginTop: 16 }}>
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+              <input
+                type="checkbox"
+                name="sworn_attestation"
+                checked={formData.sworn_attestation}
+                onChange={handleChange}
+                style={{ marginTop: 4 }}
+              />
+              <span>
+                <strong>{t('attestationConfirmation')}</strong>
+                <span className="field-help" style={{ display: 'block' }}>
+                  {t('attestationConfirmationHelp')}
+                </span>
+              </span>
+            </label>
+          </div>
+
           {/* Household summary */}
           <div style={{ marginTop: 20 }}>
             <strong style={{ display: 'block', fontSize: 15, marginBottom: 10 }}>{t('householdMembers')}</strong>
@@ -645,6 +690,7 @@ export default function OfficialApplicationView({
                   <span>{t('referenceNumber')}: <strong>{formData.reference_number || t('toBeSaved')}</strong></span>
                   <span>{t('dateLabel')}: <strong>{new Date().toLocaleDateString(lang === 'tl' ? 'fil-PH' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</strong></span>
                   <span>{t('statusLabel')}: <strong>{formData.status}</strong></span>
+                  <span>{t('recoveryCaseLink')}: <strong>{formData.case_id || t('noRecoveryCase')}</strong></span>
                 </div>
               </div>
 
@@ -780,16 +826,44 @@ export default function OfficialApplicationView({
                 IV. MGA KALAKIP NA DOKUMENTO (ATTACHMENT CHECKLIST)
               </div>
               <div className="official-checklist-grid">
-                <div>[✓] Kopya ng Valid Government ID ng Aplikante</div>
-                <div>[✓] Barangay Certificate of Calamity / Indigency</div>
-                <div>[✓] Litrato ng Nasirang Bahay / Pananim / Kabuhayan</div>
-                <div>[✓] Katibayan ng Paninirahan sa Barangay</div>
+                <div>
+                  {t('identityCategoryFiles')}: {attachmentChecklist.identityFiles.length
+                    ? `${attachmentChecklist.identityFiles.length} ${t('vaultFilesRecorded')}`
+                    : t('noVaultFilesRecorded')}
+                </div>
+                <div>
+                  {t('damagePhotoCategoryFiles')}: {attachmentChecklist.damagePhotoFiles.length
+                    ? `${attachmentChecklist.damagePhotoFiles.length} ${t('vaultFilesRecorded')}`
+                    : t('noVaultFilesRecorded')}
+                </div>
+                <div>{t('barangayDocumentsNotVerified')}</div>
+                <div>{t('residencyDocumentsNotVerified')}</div>
               </div>
+              <p className="official-footer-note">
+                {documentsLoading
+                  ? t('documentsStillLoading')
+                  : documentsError
+                    ? t('documentsCouldNotLoad')
+                    : !formData.case_id
+                      ? t('vaultNeedsLinkedCase')
+                      : t('vaultChecklistDisclaimer')}
+              </p>
+              {caseDocumentsForApplication.length > 0 && (
+                <ul className="official-document-list">
+                  {caseDocumentsForApplication.map((document) => (
+                    <li key={document.document_id}>
+                      {document.original_filename} ({document.category}) — {t('vaultFileNotAttached')}
+                    </li>
+                  ))}
+                </ul>
+              )}
 
               {/* SECTION 5 */}
               <div className="official-attestation-box">
                 <strong>SINUMPAANG SALAYSAY (SWORN ATTESTATION):</strong><br />
-                Ako ay taos-pusong nagpapatunay sa ilalim ng parusa ng batas na ang lahat ng impormasyong nakatala sa dokumentong ito ay totoo at tumpak ayon sa aking pinakamahusay na kaalaman. Ang tulong na aking hihilingin ay gagamitin lamang para sa agarang pagbangon ng aming pamilya mula sa sakunang naganap.
+                {formData.sworn_attestation
+                  ? 'Ako ay taos-pusong nagpapatunay sa ilalim ng parusa ng batas na ang lahat ng impormasyong nakatala sa dokumentong ito ay totoo at tumpak ayon sa aking pinakamahusay na kaalaman. Ang tulong na aking hihilingin ay gagamitin lamang para sa agarang pagbangon ng aming pamilya mula sa sakunang naganap.'
+                  : t('attestationNotConfirmed')}
               </div>
 
               {/* SIGNATURES BLOCK */}
@@ -808,7 +882,7 @@ export default function OfficialApplicationView({
               </div>
 
               <div className="official-footer-note">
-                Alal<span>ai</span> Calamity Portal • Naka-format para sa A4 Paper Size (Fit to 1 Page) • Libre at Hindi Ipinagbibili • Republic Act 10121
+                Alal<span>ai</span> Calamity Portal • {t('printNotSubmittedNotice')}
               </div>
             </div>
           </div>

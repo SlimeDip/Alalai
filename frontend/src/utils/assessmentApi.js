@@ -1,4 +1,4 @@
-export async function runDamageAssessment(formPayload) {
+export async function runDamageAssessment(formPayload, csrfToken) {
   const body = new FormData();
 
   Object.entries(formPayload).forEach(([key, value]) => {
@@ -15,6 +15,7 @@ export async function runDamageAssessment(formPayload) {
   try {
     response = await fetch('/api/assessments', {
       method: 'POST',
+      headers: csrfToken ? { 'X-CSRF-Token': csrfToken } : {},
       body
     });
   } catch (error) {
