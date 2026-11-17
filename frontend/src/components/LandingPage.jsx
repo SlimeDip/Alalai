@@ -1,12 +1,8 @@
 import React, { useState } from 'react';
 import { ChevronDown, HelpCircle } from 'lucide-react';
 
-export default function LandingPage({
-  onStartAssessment,
-  onOpenLogin,
-  t,
-}) {
-  const [openItems, setOpenItems] = useState([]);
+export default function LandingPage({ onStartAssessment, onOpenLogin, t }) {
+  const [openFaqIndex, setOpenFaqIndex] = useState(null);
 
   const faqs = [
     { q: t('faq1Q'), a: t('faq1A') },
@@ -17,12 +13,8 @@ export default function LandingPage({
     { q: t('faq6Q'), a: t('faq6A') }
   ];
 
-  const toggleItem = (idx) => {
-    setOpenItems((current) =>
-      current.includes(idx)
-        ? current.filter((item) => item !== idx)
-        : [...current, idx]
-    );
+  const toggleFaq = (index) => {
+    setOpenFaqIndex(openFaqIndex === index ? null : index);
   };
 
   return (
@@ -35,9 +27,7 @@ export default function LandingPage({
           <br />
           <span className="landing-title-accent">{t('landingHeroTitle3')}</span>
         </h1>
-
         <p className="landing-lead">{t('landingSubtitle')}</p>
-
         <div className="landing-cta-row">
           <button type="button" className="btn btn-primary btn-lg" onClick={onStartAssessment}>
             {t('startNewCase')}
@@ -56,9 +46,10 @@ export default function LandingPage({
             <p>{t('faqSubtitle')}</p>
           </div>
         </div>
+        
         <div className="landing-faq-list">
           {faqs.map((item, idx) => {
-            const isOpen = openItems.includes(idx);
+            const isOpen = openFaqIndex === idx;
             const panelId = `faq-panel-${idx}`;
 
             return (
@@ -66,7 +57,7 @@ export default function LandingPage({
                 <button
                   type="button"
                   className="faq-question"
-                  onClick={() => toggleItem(idx)}
+                  onClick={() => toggleFaq(idx)}
                   aria-expanded={isOpen}
                   aria-controls={panelId}
                 >
@@ -74,7 +65,7 @@ export default function LandingPage({
                   <ChevronDown className="faq-chevron" size={18} aria-hidden />
                 </button>
 
-                <div id={panelId} className="faq-answer" aria-hidden={!isOpen}>
+                <div id={panelId} className="faq-answer" aria-hidden={!isOpen} style={{ display: isOpen ? 'block' : 'none' }}>
                   <div className="faq-answer-inner">
                     <p>{item.a}</p>
                   </div>

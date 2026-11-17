@@ -20,6 +20,11 @@
   --slate-200: #e5e7eb;          /* Clean subtle borders */
   --slate-100: #f3f4f6;
   --white: #ffffff;
+
+  /* Added for Accessibility & Dark Mode */
+  --bg-color: var(--canvas-bg);
+  --text-color: var(--slate-900);
+  --base-font-size: 16px;
   
   --emerald-700: #047857;
   --amber-700: #b45309;
@@ -33,6 +38,26 @@
   --radius-pill: 9999px;
 }
 
+/* DARK MODE THEME OVERRIDES */
+html.dark {
+  /* Backgrounds */
+  --canvas-bg: #121212;          
+  --card-bg: #1e1e1e;            
+  --bento-cyan: #1e293b;         
+  --white: #1e1e1e;             
+
+ 
+  --slate-900: #f9fafb;          
+  --slate-700: #e5e7eb;
+  --slate-600: #d1d5db;         
+  --slate-500: #9ca3af;
+  
+  /* Borders & Highlights */
+  --slate-200: #374151;          
+  --slate-100: #1f2937;
+  --highlight-pill: #1e3a5f;    
+  --highlight-text: #e0f2fe;     
+}
 * {
   box-sizing: border-box;
   margin: 0;
@@ -2558,10 +2583,135 @@ body {
     align-items: flex-start;
     flex-wrap: wrap;
   }
+/* =========================================
+   MOBILE RESPONSIVENESS FIXES
+   ========================================= */
+@media (max-width: 768px) {
+  .navbar-cta {
+    gap: 8px !important;
+  }
+  
+  .navbar-cta > div[style*="display: flex"],
+  .navbar-cta .lang-toggle,
+  .navbar-cta .nav-user-cluster {
+    display: none !important;
+  }
+  
+  .card, 
+  .bento-card,
+  div[class*="container"], 
+  div[class*="card"] {
+    padding: 16px !important;
+    margin-bottom: 16px !important;
+    border-radius: 12px !important;
+  }
+
+  input, 
+  select, 
+  textarea {
+    width: 100% !important;
+    font-size: 16px !important;
+  } 
+
+  button.btn, 
+  button[class*="pill"] {
+    width: 100% !important;
+    justify-content: center;
+    margin-bottom: 8px;
+  }
+
+  .flex-row, 
+  .desktop-flex {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+  }
+  
+  h1, 
+  .card-heading-lg {
+    font-size: 1.75rem !important;
+    line-height: 1.2 !important;
+  }
 
   .recovery-hero .btn {
     width: 100%;
     justify-content: center;
   }
+} 
 
+/* =========================================
+   ACCESSIBILITY: FORCE TEXT RESIZING
+   ========================================= */
+p, span, button, input, .landing-lead, .faq-question-text, .faq-answer p {
+  font-size: var(--base-font-size) !important;
+  transition: font-size 0.2s ease-in-out;
+}
+
+h1, h2, h3, .landing-title {
+  font-size: calc(var(--base-font-size) * 1.5) !important;
+  transition: font-size 0.2s ease-in-out;
+}
+
+.brand-logo {
+  font-size: calc(var(--base-font-size) * 1.25) !important;
+}
+}
+/* =========================================
+   DARK MODE: COMPLETE UI, CARDS & BUTTONS FIX
+   ========================================= */
+/* 1. Ayusin ang spacing ng A-/A+ at Dark Mode button sa header */
+.navbar-cta > div:first-child {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  margin-right: 12px !important;
+}
+
+/* 2. Palitawin ang Dark Mode button at User pill ("Chester") */
+html.dark .btn-pill-dark {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+  border: 1px solid #475569 !important;
+}
+
+html.dark .btn-pill-dark span,
+html.dark .btn-pill-dark svg {
+  color: #f8fafc !important;
+  stroke: #f8fafc !important;
+}
+
+/* 3. Ayusin ang "Start New Case" button para hindi mag-white-on-white */
+html.dark .recovery-hero .btn,
+html.dark .recovery-hero button,
+html.dark button.btn-primary {
+  background-color: #0284c7 !important;
+  color: #ffffff !important;
+  border: none !important;
+}
+
+html.dark .recovery-hero .btn *,
+html.dark .recovery-hero button *,
+html.dark button.btn-primary * {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+/* 4. Ibalik ang puting text at sky-blue icons sa Disaster Option Cards[cite: 5] */
+html.dark .card button,
+html.dark [class*="card"] button,
+html.dark [class*="option"] h3,
+html.dark [class*="option"] h4,
+html.dark [class*="option"] strong,
+html.dark [class*="disaster"] h3,
+html.dark [class*="disaster"] h4,
+html.dark [class*="disaster"] strong,
+html.dark [class*="grid"] button {
+  color: #f8fafc !important;
+}
+
+html.dark .card button svg,
+html.dark [class*="card"] button svg,
+html.dark [class*="grid"] button svg {
+  color: #38bdf8 !important;
+  stroke: #38bdf8 !important;
 }
