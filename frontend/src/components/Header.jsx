@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Menu, X, LogOut, LogIn, User } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Menu, X, LogOut, LogIn, User, Moon, Sun, Minus, Plus } from 'lucide-react';
 
 export default function Header({
   activeTab,
@@ -14,6 +14,55 @@ export default function Header({
   t
 }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
+  // --- ADDED: Theme and Font Size State ---
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [fontSize, setFontSize] = useState(16);
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme');
+    const savedFontSize = localStorage.getItem('fontSize');
+
+    if (savedTheme === 'dark') {
+      setIsDarkMode(true);
+      document.documentElement.classList.add('dark');
+    }
+    
+    const initialSize = savedFontSize ? Number(savedFontSize) : 16;
+    setFontSize(initialSize);
+    document.documentElement.style.setProperty('--base-font-size', `${initialSize}px`);
+    document.documentElement.style.fontSize = `${initialSize}px`;
+  }, []);
+
+  // Theme Toggle Function
+  const toggleTheme = () => {
+    setIsDarkMode((prev) => {
+      const newTheme = !prev;
+      if (newTheme) {
+        document.documentElement.classList.add('dark');
+        localStorage.setItem('theme', 'dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+        localStorage.setItem('theme', 'light');
+      }
+      return newTheme;
+    });
+  };
+
+  // Font Size Change Function (with Console Log and Direct HTML Scaling)
+  const changeFontSize = (step) => {
+    setFontSize((prev) => {
+      const newSize = Math.max(14, Math.min(24, prev + step));
+      
+      console.log(`Pinindot ang font button! Bagong size: ${newSize}px`);
+      document.documentElement.style.setProperty('--base-font-size', `${newSize}px`);
+      document.documentElement.style.fontSize = `${newSize}px`;
+      
+      localStorage.setItem('fontSize', newSize);
+      return newSize;
+    });
+  };
+  // --- END ADDED LOGIC ---
 
   const handleNavClick = (tab) => {
     onNavigate(tab);
@@ -61,6 +110,37 @@ export default function Header({
         </div>
 
         <div className="navbar-cta">
+          {/* --- ADDED: Accessibility Controls (Desktop) --- */}
+          <div className="flex items-center gap-2 mr-2 hidden md:flex" style={{ gap: '8px', marginRight: '12px' }}>
+            <div className="lang-toggle" style={{ margin: 0 }}>
+              <button 
+                onClick={() => changeFontSize(-2)} 
+                className="lang-btn" 
+                title="Decrease Font Size"
+                type="button"
+              >
+                <Minus size={14} /> A
+              </button>
+              <button 
+                onClick={() => changeFontSize(2)} 
+                className="lang-btn" 
+                title="Increase Font Size"
+                type="button"
+              >
+                A <Plus size={14} />
+              </button>
+            </div>
+            <button 
+              onClick={toggleTheme} 
+              className="btn-pill-dark"
+              style={{ padding: '6px 12px' }}
+              title="Toggle Dark Mode"
+              type="button"
+            >
+              {isDarkMode ? <Sun size={14} /> : <Moon size={14} />}
+            </button>
+          </div>
+
           <div className="lang-toggle" role="group" aria-label="Language">
             <button
               type="button"
@@ -133,6 +213,21 @@ export default function Header({
               ))}
             </div>
             <div className="mobile-drawer-footer">
+              {/* --- ADDED: Accessibility Controls (Mobile) --- */}
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', justifyContent: 'space-between' }}>
+                <div className="lang-toggle" style={{ margin: 0, flex: 1 }}>
+                  <button onClick={() => changeFontSize(-2)} className="lang-btn" type="button" style={{ width: '50%' }}>
+                    <Minus size={14} /> A
+                  </button>
+                  <button onClick={() => changeFontSize(2)} className="lang-btn" type="button" style={{ width: '50%' }}>
+                    A <Plus size={14} />
+                  </button>
+                </div>
+                <button onClick={toggleTheme} className="btn-pill-dark" type="button">
+                  {isDarkMode ? <Sun size={14} /> : <Moon size={14} />}
+                </button>
+              </div>
+
               <div className="lang-toggle" style={{ marginBottom: 12 }}>
                 <button type="button" className={lang === 'en' ? 'lang-btn active' : 'lang-btn'} onClick={() => setLang('en')}>
                   EN
@@ -142,15 +237,15 @@ export default function Header({
                 </button>
               </div>
               {user && !user.isGuest ? (
-                <button type="button" className="btn btn-secondary" onClick={onLogout}>
+                <button type="button" className="btn btn-secondary" style={{ width: '100%' }} onClick={onLogout}>
                   {t('logout')}
                 </button>
               ) : (
                 <>
-                  <button type="button" className="btn btn-secondary" onClick={() => { onContinueAsGuest(); setMobileMenuOpen(false); }}>
+                  <button type="button" className="btn btn-secondary" style={{ width: '100%', marginBottom: '8px' }} onClick={() => { onContinueAsGuest(); setMobileMenuOpen(false); }}>
                     {t('continueAsGuest')}
                   </button>
-                  <button type="button" className="btn-pill-dark" style={{ width: '100%', marginTop: 8 }} onClick={() => { setMobileMenuOpen(false); onOpenLogin(); }}>
+                  <button type="button" className="btn-pill-dark" style={{ width: '100%' }} onClick={() => { setMobileMenuOpen(false); onOpenLogin(); }}>
                     {t('login')}
                   </button>
                 </>

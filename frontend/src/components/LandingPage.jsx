@@ -3,7 +3,8 @@ import { ChevronDown, HelpCircle } from 'lucide-react';
 import RecoveryDashboard from './RecoveryDashboard';
 
 export default function LandingPage({ onStartAssessment, t }) {
-  const [openItems, setOpenItems] = useState([]);
+  // FAQ Accordion State
+  const [openFaqIndex, setOpenFaqIndex] = useState(null);
 
   const faqs = [
     { q: t('faq1Q'), a: t('faq1A') },
@@ -14,12 +15,8 @@ export default function LandingPage({ onStartAssessment, t }) {
     { q: t('faq6Q'), a: t('faq6A') }
   ];
 
-  const toggleItem = (idx) => {
-    setOpenItems((current) =>
-      current.includes(idx)
-        ? current.filter((item) => item !== idx)
-        : [...current, idx]
-    );
+  const toggleFaq = (index) => {
+    setOpenFaqIndex(openFaqIndex === index ? null : index);
   };
 
   return (
@@ -32,9 +29,7 @@ export default function LandingPage({ onStartAssessment, t }) {
           <br />
           <span className="landing-title-accent">{t('landingHeroTitle3')}</span>
         </h1>
-
         <p className="landing-lead">{t('landingSubtitle')}</p>
-
       </section>
 
       <RecoveryDashboard onStartCase={onStartAssessment} t={t} />
@@ -47,9 +42,10 @@ export default function LandingPage({ onStartAssessment, t }) {
             <p>{t('faqSubtitle')}</p>
           </div>
         </div>
+        
         <div className="landing-faq-list">
           {faqs.map((item, idx) => {
-            const isOpen = openItems.includes(idx);
+            const isOpen = openFaqIndex === idx;
             const panelId = `faq-panel-${idx}`;
 
             return (
@@ -57,7 +53,7 @@ export default function LandingPage({ onStartAssessment, t }) {
                 <button
                   type="button"
                   className="faq-question"
-                  onClick={() => toggleItem(idx)}
+                  onClick={() => toggleFaq(idx)}
                   aria-expanded={isOpen}
                   aria-controls={panelId}
                 >
@@ -65,7 +61,7 @@ export default function LandingPage({ onStartAssessment, t }) {
                   <ChevronDown className="faq-chevron" size={18} aria-hidden />
                 </button>
 
-                <div id={panelId} className="faq-answer" aria-hidden={!isOpen}>
+                <div id={panelId} className="faq-answer" aria-hidden={!isOpen} style={{ display: isOpen ? 'block' : 'none' }}>
                   <div className="faq-answer-inner">
                     <p>{item.a}</p>
                   </div>
