@@ -2712,16 +2712,17 @@ html.dark .btn-pill-dark svg {
 html.dark .recovery-hero .btn,
 html.dark .recovery-hero button,
 html.dark button.btn-primary {
-  background-color: #7692ff !important;
-  color: #091540 !important;
-  border: none !important;
+  background-color: #343434 !important;
+  color: #f8fafc !important;
+  border: 1px solid #626a82 !important;
+  box-shadow: none !important;
 }
 
 html.dark .recovery-hero .btn *,
 html.dark .recovery-hero button *,
 html.dark button.btn-primary * {
-  color: #091540 !important;
-  stroke: #091540 !important;
+  color: #f8fafc !important;
+  stroke: #7692ff !important;
 }
 
 /* 4. Ibalik ang puting text at sky-blue icons sa Disaster Option Cards[cite: 5] */
@@ -2803,9 +2804,9 @@ html.dark .application-section-heading {
 html.dark .card,
 html.dark [class*="-card"],
 html.dark [class*="_card"] {
-  border: 1px solid #525252;
-  box-shadow: inset 0 0 0 1px rgb(148 163 184 / 4%), 0 8px 24px rgb(0 0 0 / 18%);
-  border-color: #525252;
+  border: 1px solid #454545;
+  box-shadow: none;
+  border-color: #454545;
 }
 
 html.dark .app-main-canvas {
@@ -2823,25 +2824,25 @@ html.dark .results-card,
 html.dark .trust-card,
 html.dark .landing-faq,
 html.dark .faq-item {
-  background: #292929 !important;
-  border: 1px solid #525252 !important;
-  box-shadow: 0 6px 18px rgb(0 0 0 / 20%);
+  background: #242424 !important;
+  border: 1px solid #454545 !important;
+  box-shadow: none;
 }
 
 html.dark .disaster-card.selected,
 html.dark .method-card.selected,
 html.dark .faq-item.open {
-  background: #091540 !important;
+  background: #303030 !important;
   border-color: #7692ff !important;
-  box-shadow: 0 0 0 2px rgb(118 146 255 / 18%);
+  box-shadow: none;
 }
 
 html.dark .recovery-hero,
 html.dark .recovery-hero-icon,
 html.dark .recovery-dashboard-metric,
 html.dark .guest-dashboard-notice {
-  background: #292929 !important;
-  border-color: #525252 !important;
+  background: #242424 !important;
+  border-color: #454545 !important;
 }
 
 html.dark .recovery-hero .eyebrow,
@@ -2854,9 +2855,9 @@ html.dark .recovery-dashboard-action svg {
 }
 
 html.dark .guest-dashboard-notice .btn-secondary {
-  background: #091540 !important;
-  border: 1px solid #7692ff !important;
-  color: #abd2fa !important;
+  background: #343434 !important;
+  border: 1px solid #626a82 !important;
+  color: #f8fafc !important;
   box-sizing: border-box;
   border-radius: 9999px;
 }
@@ -2886,6 +2887,40 @@ html.dark input::placeholder,
 html.dark textarea::placeholder {
   color: #94a3b8;
   opacity: 1;
+}
+
+html.dark .disaster-card,
+html.dark .method-card,
+html.dark .subsidy-card,
+html.dark .trust-card,
+html.dark .faq-item,
+html.dark .metric-box,
+html.dark .recovery-case-list-item {
+  border-width: 1px !important;
+  border-color: #454545 !important;
+  box-shadow: none !important;
+}
+
+html.dark .wizard-stepper,
+html.dark .optional-details,
+html.dark .recovery-dashboard-followups {
+  background: transparent !important;
+  border-color: #454545 !important;
+  box-shadow: none !important;
+}
+
+html.dark .btn-pill-primary,
+html.dark .btn-primary {
+  background: #343434 !important;
+  color: #f8fafc !important;
+  border: 1px solid #626a82 !important;
+  box-shadow: none !important;
+}
+
+html.dark .btn-pill-primary *,
+html.dark .btn-primary * {
+  color: #f8fafc !important;
+  stroke: #7692ff !important;
 }
 
 html.dark table,
