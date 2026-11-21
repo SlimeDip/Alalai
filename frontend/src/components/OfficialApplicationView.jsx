@@ -20,6 +20,7 @@ import {
 } from '../utils/applicationStorage';
 import { fetchOwnedRecoveryCases } from '../utils/assessmentApi';
 import { createApplicationFormData } from '../utils/applicationForm';
+import LocationFields from './LocationFields';
 
 export default function OfficialApplicationView({
   initialData,
@@ -125,7 +126,6 @@ export default function OfficialApplicationView({
         case_id: savedApplication.case_id,
         status: savedApplication.status
       }));
-      const savedMessage = user && !user.isGuest ? 'recordSavedAccount' : 'recordSavedBrowser';
       setSaveSuccess(`${user && !user.isGuest ? 'Record saved to your account.' : 'Record saved in this browser.'} ${savedApplication.reference_number}`);
       if (onSavedSuccess) onSavedSuccess(savedApplication);
     } catch (err) {
@@ -347,51 +347,29 @@ export default function OfficialApplicationView({
             </div>
           </div>
 
+          <div style={{ marginTop: 12 }}>
+            <LocationFields
+              values={{
+                province: formData.province,
+                cityMunicipality: formData.city_municipality,
+                barangay: formData.barangay,
+                purokStreet: formData.purok_street,
+              }}
+              onChangeField={(field, value) => {
+                const keyMap = {
+                  province: 'province',
+                  cityMunicipality: 'city_municipality',
+                  barangay: 'barangay',
+                  purokStreet: 'purok_street',
+                };
+                setFormData((prev) => ({ ...prev, [keyMap[field]]: value }));
+              }}
+              includeStreet={true}
+              required={true}
+            />
+          </div>
+
           <div className="form-grid" style={{ marginTop: 8 }}>
-            <div className="form-group">
-              <label className="form-label">{"Purok / Street"}</label>
-              <input
-                type="text"
-                name="purok_street"
-                value={formData.purok_street}
-                onChange={handleChange}
-                className="form-input"
-                placeholder="Purok 2"
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">{"Barangay"} *</label>
-              <input
-                type="text"
-                name="barangay"
-                value={formData.barangay}
-                onChange={handleChange}
-                className="form-input"
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">{"City / Municipality"} *</label>
-              <input
-                type="text"
-                name="city_municipality"
-                value={formData.city_municipality}
-                onChange={handleChange}
-                className="form-input"
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">{"Province"} *</label>
-              <input
-                type="text"
-                name="province"
-                value={formData.province}
-                onChange={handleChange}
-                className="form-input"
-              />
-            </div>
             <div className="form-group">
               <label className="form-label">Household members *</label>
               <input type="number" min="1" name="household_members_count" value={formData.household_members_count} onChange={handleChange} className="form-input" />

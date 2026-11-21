@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { runDamageAssessment } from '../utils/assessmentApi';
 import { getAssessmentEligibilityModel } from '../utils/subsidyPresentation';
+import LocationFields from './LocationFields';
 
 const DISASTERS = [
   { value: 'Typhoon', icon: Wind, title: 'Typhoon / Strong Winds', description: 'Violent winds, blown off roofs, fallen trees' },
@@ -476,16 +477,20 @@ export default function DamageAssessmentForm({ user, csrfToken, onSelectSubsidyF
                     <label className="form-label">{"Contact Number"}</label>
                     <input type="text" name="contactNumber" value={formData.contactNumber} onChange={handleChange} className="form-input" />
                   </div>
-                  <div className="form-group">
-                    <label className="form-label"><MapPin size={15} /> {"Address (Purok, Barangay, City, Province)"}</label>
-                    <input type="text" name="barangay" placeholder="Barangay" value={formData.barangay} onChange={handleChange} className="form-input" />
-                  </div>
-                  <div className="form-group">
-                    <input type="text" name="cityMunicipality" placeholder={"City / Municipality"} value={formData.cityMunicipality} onChange={handleChange} className="form-input" />
-                  </div>
-                  <div className="form-group">
-                    <input type="text" name="province" placeholder="Province" value={formData.province} onChange={handleChange} className="form-input" />
-                  </div>
+                </div>
+                <div style={{ marginTop: 8 }}>
+                  <LocationFields
+                    values={{
+                      province: formData.province,
+                      cityMunicipality: formData.cityMunicipality,
+                      barangay: formData.barangay,
+                    }}
+                    onChangeField={(field, value) =>
+                      setFormData((prev) => ({ ...prev, [field]: value }))
+                    }
+                    includeStreet={false}
+                    required={false}
+                  />
                 </div>
               </details>
 

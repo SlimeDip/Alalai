@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { User, Phone, MapPin, X, ArrowRight, UserCheck, Mail, Lock, Users } from 'lucide-react';
+import LocationFields from './LocationFields';
 
 const emptyProfile = {
   firstName: '', middleName: '', lastName: '', mobile: '', email: '', password: '', province: '', cityMunicipality: '',
@@ -127,14 +128,19 @@ export default function AuthModal({
             <>
               <div className="auth-section">
                 <p className="form-section-label"><MapPin size={15} /> Address {!isProfile && '(Optional)'}</p>
-                <div className="form-grid">
-                  <label className="auth-field"><span>Province</span><input type="text" name="province" placeholder="Add province" value={formData.province} onChange={update} /></label>
-                  <label className="auth-field"><span>City / Municipality</span><input type="text" name="cityMunicipality" placeholder="Add city" value={formData.cityMunicipality} onChange={update} /></label>
-                </div>
-                <div className="form-grid">
-                  <label className="auth-field"><span>Barangay</span><input type="text" name="barangay" placeholder="Add barangay" value={formData.barangay} onChange={update} /></label>
-                  <label className="auth-field"><span>Purok / Street</span><input type="text" name="purokStreet" placeholder="Add street" value={formData.purokStreet} onChange={update} /></label>
-                </div>
+                <LocationFields
+                  values={{
+                    province: formData.province,
+                    cityMunicipality: formData.cityMunicipality,
+                    barangay: formData.barangay,
+                    purokStreet: formData.purokStreet,
+                  }}
+                  onChangeField={(field, value) =>
+                    setFormData((prev) => ({ ...prev, [field]: value }))
+                  }
+                  includeStreet={true}
+                  required={false}
+                />
               </div>
               {(isProfile || mode === 'signup') && (
                 <div className="auth-section">
