@@ -10,20 +10,20 @@ import {
 } from '../utils/recoveryCaseWorkspace';
 import { getAssessmentEligibilityModel } from '../utils/subsidyPresentation';
 
-function dateLabel(value, lang) {
+function dateLabel(value) {
   if (!value) return '';
   const date = new Date(value.includes(' ') ? `${value.replace(' ', 'T')}Z` : `${value}T00:00:00`);
   return Number.isNaN(date.getTime())
     ? value
-    : date.toLocaleDateString(lang === 'tl' ? 'fil-PH' : 'en-US', {
+    : date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
     });
 }
 
-function peso(value, lang) {
-  return `₱${Number(value).toLocaleString(lang === 'tl' ? 'fil-PH' : 'en-PH', {
+function peso(value) {
+  return `₱${Number(value).toLocaleString('en-PH', {
     maximumFractionDigits: 2
   })}`;
 }
@@ -36,8 +36,7 @@ function CaseDetail({
   onPrepareApplication,
   onOpenApplication,
   onNavigateToWorkflow,
-  t,
-  lang
+  t
 }) {
   const detail = getRecoveryCaseDetailModel(recoveryCase);
   const eligibility = getAssessmentEligibilityModel({
@@ -69,8 +68,8 @@ function CaseDetail({
           <h2 className="card-heading-lg">{recoveryCase.disaster_type || t('disasterTypeUnavailable')}</h2>
           <p className="card-subheading">{location || t('locationUnavailable')}</p>
           <p className="card-subheading">
-            {recoveryCase.incident_date ? `${t('disasterDate')}: ${dateLabel(recoveryCase.incident_date, lang)}` : ''}
-            {recoveryCase.created_at ? ` · ${t('caseCreated')}: ${dateLabel(recoveryCase.created_at, lang)}` : ''}
+            {recoveryCase.incident_date ? `${t('disasterDate')}: ${dateLabel(recoveryCase.incident_date)}` : ''}
+            {recoveryCase.created_at ? ` · ${t('caseCreated')}: ${dateLabel(recoveryCase.created_at)}` : ''}
           </p>
         </div>
         <span className="badge badge-agency">{recoveryCase.severity_level || t('severityUnavailable')}</span>
@@ -105,9 +104,9 @@ function CaseDetail({
             {(recoveryCase.estimated_cost_min != null || recoveryCase.estimated_cost_max != null) && (
               <p>
                 <strong>{t('assessmentEstimate')}: </strong>
-                {recoveryCase.estimated_cost_min != null ? peso(recoveryCase.estimated_cost_min, lang) : '—'}
+                {recoveryCase.estimated_cost_min != null ? peso(recoveryCase.estimated_cost_min) : '—'}
                 {' – '}
-                {recoveryCase.estimated_cost_max != null ? peso(recoveryCase.estimated_cost_max, lang) : '—'}
+                {recoveryCase.estimated_cost_max != null ? peso(recoveryCase.estimated_cost_max) : '—'}
               </p>
             )}
           </>
@@ -130,7 +129,7 @@ function CaseDetail({
                 <strong>{loss.item_category || loss.item_name || loss.loss_type || t('lossCategoryUnavailable')}</strong>
                 {loss.condition && <span>{t('recordedCondition')}: {loss.condition}</span>}
                 {loss.estimated_loss_php != null && (
-                  <span>{t('recordedEstimate')}: {peso(loss.estimated_loss_php, lang)}</span>
+                  <span>{t('recordedEstimate')}: {peso(loss.estimated_loss_php)}</span>
                 )}
                 {loss.description && <p>{loss.description}</p>}
               </div>
@@ -247,7 +246,6 @@ export default function RecoveryCaseWorkspace({
   onOpenApplication,
   onNavigateToWorkflow,
   t,
-  lang = 'en'
 }) {
   const [cases, setCases] = useState([]);
   const [applications, setApplications] = useState([]);
@@ -380,10 +378,10 @@ export default function RecoveryCaseWorkspace({
                   <strong>{recoveryCase.disaster_type || t('disasterTypeUnavailable')}</strong>
                   <span>{getRecoveryCaseDetailModel(recoveryCase).location || t('locationUnavailable')}</span>
                   {recoveryCase.incident_date && (
-                    <span>{t('disasterDate')}: {dateLabel(recoveryCase.incident_date, lang)}</span>
+                    <span>{t('disasterDate')}: {dateLabel(recoveryCase.incident_date)}</span>
                   )}
                   {recoveryCase.created_at && (
-                    <span>{t('caseCreated')}: {dateLabel(recoveryCase.created_at, lang)}</span>
+                    <span>{t('caseCreated')}: {dateLabel(recoveryCase.created_at)}</span>
                   )}
                 </button>
               ))}
@@ -400,7 +398,6 @@ export default function RecoveryCaseWorkspace({
               onOpenApplication={onOpenApplication}
               onNavigateToWorkflow={onNavigateToWorkflow}
               t={t}
-              lang={lang}
             />
           ) : (
             <div className="modern-card recovery-case-empty">

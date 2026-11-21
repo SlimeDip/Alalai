@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Layers, ArrowRight, Search, SlidersHorizontal, X, ExternalLink, CheckCircle2, ListChecks } from 'lucide-react';
 import { getCatalogProgramPresentation } from '../utils/subsidyPresentation';
 
-export default function SubsidyCatalog({ onSelectSubsidyForApplication, t, lang = 'en' }) {
+export default function SubsidyCatalog({ onSelectSubsidyForApplication, t }) {
   const [subsidies, setSubsidies] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState('');

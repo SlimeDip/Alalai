@@ -52,7 +52,7 @@ const COST_TIERS = [
   { value: 'over100', labelKey: 'estOver100k' }
 ];
 
-export default function DamageAssessmentForm({ user, csrfToken, t, lang = 'en', onSelectSubsidyForApplication, onViewReliefOptions }) {
+export default function DamageAssessmentForm({ user, csrfToken, t, onSelectSubsidyForApplication, onViewReliefOptions }) {
   const [currentStep, setCurrentStep] = useState(1);
   const [inputMethod, setInputMethod] = useState(null);
 

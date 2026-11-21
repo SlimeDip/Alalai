@@ -18,21 +18,21 @@ import {
 } from '../utils/recoveryDashboard';
 import { getCaseLocation } from '../utils/recoveryCaseWorkspace';
 
-function dateLabel(value, lang) {
+function dateLabel(value) {
   if (!value) return '';
   const dateValue = String(value);
   const date = new Date(dateValue.includes(' ') ? `${dateValue.replace(' ', 'T')}Z` : `${dateValue}T00:00:00`);
   return Number.isNaN(date.getTime())
     ? dateValue
-    : date.toLocaleDateString(lang === 'tl' ? 'fil-PH' : 'en-US', {
+    : date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
     });
 }
 
-function peso(value, lang) {
-  return `₱${Number(value).toLocaleString(lang === 'tl' ? 'fil-PH' : 'en-PH', {
+function peso(value) {
+  return `₱${Number(value).toLocaleString('en-PH', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   })}`;
@@ -60,8 +60,7 @@ export default function RecoveryDashboard({
   onOpenTracker,
   onOpenAidLedger,
   onOpenVault,
-  t,
-  lang = 'en'
+  t
 }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -212,10 +211,10 @@ export default function RecoveryDashboard({
                     <strong>{recoveryCase.disaster_type || t('disasterTypeUnavailable')}</strong>
                     <span>{getCaseLocation(recoveryCase) || t('locationUnavailable')}</span>
                     {recoveryCase.incident_date && (
-                      <span>{t('disasterDate')}: {dateLabel(recoveryCase.incident_date, lang)}</span>
+                      <span>{t('disasterDate')}: {dateLabel(recoveryCase.incident_date)}</span>
                     )}
                     {recoveryCase.created_at && (
-                      <span>{t('caseCreated')}: {dateLabel(recoveryCase.created_at, lang)}</span>
+                      <span>{t('caseCreated')}: {dateLabel(recoveryCase.created_at)}</span>
                     )}
                   </button>
                 ))}
@@ -256,13 +255,13 @@ export default function RecoveryDashboard({
             <DashboardMetric title={t('dashboardAssistance')} icon={HandCoins}>
               <p className="recovery-dashboard-assistance-label">{t('dashboardRecordedCash')}</p>
               <p className="recovery-dashboard-total">
-                {data.cashTotal == null ? t('dashboardMetricUnavailable') : peso(data.cashTotal, lang)}
+                {data.cashTotal == null ? t('dashboardMetricUnavailable') : peso(data.cashTotal)}
               </p>
               <p className="recovery-dashboard-assistance-label">
                 {t('dashboardInKindEntries')}: {data.inKindCount == null ? t('dashboardMetricUnavailable') : data.inKindCount}
               </p>
               {data.inKindEstimatedValue != null && (
-                <p>{t('dashboardInKindEstimatedValue')}: {peso(data.inKindEstimatedValue, lang)}</p>
+                <p>{t('dashboardInKindEstimatedValue')}: {peso(data.inKindEstimatedValue)}</p>
               )}
               <p role="note" className="recovery-dashboard-disclaimer">{t('dashboardAidDisclaimer')}</p>
               <button type="button" className="btn btn-secondary btn-sm" onClick={() => onOpenAidLedger()}>

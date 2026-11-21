@@ -17,25 +17,10 @@ import { createCaseApplicationContext } from './utils/recoveryCaseWorkspace';
 export default function App() {
   const [activeTab, setActiveTab] = useState('landing');
   const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [lang, setLang] = useState(() => {
-    try {
-      return localStorage.getItem('alalai_lang') === 'tl' ? 'tl' : 'en';
-    } catch {
-      return 'en';
-    }
-  });
-
   const t = useMemo(() => {
-    const dict = translations[lang] || translations.en;
-    return (key) => dict[key] ?? translations.en[key] ?? key;
-  }, [lang]);
-
-  const setLanguage = (next) => {
-    setLang(next);
-    try {
-      localStorage.setItem('alalai_lang', next);
-    } catch {}
-  };
+    const dict = translations.en;
+    return (key) => dict[key] ?? key;
+  }, []);
 
   const [user, setUser] = useState(() => {
     try {
@@ -106,7 +91,7 @@ export default function App() {
       });
     } finally {
       setCsrfToken('');
-      const guestUser = { isGuest: true, name: lang === 'tl' ? 'Bisita' : 'Guest' };
+      const guestUser = { isGuest: true, name: 'Guest' };
       setUser(guestUser);
       try {
         localStorage.removeItem('alalai_user');
@@ -115,7 +100,7 @@ export default function App() {
   };
 
   const handleContinueAsGuest = () => {
-    const guestUser = { isGuest: true, name: lang === 'tl' ? 'Bisita' : 'Guest' };
+    const guestUser = { isGuest: true, name: 'Guest' };
     setUser(guestUser);
     setAuthModalOpen(false);
   };
@@ -205,8 +190,7 @@ export default function App() {
     onOpenTracker: (caseId) => handleNavigateToCaseWorkflow('tracker', caseId),
     onOpenAidLedger: (caseId) => handleNavigateToCaseWorkflow('aid', caseId),
     onOpenVault: (caseId) => handleNavigateToCaseWorkflow('vault', caseId),
-    t,
-    lang
+    t
   };
 
   return (
@@ -223,8 +207,6 @@ export default function App() {
           onOpenProfile={() => { setAuthModalMode('profile'); setAuthModalOpen(true); }}
           onLogout={handleLogout}
           onContinueAsGuest={handleContinueAsGuest}
-          lang={lang}
-          setLang={setLanguage}
           t={t}
         />
 
@@ -249,7 +231,6 @@ export default function App() {
               user={user}
               csrfToken={csrfToken}
               t={t}
-              lang={lang}
               onSelectSubsidyForApplication={handleSelectSubsidyForApplication}
               onViewReliefOptions={() => setActiveTab('subsidies')}
             />
@@ -258,7 +239,6 @@ export default function App() {
           <div style={{ display: activeTab === 'subsidies' ? 'block' : 'none' }}>
             <SubsidyCatalog
               t={t}
-              lang={lang}
               onSelectSubsidyForApplication={handleSelectSubsidyForApplication}
             />
           </div>
@@ -270,7 +250,6 @@ export default function App() {
               user={user}
               csrfToken={csrfToken}
               t={t}
-              lang={lang}
               onBack={() => setActiveTab(selectedApplicationData?.returnTab || 'subsidies')}
               backLabel={
                 selectedApplicationData?.returnTab === 'assessment'
@@ -291,7 +270,6 @@ export default function App() {
               user={user}
               csrfToken={csrfToken}
               t={t}
-              lang={lang}
             />
           )}
 
@@ -306,7 +284,6 @@ export default function App() {
               onOpenApplication={handleSelectCaseRelatedApplication}
               onNavigateToWorkflow={handleNavigateToCaseWorkflow}
               t={t}
-              lang={lang}
             />
           )}
 

@@ -33,8 +33,7 @@ export default function OfficialApplicationView({
   onSavedSuccess,
   onBack,
   backLabel,
-  t = (k) => k,
-  lang = 'en'
+  t = (k) => k
 }) {
   const [activeView, setActiveView] = useState('editor'); // 'editor' | 'preview'
   const [formData, setFormData] = useState(() => createApplicationFormData(initialData, user));
@@ -688,7 +687,7 @@ export default function OfficialApplicationView({
 
                 <div className="official-meta-bar">
                   <span>{t('referenceNumber')}: <strong>{formData.reference_number || t('toBeSaved')}</strong></span>
-                  <span>{t('dateLabel')}: <strong>{new Date().toLocaleDateString(lang === 'tl' ? 'fil-PH' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</strong></span>
+                  <span>{t('dateLabel')}: <strong>{new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</strong></span>
                   <span>{t('statusLabel')}: <strong>{formData.status}</strong></span>
                   <span>{t('recoveryCaseLink')}: <strong>{formData.case_id || t('noRecoveryCase')}</strong></span>
                 </div>

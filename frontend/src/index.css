@@ -25,7 +25,6 @@
   /* Added for Accessibility & Dark Mode */
   --bg-color: var(--canvas-bg);
   --text-color: var(--slate-900);
-  --base-font-size: 16px;
   
   --emerald-700: #047857;
   --amber-700: #b45309;
@@ -714,11 +713,6 @@ body {
   flex-direction: column;
   justify-content: center;
   cursor: pointer;
-  transition: transform 0.15s ease;
-}
-
-.bento-card-cyan:hover {
-  transform: translateY(-2px);
 }
 
 .bento-item-row {
@@ -770,11 +764,6 @@ body {
   flex-direction: column;
   justify-content: space-between;
   cursor: pointer;
-  transition: transform 0.15s ease;
-}
-
-.bento-card-dark:hover {
-  transform: translateY(-2px);
 }
 
 .bento-dark-text {
@@ -2051,11 +2040,6 @@ body {
 .faq-chevron {
   color: var(--primary);
   flex-shrink: 0;
-  transition: transform 0.2s ease;
-}
-
-.faq-item.open .faq-chevron {
-  transform: rotate(180deg);
 }
 
 .faq-answer {
@@ -2108,31 +2092,6 @@ body {
 
 .brand-block {
   cursor: pointer;
-}
-
-.lang-toggle {
-  display: inline-flex;
-  background: var(--slate-100);
-  border-radius: var(--radius-pill);
-  padding: 3px;
-  gap: 2px;
-}
-
-.lang-btn {
-  border: none;
-  background: transparent;
-  font-size: 13px;
-  font-weight: 600;
-  padding: 6px 12px;
-  border-radius: var(--radius-pill);
-  cursor: pointer;
-  color: var(--slate-600);
-}
-
-.lang-btn.active {
-  background: var(--white);
-  color: var(--slate-900);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .nav-user-cluster {
@@ -2432,7 +2391,6 @@ body {
 .recovery-case-list-item:hover {
   border-color: var(--slate-500);
   background: var(--slate-50);
-  transform: none;
 }
 
 .recovery-case-list-item.is-selected {
@@ -2642,7 +2600,6 @@ body {
   }
   
   .navbar-cta > div[style*="display: flex"],
-  .navbar-cta .lang-toggle,
   .navbar-cta .nav-user-cluster {
     display: none !important;
   }
@@ -2673,8 +2630,7 @@ body {
   }
 
   .navbar-cta .btn-pill-dark,
-  .navbar-cta .nav-user-cluster button,
-  .navbar-cta .lang-toggle button {
+  .navbar-cta .nav-user-cluster button {
     width: auto !important;
     margin-bottom: 0;
   }
@@ -2698,17 +2654,6 @@ body {
   }
 } 
 
-/* =========================================
-   ACCESSIBILITY: FORCE TEXT RESIZING
-   ========================================= */
-html {
-  font-size: var(--base-font-size);
-}
-
-body {
-  font-size: var(--base-font-size);
-  zoom: var(--font-scale, 1);
-}
 /* =========================================
    DARK MODE: COMPLETE UI, CARDS & BUTTONS FIX
    ========================================= */
@@ -2878,7 +2823,6 @@ html.dark .recovery-case-list-item:hover {
   background: #303030 !important;
   border-color: #737373 !important;
   box-shadow: none !important;
-  transform: none;
 }
 
 html.dark .recovery-case-list-item.is-selected {
@@ -2891,7 +2835,7 @@ html.dark .disaster-card,
 html.dark .method-card {
   border-radius: var(--radius-md) !important;
   box-shadow: none !important;
-  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
 html.dark .disaster-card:hover,
@@ -2899,7 +2843,6 @@ html.dark .method-card:hover {
   background: #303030 !important;
   border-color: #737373 !important;
   box-shadow: none !important;
-  transform: translateY(-1px);
 }
 
 html.dark .recovery-hero,

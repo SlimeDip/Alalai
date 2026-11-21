@@ -1,4 +1,4 @@
-// Bilingual Dictionary: English (default) and Tagalog
+// English-only dictionary
 export const translations = {
   en: {
     // Header & Global
@@ -134,7 +134,6 @@ export const translations = {
     authSubtitle: 'Signing in saves your details so they can fill in your application form next time.',
     authSubmit: 'Save & Continue',
     languageEn: 'English',
-    languageTl: 'Tagalog',
     stepDisaster: 'Disaster',
     stepDetails: 'Your Details',
     stepResults: 'Relief Options',
@@ -498,7 +497,7 @@ export const translations = {
     cityPlaceholder: 'City / Municipality'
   },
 
-  tl: {
+/* Tagalog dictionary removed:
     // Header & Global - Standardized UI terms based on user preference
     appName: 'Alalai',
     appSubtitle: 'Portal sa Paghahanda ng Intake at Ayuda sa Kalamidad',
@@ -991,4 +990,5 @@ export const translations = {
     pleaseEnterName: 'Ilagay ang iyong buong pangalan.',
     cityPlaceholder: 'Lungsod / Bayan'
   }
+*/
 };
