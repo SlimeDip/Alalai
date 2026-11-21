@@ -292,8 +292,10 @@ export default function RecoveryDashboard({
           </div>
 
           {nextActions.length > 0 && (
-            <section className="modern-card recovery-dashboard-next-actions">
-              <h2 className="application-section-heading">{t('dashboardNextActions')}</h2>
+            <section className="recovery-dashboard-next-actions" aria-labelledby="recovery-next-actions-heading">
+              <h2 id="recovery-next-actions-heading" className="recovery-section-heading">
+                {t('dashboardNextActions')}
+              </h2>
               <div className="recovery-dashboard-action-list">
                 {nextActions.map((action, index) => (
                   <div className="recovery-dashboard-action" key={`${action.type}-${action.caseId || action.application?.id || index}`}>

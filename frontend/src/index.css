@@ -242,12 +242,29 @@ body {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  margin-top: 4px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.recovery-section-heading {
+  margin: 0;
+  padding: 0 0 10px;
+  border: 0;
+  background: transparent;
+  color: var(--slate-900);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .recovery-dashboard-action-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 0;
 }
 
 .recovery-dashboard-action {
@@ -255,7 +272,8 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding-top: 10px;
+  padding: 12px 0;
+  border: 0;
   border-top: 1px solid var(--slate-100);
 }
 
@@ -957,10 +975,11 @@ body {
 
 .application-section-heading {
   margin: 20px 0 14px;
-  padding: 7px 10px;
-  border: 1px solid #111827;
-  background-color: #f1f5f9;
-  color: #111827;
+  padding: 0 0 8px;
+  border: 0;
+  border-bottom: 1px solid var(--slate-200);
+  background: transparent;
+  color: var(--slate-900);
   font-size: 13px;
   font-weight: 900;
   letter-spacing: .04em;
@@ -2207,7 +2226,8 @@ body {
 }
 
 .method-card:hover {
-  border-color: var(--primary);
+  border-color: var(--slate-500);
+  background: var(--slate-50);
 }
 
 .method-card p {
@@ -2409,10 +2429,15 @@ body {
   font-size: 13px;
 }
 
-.recovery-case-list-item:hover,
+.recovery-case-list-item:hover {
+  border-color: var(--slate-500);
+  background: var(--slate-50);
+  transform: none;
+}
+
 .recovery-case-list-item.is-selected {
-  border-color: var(--primary);
-  background: #f0f9ff;
+  border-color: var(--slate-900);
+  background: var(--slate-50);
 }
 
 .recovery-case-detail {
@@ -2796,15 +2821,15 @@ html.dark .auth-sheet .auth-section {
 
 html.dark .application-form-heading,
 html.dark .application-section-heading {
-  background-color: var(--slate-100) !important;
+  background: transparent !important;
   color: var(--slate-900) !important;
-  border-color: var(--slate-200) !important;
+  border: 0 !important;
+  border-bottom: 1px solid #525252 !important;
 }
 
 html.dark .card,
 html.dark [class*="-card"],
 html.dark [class*="_card"] {
-  border: 0;
   box-shadow: none;
 }
 
@@ -2824,7 +2849,6 @@ html.dark .trust-card,
 html.dark .landing-faq,
 html.dark .faq-item {
   background: #242424 !important;
-  border: 0 !important;
   box-shadow: none;
 }
 
@@ -2836,19 +2860,61 @@ html.dark .faq-item.open {
   box-shadow: none;
 }
 
+html.dark .recovery-case-list-panel {
+  border: 1px solid #525252 !important;
+  background: #242424 !important;
+  box-shadow: none !important;
+}
+
+html.dark .recovery-case-list-item {
+  background: #242424 !important;
+  border: 1px solid #525252 !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: none !important;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+html.dark .recovery-case-list-item:hover {
+  background: #303030 !important;
+  border-color: #737373 !important;
+  box-shadow: none !important;
+  transform: none;
+}
+
+html.dark .recovery-case-list-item.is-selected {
+  background: #303030 !important;
+  border-color: #7692ff !important;
+  box-shadow: none !important;
+}
+
+html.dark .disaster-card,
+html.dark .method-card {
+  border-radius: var(--radius-md) !important;
+  box-shadow: none !important;
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+html.dark .disaster-card:hover,
+html.dark .method-card:hover {
+  background: #303030 !important;
+  border-color: #737373 !important;
+  box-shadow: none !important;
+  transform: translateY(-1px);
+}
+
 html.dark .recovery-hero,
 html.dark .recovery-hero-icon,
 html.dark .recovery-dashboard-metric,
 html.dark .guest-dashboard-notice {
   background: #242424 !important;
-  border: 0 !important;
 }
 
 html.dark .recovery-hero .eyebrow,
 html.dark .landing-title-accent,
 html.dark .faq-chevron,
 html.dark .recovery-dashboard-metric-heading svg,
-html.dark .recovery-dashboard-action svg {
+html.dark .recovery-dashboard-action svg,
+html.dark .recovery-section-heading {
   color: #7692ff !important;
   stroke: #7692ff !important;
 }
@@ -2864,7 +2930,6 @@ html.dark .guest-dashboard-notice .btn-secondary {
 html.dark .faq-answer,
 html.dark .faq-answer-inner {
   background: #242424 !important;
-  border: 0 !important;
   color: var(--slate-900) !important;
 }
 
@@ -2895,16 +2960,38 @@ html.dark .trust-card,
 html.dark .faq-item,
 html.dark .metric-box,
 html.dark .recovery-case-list-item {
-  border-width: 0 !important;
-  border-color: transparent !important;
   box-shadow: none !important;
+}
+
+html.dark .flow-card,
+html.dark .modern-card,
+html.dark .subsidy-card,
+html.dark .trust-card,
+html.dark .landing-faq,
+html.dark .faq-item,
+html.dark .metric-box,
+html.dark .recovery-case-list-item {
+  border-style: solid;
+  border-width: 1px;
+  border-color: #525252;
+}
+
+html.dark .disaster-card,
+html.dark .method-card {
+  border-style: solid;
+  border-width: 2px;
+  border-color: #525252;
+}
+
+html.dark .disaster-card.selected,
+html.dark .method-card.selected {
+  border-color: #7692ff;
 }
 
 html.dark .wizard-stepper,
 html.dark .optional-details,
 html.dark .recovery-dashboard-followups {
   background: transparent !important;
-  border: 0 !important;
   box-shadow: none !important;
 }
 

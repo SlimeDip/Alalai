@@ -366,7 +366,7 @@ export default function RecoveryCaseWorkspace({
 
       {listView.state === 'list' && (
         <div className="recovery-case-workspace-grid">
-          <section className="modern-card" aria-label={t('recoveryCasesTitle')}>
+          <section className="modern-card recovery-case-list-panel" aria-label={t('recoveryCasesTitle')}>
             <h2 className="application-section-heading">{t('yourRecoveryCases')} ({cases.length})</h2>
             <div className="recovery-case-list">
               {listView.cases.map((recoveryCase) => (
