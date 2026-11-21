@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
 import LandingPage from './components/LandingPage';
 import RecoveryDashboard from './components/RecoveryDashboard';
@@ -11,16 +11,11 @@ import ApplicationTracker from './components/ApplicationTracker';
 import AidLedger from './components/AidLedger';
 import DocumentVault from './components/DocumentVault';
 import RecoveryCaseWorkspace from './components/RecoveryCaseWorkspace';
-import { translations } from './utils/translations';
 import { createCaseApplicationContext } from './utils/recoveryCaseWorkspace';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('landing');
   const [authModalOpen, setAuthModalOpen] = useState(false);
-  const t = useMemo(() => {
-    const dict = translations.en;
-    return (key) => dict[key] ?? key;
-  }, []);
 
   const [user, setUser] = useState(() => {
     try {
@@ -189,8 +184,7 @@ export default function App() {
     onOpenApplication: handleDashboardOpenApplication,
     onOpenTracker: (caseId) => handleNavigateToCaseWorkflow('tracker', caseId),
     onOpenAidLedger: (caseId) => handleNavigateToCaseWorkflow('aid', caseId),
-    onOpenVault: (caseId) => handleNavigateToCaseWorkflow('vault', caseId),
-    t
+    onOpenVault: (caseId) => handleNavigateToCaseWorkflow('vault', caseId)
   };
 
   return (
@@ -207,7 +201,6 @@ export default function App() {
           onOpenProfile={() => { setAuthModalMode('profile'); setAuthModalOpen(true); }}
           onLogout={handleLogout}
           onContinueAsGuest={handleContinueAsGuest}
-          t={t}
         />
 
         <main className="main-content-area">
@@ -218,7 +211,6 @@ export default function App() {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
               onOpenLogin={dashboardProps.onOpenLogin}
-              t={t}
             />
           )}
 
@@ -230,7 +222,6 @@ export default function App() {
             <DamageAssessmentForm
               user={user}
               csrfToken={csrfToken}
-              t={t}
               onSelectSubsidyForApplication={handleSelectSubsidyForApplication}
               onViewReliefOptions={() => setActiveTab('subsidies')}
             />
@@ -238,7 +229,6 @@ export default function App() {
 
           <div style={{ display: activeTab === 'subsidies' ? 'block' : 'none' }}>
             <SubsidyCatalog
-              t={t}
               onSelectSubsidyForApplication={handleSelectSubsidyForApplication}
             />
           </div>
@@ -249,16 +239,15 @@ export default function App() {
               initialData={selectedApplicationData}
               user={user}
               csrfToken={csrfToken}
-              t={t}
               onBack={() => setActiveTab(selectedApplicationData?.returnTab || 'subsidies')}
               backLabel={
                 selectedApplicationData?.returnTab === 'assessment'
-                  ? t('backToAssessment')
+                  ? "Back to assessment"
                   : selectedApplicationData?.returnTab === 'cases'
-                  ? t('backToCases')
+                  ? "Back to recovery cases"
                   : selectedApplicationData?.returnTab === 'saved'
-                  ? (t('backToSaved') || 'Back to Saved Applications')
-                  : t('backToSubsidies')
+                  ? ("Back to saved applications" || 'Back to Saved Applications')
+                  : "Back to aid options"
               }
               onSavedSuccess={() => {}}
             />
@@ -269,7 +258,6 @@ export default function App() {
               onSelectApplication={handleSelectSavedApplication}
               user={user}
               csrfToken={csrfToken}
-              t={t}
             />
           )}
 
@@ -283,7 +271,6 @@ export default function App() {
               onPrepareApplication={handlePrepareApplicationFromCase}
               onOpenApplication={handleSelectCaseRelatedApplication}
               onNavigateToWorkflow={handleNavigateToCaseWorkflow}
-              t={t}
             />
           )}
 
@@ -293,7 +280,6 @@ export default function App() {
               csrfToken={csrfToken}
               initialCaseId={workflowCaseId}
               onOpenLogin={() => { setAuthModalMode('signin'); setAuthModalOpen(true); }}
-              t={t}
             />
           )}
 
@@ -303,7 +289,6 @@ export default function App() {
               csrfToken={csrfToken}
               initialCaseId={workflowCaseId}
               onOpenLogin={() => { setAuthModalMode('signin'); setAuthModalOpen(true); }}
-              t={t}
             />
           )}
 
@@ -313,14 +298,13 @@ export default function App() {
               csrfToken={csrfToken}
               initialCaseId={workflowCaseId}
               onOpenLogin={() => { setAuthModalMode('signin'); setAuthModalOpen(true); }}
-              t={t}
             />
           )}
         </main>
 
         <footer className="site-footer no-print">
-          <strong>{t('appName')}</strong>
-          <span> — {t('footerDisclaimer')}</span>
+          <strong>{"Alalai"}</strong>
+          <span> — {"Alalai is an independent, non-governmental assistance tool. It does not disburse funds directly but assists citizens in preparing organized intake documents for local calamity relief."}</span>
         </footer>
       </div>
 
@@ -333,7 +317,6 @@ export default function App() {
         user={user}
         csrfToken={csrfToken}
         initialMode={authModalMode}
-        t={t}
       />
     </div>
   );

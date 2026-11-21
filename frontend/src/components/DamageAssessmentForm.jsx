@@ -25,34 +25,41 @@ import { runDamageAssessment } from '../utils/assessmentApi';
 import { getAssessmentEligibilityModel } from '../utils/subsidyPresentation';
 
 const DISASTERS = [
-  { value: 'Typhoon', icon: Wind, titleKey: 'disasterTyphoon', descKey: 'disasterTyphoonDesc' },
-  { value: 'Flash Flood', icon: Droplets, titleKey: 'disasterFlood', descKey: 'disasterFloodDesc' },
-  { value: 'Earthquake', icon: Activity, titleKey: 'disasterEarthquake', descKey: 'disasterEarthquakeDesc' },
-  { value: 'Landslide', icon: Mountain, titleKey: 'disasterLandslide', descKey: 'disasterLandslideDesc' },
-  { value: 'Fire', icon: Flame, titleKey: 'disasterFire', descKey: 'disasterFireDesc' },
-  { value: 'Volcanic Eruption', icon: Mountain, titleKey: 'disasterVolcano', descKey: 'disasterVolcanoDesc' },
-  { value: 'Tornado', icon: Tornado, titleKey: 'disasterTornado', descKey: 'disasterTornadoDesc' },
-  { value: 'Storm Surge', icon: Waves, titleKey: 'disasterStormSurge', descKey: 'disasterStormSurgeDesc' },
-  { value: 'Drought', icon: Sun, titleKey: 'disasterDrought', descKey: 'disasterDroughtDesc' },
+  { value: 'Typhoon', icon: Wind, title: 'Typhoon / Strong Winds', description: 'Violent winds, blown off roofs, fallen trees' },
+  { value: 'Flash Flood', icon: Droplets, title: 'Flood / Flash Flood', description: 'Overflowing rivers, submerged houses, damaged crops' },
+  { value: 'Earthquake', icon: Activity, title: 'Earthquake', description: 'Ground shaking, cracked walls, collapsed structures' },
+  { value: 'Landslide', icon: Mountain, title: 'Landslide / Mudflow', description: 'Soil erosion, mud ingress, foundation damage' },
+  { value: 'Fire', icon: Flame, title: 'Fire Incident', description: 'Residential fire or electrical fire damage' },
+  { value: 'Volcanic Eruption', icon: Mountain, title: 'Volcanic Ashfall', description: 'Heavy ash on roof, air quality emergency' },
+  { value: 'Tornado', icon: Tornado, title: 'Tornado', description: 'Extreme rotating winds and structural damage' },
+  { value: 'Storm Surge', icon: Waves, title: 'Storm Surge', description: 'Coastal flooding caused by a severe storm' },
+  { value: 'Drought', icon: Sun, title: 'Drought', description: 'Extended lack of rain affecting water and livelihoods' },
 ];
 
 const MANUAL_CHECK_KEYS = [
-  { id: 'roof', labelKey: 'damageRoof' },
-  { id: 'walls', labelKey: 'damageWalls' },
-  { id: 'flood', labelKey: 'damageFlood' },
-  { id: 'agri', labelKey: 'damageAgri' },
-  { id: 'store', labelKey: 'damageStore' },
-  { id: 'medical', labelKey: 'damageMedical' }
+  { id: 'roof', label: 'Roof and upper structure' },
+  { id: 'walls', label: 'Walls, doors, and windows' },
+  { id: 'flood', label: 'Flood or water damage' },
+  { id: 'agri', label: 'Crops or agricultural equipment' },
+  { id: 'store', label: 'Store, business, or livelihood tools' },
+  { id: 'medical', label: 'Medical or essential household items' }
 ];
 
 const COST_TIERS = [
-  { value: 'under15', labelKey: 'estUnder15k' },
-  { value: '15to40', labelKey: 'est15kTo40k' },
-  { value: '40to100', labelKey: 'est40kTo100k' },
-  { value: 'over100', labelKey: 'estOver100k' }
+  { value: 'under15', label: 'Under ₱15,000' },
+  { value: '15to40', label: '₱15,000 to ₱40,000' },
+  { value: '40to100', label: '₱40,000 to ₱100,000' },
+  { value: 'over100', label: 'Over ₱100,000' }
 ];
 
-export default function DamageAssessmentForm({ user, csrfToken, t, onSelectSubsidyForApplication, onViewReliefOptions }) {
+const SCREENING_OUTCOME_LABELS = {
+  eligible: 'Likely eligible',
+  maybe: 'Potentially eligible',
+  ineligible: 'Not likely eligible',
+  unavailable: 'Information unavailable'
+};
+
+export default function DamageAssessmentForm({ user, csrfToken, onSelectSubsidyForApplication, onViewReliefOptions }) {
   const [currentStep, setCurrentStep] = useState(1);
   const [inputMethod, setInputMethod] = useState(null);
 
@@ -111,12 +118,12 @@ export default function DamageAssessmentForm({ user, csrfToken, t, onSelectSubsi
     if (!file) return;
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
-      setErrorMsg(t('imageTypeError'));
+      setErrorMsg("Please choose a JPG, PNG, or WebP image.");
       e.target.value = '';
       return;
     }
     if (file.size > 8 * 1024 * 1024) {
-      setErrorMsg(t('imageSizeError'));
+      setErrorMsg("The image must be 8 MB or smaller.");
       e.target.value = '';
       return;
     }
@@ -139,7 +146,7 @@ export default function DamageAssessmentForm({ user, csrfToken, t, onSelectSubsi
 
   const handleStep1Next = () => {
     if (!formData.disasterType) {
-      setErrorMsg(t('step1Subtitle'));
+      setErrorMsg("Please choose which calamity affected your home or livelihood.");
       return;
     }
     setErrorMsg('');
@@ -151,12 +158,12 @@ export default function DamageAssessmentForm({ user, csrfToken, t, onSelectSubsi
     e.preventDefault();
 
     if (inputMethod === 'ai' && !formData.damageDescription.trim() && !damageImage) {
-      setErrorMsg(t('provideAnalysisInput'));
+      setErrorMsg("Please provide a damage description, a photo, or both for analysis.");
       return;
     }
 
     if (inputMethod === 'manual' && !Object.values(manualChecks).some(Boolean)) {
-      setErrorMsg(t('manualChecklistTitle'));
+      setErrorMsg("Check all damages that apply to your situation:");
       return;
     }
 
@@ -165,17 +172,17 @@ export default function DamageAssessmentForm({ user, csrfToken, t, onSelectSubsi
     try {
       const manualDescription = MANUAL_CHECK_KEYS
         .filter((key) => manualChecks[key.id])
-        .map((key) => t(key.labelKey))
+        .map((key) => key.label)
         .join('. ');
       const selectedCostTier = COST_TIERS.find((tier) => tier.value === costTier);
       const assessmentPayload = {
         disasterType: formData.disasterType,
         damageDescription: inputMethod === 'manual'
-          ? `${manualDescription}. Estimated damage range selected by resident: ${selectedCostTier ? t(selectedCostTier.labelKey) : costTier}.`
+          ? `${manualDescription}. Estimated damage range selected by resident: ${selectedCostTier ? selectedCostTier.label : costTier}.`
           : formData.damageDescription,
         householdSize: formData.householdSize,
         manualChecks: Object.fromEntries(
-          MANUAL_CHECK_KEYS.filter((k) => manualChecks[k.id]).map((k) => [t(k.labelKey), true])
+          MANUAL_CHECK_KEYS.filter((k) => manualChecks[k.id]).map((k) => [k.label, true])
         ),
         costTier: inputMethod === 'manual' ? costTier : ''
       };
@@ -190,15 +197,15 @@ export default function DamageAssessmentForm({ user, csrfToken, t, onSelectSubsi
     } catch (err) {
       console.error(err);
       if (err.code === 'NO_DAMAGE_DETECTED') {
-        setErrorMsg(t('noDamageDetectedError'));
+        setErrorMsg("No visible damage was detected in the uploaded photo. Please describe the specific damage in the text box below so we can assess it accurately.");
       } else if (err.code === 'IRRELEVANT_IMAGE' || err.isRelevanceError) {
-        setErrorMsg(t('imageRelevanceError'));
+        setErrorMsg("The uploaded image does not appear to show disaster-related damage. Please upload a clear photo of the affected property or area.");
       } else if (err.code === 'AI_UNAVAILABLE') {
-        setErrorMsg(t('aiUnavailableError'));
+        setErrorMsg("The AI damage analysis service is temporarily unavailable. Please try again in a few moments, or use the Manual Checklist method instead.");
       } else if (err.code === 'MISSING_ANALYSIS_INPUT') {
-        setErrorMsg(t('missingAnalysisInputError'));
+        setErrorMsg("Please provide a damage description, a damage photo, or both before running the analysis.");
       } else {
-        setErrorMsg(t('analysisError'));
+        setErrorMsg("An unexpected error occurred while analyzing your submission. Please check your internet connection and try again.");
       }
     } finally {
       setLoading(false);
@@ -280,7 +287,7 @@ export default function DamageAssessmentForm({ user, csrfToken, t, onSelectSubsi
               <AlertTriangle size={28} />
             </div>
             <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#0f172a', marginBottom: '8px' }}>
-              {t('assessmentAlert')}
+              {"Assessment Notice"}
             </h3>
             <p style={{ fontSize: '14px', color: '#475569', lineHeight: '1.5', marginBottom: '20px' }}>
               {errorMsg}
@@ -291,7 +298,7 @@ export default function DamageAssessmentForm({ user, csrfToken, t, onSelectSubsi
               style={{ width: '100%', padding: '10px 16px', fontWeight: '600', borderRadius: '8px' }}
               onClick={() => setErrorMsg('')}
             >
-              {t('gotIt')}
+              {"Got It"}
             </button>
           </div>
         </div>
@@ -300,27 +307,27 @@ export default function DamageAssessmentForm({ user, csrfToken, t, onSelectSubsi
       <div className="wizard-stepper no-print">
         <div className={`step-node ${currentStep === 1 ? 'active' : ''} ${currentStep > 1 ? 'completed' : ''}`}>
           <div className="step-number">{currentStep > 1 ? <Check size={16} /> : '1'}</div>
-          <span className="step-label">{t('stepDisaster')}</span>
+          <span className="step-label">{"Disaster"}</span>
         </div>
         <div className="step-connector" />
         <div className={`step-node ${currentStep === 2 ? 'active' : ''} ${currentStep > 2 ? 'completed' : ''}`}>
           <div className="step-number">{currentStep > 2 ? <Check size={16} /> : '2'}</div>
-          <span className="step-label">{t('stepDetails')}</span>
+          <span className="step-label">{"Your Details"}</span>
         </div>
         <div className="step-connector" />
         <div className={`step-node ${currentStep === 3 ? 'active' : ''}`}>
           <div className="step-number">3</div>
-          <span className="step-label">{t('stepResults')}</span>
+          <span className="step-label">{"Relief Options"}</span>
         </div>
       </div>
 
       {currentStep === 1 && (
         <div className="modern-card">
-          <h2 className="card-heading-lg">{t('step1Title')}</h2>
-          <p className="card-subheading-lg">{t('step1Subtitle')}</p>
+          <h2 className="card-heading-lg">{"Select the Disaster You Experienced"}</h2>
+          <p className="card-subheading-lg">{"Please choose which calamity affected your home or livelihood."}</p>
 
           <div className="disaster-grid">
-            {DISASTERS.map(({ value, icon: Icon, titleKey, descKey }) => (
+            {DISASTERS.map(({ value, icon: Icon, title, description }) => (
               <button
                 key={value}
                 type="button"
@@ -328,15 +335,15 @@ export default function DamageAssessmentForm({ user, csrfToken, t, onSelectSubsi
                 onClick={() => selectDisaster(value)}
               >
                 <Icon size={28} strokeWidth={1.75} aria-hidden />
-                <strong>{t(titleKey)}</strong>
-                <span>{t(descKey)}</span>
+                <strong>{title}</strong>
+                <span>{description}</span>
               </button>
             ))}
           </div>
 
           <div className="form-group" style={{ maxWidth: 280, marginTop: 20 }}>
             <label className="form-label">
-              <Calendar size={15} /> {t('disasterDate')}
+              <Calendar size={15} /> {"Incident Date"}
             </label>
             <input
               type="date"
@@ -349,7 +356,7 @@ export default function DamageAssessmentForm({ user, csrfToken, t, onSelectSubsi
 
           <div style={{ marginTop: 28, display: 'flex', justifyContent: 'flex-end' }}>
             <button type="button" className="btn btn-primary btn-lg" onClick={handleStep1Next}>
-              {t('nextBtn')}
+              {"Next"}
               <ArrowRight size={16} />
             </button>
           </div>
@@ -358,22 +365,22 @@ export default function DamageAssessmentForm({ user, csrfToken, t, onSelectSubsi
 
       {currentStep === 2 && (
         <div className="modern-card">
-          <h2 className="card-heading-lg">{t('step2Title')}</h2>
-          <p className="card-subheading-lg">{t('step2Subtitle')}</p>
+          <h2 className="card-heading-lg">{"How Would You Like to Detail the Damages?"}</h2>
+          <p className="card-subheading-lg">{"Choose the method that is most comfortable for you."}</p>
 
           {!inputMethod && (
             <div className="method-grid">
               <button type="button" className="method-card" onClick={() => setInputMethod('ai')}>
                 <Sparkles size={32} aria-hidden />
-                <strong>{t('methodAiTitle')}</strong>
-                <p>{t('methodAiDesc')}</p>
-                <span className="method-action">{t('methodAiAction')}</span>
+                <strong>{"AI Smart Assistant"}</strong>
+                <p>{"Simply describe what happened in your own words. Our smart system will calculate the damage severity and estimated cost for you."}</p>
+                <span className="method-action">{"Use Smart Assistant"}</span>
               </button>
               <button type="button" className="method-card" onClick={() => setInputMethod('manual')}>
                 <ClipboardList size={32} aria-hidden />
-                <strong>{t('methodManualTitle')}</strong>
-                <p>{t('methodManualDesc')}</p>
-                <span className="method-action">{t('methodManualAction')}</span>
+                <strong>{"Manual Damage Checklist"}</strong>
+                <p>{"Prefer not to type? Simply tick checkboxes for the items that were damaged in your home or farm."}</p>
+                <span className="method-action">{"Use Checklist"}</span>
               </button>
             </div>
           )}
@@ -386,25 +393,25 @@ export default function DamageAssessmentForm({ user, csrfToken, t, onSelectSubsi
                 style={{ marginBottom: 16 }}
                 onClick={() => setInputMethod(null)}
               >
-                <ArrowLeft size={14} /> {t('backBtn')}
+                <ArrowLeft size={14} /> {"Back"}
               </button>
 
               {inputMethod === 'ai' && (
                 <>
                   <div className="form-group">
-                    <label className="form-label">{t('aiInputLabel')}</label>
+                    <label className="form-label">{"Describe what happened to your home or belongings"}</label>
                     <textarea
                       name="damageDescription"
                       value={formData.damageDescription}
                       onChange={handleChange}
                       rows={5}
                       className="form-textarea form-input-lg"
-                      placeholder={t('aiInputPlaceholder')}
+                      placeholder={"Example: Strong typhoon winds tore off 10 GI sheets from our roof. Rain water flooded the bedrooms and damaged our rice sacks and mattress..."}
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label"><ImagePlus size={15} /> {t('damageImageLabel')}</label>
-                    <p className="field-help">{t('damageImageHelp')}</p>
+                    <label className="form-label"><ImagePlus size={15} /> {"Add a damage photo (optional)"}</label>
+                    <p className="field-help">{"Upload a clear photo of the affected property or livelihood. JPG, PNG, or WebP up to 8 MB. The photo must match the selected disaster; unrelated images are rejected."}</p>
                     {!damageImage ? (
                       <input
                         type="file"
@@ -414,9 +421,9 @@ export default function DamageAssessmentForm({ user, csrfToken, t, onSelectSubsi
                       />
                     ) : (
                       <div className="image-upload-preview">
-                        <img src={imagePreview} alt={t('damageImagePreviewAlt')} />
+                        <img src={imagePreview} alt={"Selected damage photo preview"} />
                         <button type="button" className="btn btn-secondary btn-sm" onClick={clearImage}>
-                          <X size={14} /> {t('removeImage')}
+                          <X size={14} /> {"Remove photo"}
                         </button>
                       </div>
                     )}
@@ -426,9 +433,9 @@ export default function DamageAssessmentForm({ user, csrfToken, t, onSelectSubsi
 
               {inputMethod === 'manual' && (
                 <>
-                  <p className="form-label" style={{ marginBottom: 12 }}>{t('manualChecklistTitle')}</p>
+                  <p className="form-label" style={{ marginBottom: 12 }}>{"Check all damages that apply to your situation:"}</p>
                   <div className="checklist-grid">
-                    {MANUAL_CHECK_KEYS.map(({ id, labelKey }) => (
+                    {MANUAL_CHECK_KEYS.map(({ id, label }) => (
                       <label key={id} className="checklist-item">
                         <input
                           type="checkbox"
@@ -437,12 +444,12 @@ export default function DamageAssessmentForm({ user, csrfToken, t, onSelectSubsi
                             setManualChecks((prev) => ({ ...prev, [id]: e.target.checked }))
                           }
                         />
-                        <span>{t(labelKey)}</span>
+                        <span>{label}</span>
                       </label>
                     ))}
                   </div>
                   <div className="form-group" style={{ marginTop: 20 }}>
-                    <label className="form-label">{t('estDamageLabel')}</label>
+                    <label className="form-label">{"Estimated Total Damage in Pesos (₱):"}</label>
                     <select
                       className="form-select form-input-lg"
                       value={costTier}
@@ -450,7 +457,7 @@ export default function DamageAssessmentForm({ user, csrfToken, t, onSelectSubsi
                     >
                       {COST_TIERS.map((tier) => (
                         <option key={tier.value} value={tier.value}>
-                          {t(tier.labelKey)}
+                          {tier.label}
                         </option>
                       ))}
                     </select>
@@ -459,22 +466,22 @@ export default function DamageAssessmentForm({ user, csrfToken, t, onSelectSubsi
               )}
 
               <details className="optional-details">
-                <summary>{t('fullName')} & {t('address')} ({t('optional')})</summary>
+                <summary>{"Applicant Full Name"} & {"Address (Purok, Barangay, City, Province)"} ({"optional"})</summary>
                 <div className="form-grid" style={{ marginTop: 12 }}>
                   <div className="form-group">
-                    <label className="form-label"><User size={15} /> {t('fullName')}</label>
+                    <label className="form-label"><User size={15} /> {"Applicant Full Name"}</label>
                     <input type="text" name="applicantName" value={formData.applicantName} onChange={handleChange} className="form-input" />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">{t('phone')}</label>
+                    <label className="form-label">{"Contact Number"}</label>
                     <input type="text" name="contactNumber" value={formData.contactNumber} onChange={handleChange} className="form-input" />
                   </div>
                   <div className="form-group">
-                    <label className="form-label"><MapPin size={15} /> {t('address')}</label>
+                    <label className="form-label"><MapPin size={15} /> {"Address (Purok, Barangay, City, Province)"}</label>
                     <input type="text" name="barangay" placeholder="Barangay" value={formData.barangay} onChange={handleChange} className="form-input" />
                   </div>
                   <div className="form-group">
-                    <input type="text" name="cityMunicipality" placeholder={t('cityPlaceholder')} value={formData.cityMunicipality} onChange={handleChange} className="form-input" />
+                    <input type="text" name="cityMunicipality" placeholder={"City / Municipality"} value={formData.cityMunicipality} onChange={handleChange} className="form-input" />
                   </div>
                   <div className="form-group">
                     <input type="text" name="province" placeholder="Province" value={formData.province} onChange={handleChange} className="form-input" />
@@ -484,10 +491,10 @@ export default function DamageAssessmentForm({ user, csrfToken, t, onSelectSubsi
 
               <div className="form-actions-row">
                 <button type="button" className="btn btn-secondary btn-lg" onClick={() => goStep(1)}>
-                  <ArrowLeft size={16} /> {t('backBtn')}
+                  <ArrowLeft size={16} /> {"Back"}
                 </button>
                 <button type="submit" disabled={loading} className="btn btn-primary btn-lg">
-                  {loading ? '…' : t('analyzeButton')}
+                  {loading ? '…' : "Assess Damage & Find Aid"}
                   {!loading && <Sparkles size={18} />}
                 </button>
               </div>
@@ -497,7 +504,7 @@ export default function DamageAssessmentForm({ user, csrfToken, t, onSelectSubsi
           {!inputMethod && (
             <div style={{ marginTop: 24 }}>
               <button type="button" className="btn btn-secondary" onClick={() => goStep(1)}>
-                <ArrowLeft size={16} /> {t('backBtn')}
+                <ArrowLeft size={16} /> {"Back"}
               </button>
             </div>
           )}
@@ -510,22 +517,22 @@ export default function DamageAssessmentForm({ user, csrfToken, t, onSelectSubsi
             <div className="results-header">
               <div>
                 <span className="results-ref">REF: {result.id}</span>
-                <h2 className="card-heading-lg">{t('resultsTitle')}</h2>
+                <h2 className="card-heading-lg">{"Damage Assessment Summary"}</h2>
               </div>
               <span className={`badge ${getSeverityBadgeClass(result.severity_level)}`}>
-                {t('severityLabel')}: {result.severity_level}
+                {"Severity Level"}: {result.severity_level}
               </span>
             </div>
 
             <div className="results-metrics">
               <div className="metric-box">
-                <span>{t('estCostLabel')}</span>
+                <span>{"Estimated Repair Cost"}</span>
                 <strong>
                   ₱{result.estimated_cost_min?.toLocaleString()} – ₱{result.estimated_cost_max?.toLocaleString()}
                 </strong>
               </div>
               <div className="metric-box">
-                <span>{t('categoriesLabel')}</span>
+                <span>{"Identified Damage Categories"}</span>
                 <div className="chip-row">
                   {result.damage_categories?.map((cat, idx) => (
                     <span key={idx} className="badge badge-agency">{cat}</span>
@@ -545,27 +552,27 @@ export default function DamageAssessmentForm({ user, csrfToken, t, onSelectSubsi
             )}
 
             <button type="button" className="btn btn-secondary btn-sm" onClick={() => goStep(2)}>
-              <ArrowLeft size={14} /> {t('backBtn')}
+              <ArrowLeft size={14} /> {"Back"}
             </button>
             <div className="form-actions-row" style={{ marginTop: 20 }}>
               <button type="button" className="btn btn-secondary" onClick={onViewReliefOptions}>
-                {t('viewReliefOptions')}
+                {"Browse all aid options"}
               </button>
               <button type="button" className="btn btn-primary" onClick={startAnotherAssessment}>
-                {t('anotherAssessment')}
+                {"Do another assessment"}
               </button>
             </div>
           </div>
 
           <div style={{ marginTop: 28 }}>
-            <h3 className="card-heading-lg">{t('screeningResultsTitle')}</h3>
-            <p className="card-subheading-lg">{t('screeningResultsSubtitle')}</p>
+            <h3 className="card-heading-lg">{"Preliminary assistance screening"}</h3>
+            <p className="card-subheading-lg">{"These program comparisons use the information in this assessment."}</p>
             <p role="note" className="subsidy-screening-disclaimer">
-              {t('screeningDisclaimer')}
+              {"This is preliminary screening, not an official eligibility determination. A program listed here does not guarantee approval. The screening may not account for every agency requirement. Verify current program details and requirements with the responsible agency."}
             </p>
 
             {eligibility.state === 'empty' ? (
-              <p className="field-help">{t('noScreeningResults')}</p>
+              <p className="field-help">{"No program screening results are available for this assessment."}</p>
             ) : (
               <div className="subsidy-grid">
                 {eligibility.programs.map((sub, index) => (
@@ -575,10 +582,10 @@ export default function DamageAssessmentForm({ user, csrfToken, t, onSelectSubsi
                   >
                     <div>
                       <span className={`subsidy-outcome subsidy-outcome--${sub.outcomeClass}`}>
-                        {t(`screeningOutcome${sub.outcomeKey.charAt(0).toUpperCase()}${sub.outcomeKey.slice(1)}`)}
+                        {SCREENING_OUTCOME_LABELS[sub.outcomeKey] || 'Status unavailable'}
                       </span>
                       <h4 style={{ fontSize: 17, fontWeight: 700, margin: '8px 0 6px' }}>
-                        {sub.title || t('programTitleUnavailable')}
+                        {sub.title || "Program title unavailable"}
                       </h4>
                       {sub.short_description && (
                         <p style={{ fontSize: 14, color: 'var(--slate-600)', marginBottom: 10 }}>
@@ -588,26 +595,26 @@ export default function DamageAssessmentForm({ user, csrfToken, t, onSelectSubsi
                       <div className="subsidy-amount">
                         {Number(sub.amount_display) > 0
                           ? `₱${Number(sub.amount_display).toLocaleString()}`
-                          : t('amountVaries')}
+                          : "Amount varies"}
                       </div>
                       <div className="subsidy-screening-details">
                         <div>
-                          <strong>{t('screeningReasons')}</strong>
+                          <strong>{"Why it appeared in screening"}</strong>
                           {sub.reasons.length
                             ? <ul>{sub.reasons.map((reason, reasonIndex) => <li key={reasonIndex}>{reason}</li>)}</ul>
-                            : <p>{t('screeningDetailsNotReturned')}</p>}
+                            : <p>{"No details were returned for this section."}</p>}
                         </div>
                         <div>
-                          <strong>{t('screeningMissingInformation')}</strong>
+                          <strong>{"Information to review or provide"}</strong>
                           {sub.missingInformation.length
                             ? <ul>{sub.missingInformation.map((item, itemIndex) => <li key={itemIndex}>{item}</li>)}</ul>
-                            : <p>{t('screeningDetailsNotReturned')}</p>}
+                            : <p>{"No details were returned for this section."}</p>}
                         </div>
                         <div>
-                          <strong>{t('screeningRestrictions')}</strong>
+                          <strong>{"Conditions and limitations"}</strong>
                           {sub.restrictions.length
                             ? <ul>{sub.restrictions.map((item, itemIndex) => <li key={itemIndex}>{item}</li>)}</ul>
-                            : <p>{t('screeningDetailsNotReturned')}</p>}
+                            : <p>{"No details were returned for this section."}</p>}
                         </div>
                       </div>
                     </div>
@@ -625,7 +632,7 @@ export default function DamageAssessmentForm({ user, csrfToken, t, onSelectSubsi
                           })
                         }
                       >
-                        {t('applySubsidyBtn')}
+                        {"Choose This Program"}
                         <ArrowRight size={15} />
                       </button>
                     )}

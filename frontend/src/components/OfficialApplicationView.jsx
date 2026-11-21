@@ -33,7 +33,6 @@ export default function OfficialApplicationView({
   onSavedSuccess,
   onBack,
   backLabel,
-  t = (k) => k
 }) {
   const [activeView, setActiveView] = useState('editor'); // 'editor' | 'preview'
   const [formData, setFormData] = useState(() => createApplicationFormData(initialData, user));
@@ -122,11 +121,11 @@ export default function OfficialApplicationView({
 
   const handleDownloadPdfOrPrint = () => {
     if (!formData.sworn_attestation) {
-      setSaveError(t('attestationRequired'));
+      setSaveError("Confirm the sworn attestation before saving or printing this application.");
       return;
     }
     if (documentsLoading || documentsError) {
-      setSaveError(documentsError || t('documentsStillLoading'));
+      setSaveError(documentsError || "Wait for the vault document list to finish loading before printing.");
       return;
     }
     window.print();
@@ -139,7 +138,7 @@ export default function OfficialApplicationView({
 
   const handleSaveToDatabase = async () => {
     if (!formData.sworn_attestation) {
-      setSaveError(t('attestationRequired'));
+      setSaveError("Confirm the sworn attestation before saving or printing this application.");
       return;
     }
     setSaving(true);
@@ -165,7 +164,7 @@ export default function OfficialApplicationView({
         status: savedApplication.status
       }));
       const savedMessage = user && !user.isGuest ? 'recordSavedAccount' : 'recordSavedBrowser';
-      setSaveSuccess(`${t(savedMessage)} ${savedApplication.reference_number}`);
+      setSaveSuccess(`${user && !user.isGuest ? 'Record saved to your account.' : 'Record saved in this browser.'} ${savedApplication.reference_number}`);
       if (onSavedSuccess) onSavedSuccess(savedApplication);
     } catch (err) {
       setSaveError(err.message);
@@ -188,14 +187,14 @@ export default function OfficialApplicationView({
           <div>
             <h2 className="flow-heading">
               <FileText size={20} color="var(--primary)" />
-              {t('appTitle')}
+              {"Disaster Assistance Application"}
             </h2>
-            <p className="flow-subheading">{t('applyingFor')}: <strong>{formData.applied_subsidies[0] || t('generalAssistance')}</strong></p>
+            <p className="flow-subheading">{"Aid program"}: <strong>{formData.applied_subsidies[0] || "General aid"}</strong></p>
           </div>
 
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             <button type="button" className="btn btn-secondary btn-sm" onClick={onBack}>
-              <ArrowLeft size={14} /> {backLabel || t('backToAssessment')}
+              <ArrowLeft size={14} /> {backLabel || "Back to assessment"}
             </button>
             <div style={{ display: 'inline-flex', backgroundColor: 'var(--slate-100)', padding: 3, borderRadius: 9999 }}>
               <button
@@ -204,7 +203,7 @@ export default function OfficialApplicationView({
                 style={{ border: 'none' }}
                 onClick={() => setActiveView('editor')}
               >
-                <Edit3 size={14} /> {t('editorTab')}
+                <Edit3 size={14} /> {"Edit Details"}
               </button>
               <button
                 type="button"
@@ -212,7 +211,7 @@ export default function OfficialApplicationView({
                 style={{ border: 'none' }}
                 onClick={() => setActiveView('preview')}
               >
-                <Eye size={14} /> {t('previewTab')}
+                <Eye size={14} /> {"A4 Print Preview"}
               </button>
             </div>
 
@@ -221,10 +220,10 @@ export default function OfficialApplicationView({
               className="btn-pill-dark"
               style={{ fontSize: 13, padding: '8px 18px' }}
               onClick={openPdfView}
-              title={t('printBtn')}
+              title={"Print / Save as PDF (A4)"}
             >
               <Download size={14} />
-              {t('printBtn')}
+              {"Print / Save as PDF (A4)"}
             </button>
           </div>
         </div>
@@ -247,12 +246,12 @@ export default function OfficialApplicationView({
         <div className="flow-card application-editor no-print">
           <div className="application-form-heading">
             <span>ALALAI COMMUNITY DISASTER ASSISTANCE</span>
-            <strong>{t('applicantDetailsSection')}</strong>
+            <strong>{"I. Applicant and Household Details"}</strong>
           </div>
 
           <div className="form-group">
             <label className="form-label" htmlFor="application-recovery-case">
-              {t('recoveryCaseLink')}
+              {"Recovery case"}
             </label>
             <select
               id="application-recovery-case"
@@ -261,10 +260,10 @@ export default function OfficialApplicationView({
               onChange={handleChange}
               className="form-select"
             >
-              <option value="">{t('noRecoveryCase')}</option>
+              <option value="">{"No linked recovery case"}</option>
               {formData.case_id && !selectedCaseExists && (
                 <option value={formData.case_id}>
-                  {initialData?.caseLabel || `${t('savedCaseReference')}: ${formData.case_id}`}
+                  {initialData?.caseLabel || `${"Existing case"}: ${formData.case_id}`}
                 </option>
               )}
               {recoveryCases
@@ -281,19 +280,19 @@ export default function OfficialApplicationView({
                   </option>
                 ))}
             </select>
-            <p className="field-help">{t('recoveryCaseLinkHelp')}</p>
-            {casesLoading && <p className="field-help">{t('loadingRecoveryCases')}</p>}
+            <p className="field-help">{"Choose the case this application concerns. Linking is optional; Alalai will not select a case automatically."}</p>
+            {casesLoading && <p className="field-help">{"Loading your recovery cases…"}</p>}
             {casesError && <p role="alert" className="field-help">{casesError}</p>}
-            {!isAccountUser && <p className="field-help">{t('guestCaseLinkNotice')}</p>}
+            {!isAccountUser && <p className="field-help">{"Sign in to choose from your saved recovery cases. You may continue without linking a case."}</p>}
           </div>
 
           <h3 className="application-section-heading">
-            {t('applicantDetailsSection')}
+            {"I. Applicant and Household Details"}
           </h3>
 
           <div className="form-grid">
             <div className="form-group">
-              <label className="form-label">{t('fullName')} *</label>
+              <label className="form-label">{"Applicant Full Name"} *</label>
               <input
                 type="text"
                 name="applicant_name"
@@ -305,7 +304,7 @@ export default function OfficialApplicationView({
             </div>
 
             <div className="form-group">
-              <label className="form-label">{t('age')}</label>
+              <label className="form-label">{"Age"}</label>
               <input
                 type="number"
                 name="applicant_age"
@@ -332,7 +331,7 @@ export default function OfficialApplicationView({
             </div>
 
             <div className="form-group">
-              <label className="form-label">{t('civilStatus')}</label>
+              <label className="form-label">{"Civil Status"}</label>
               <select
                 name="civil_status"
                 value={formData.civil_status}
@@ -347,7 +346,7 @@ export default function OfficialApplicationView({
             </div>
 
             <div className="form-group">
-              <label className="form-label">{t('idType')}</label>
+              <label className="form-label">{"Valid ID Type"}</label>
               <select
                 name="valid_id_type"
                 value={formData.valid_id_type}
@@ -364,7 +363,7 @@ export default function OfficialApplicationView({
             </div>
 
             <div className="form-group">
-              <label className="form-label">{t('idNumber')}</label>
+              <label className="form-label">{"ID Number"}</label>
               <input
                 type="text"
                 name="valid_id_number"
@@ -376,7 +375,7 @@ export default function OfficialApplicationView({
             </div>
 
             <div className="form-group">
-              <label className="form-label">{t('phone')}</label>
+              <label className="form-label">{"Contact Number"}</label>
               <input
                 type="text"
                 name="contact_number"
@@ -390,7 +389,7 @@ export default function OfficialApplicationView({
 
           <div className="form-grid" style={{ marginTop: 8 }}>
             <div className="form-group">
-              <label className="form-label">{t('street')}</label>
+              <label className="form-label">{"Purok / Street"}</label>
               <input
                 type="text"
                 name="purok_street"
@@ -402,7 +401,7 @@ export default function OfficialApplicationView({
             </div>
 
             <div className="form-group">
-              <label className="form-label">{t('barangay')} *</label>
+              <label className="form-label">{"Barangay"} *</label>
               <input
                 type="text"
                 name="barangay"
@@ -413,7 +412,7 @@ export default function OfficialApplicationView({
             </div>
 
             <div className="form-group">
-              <label className="form-label">{t('city')} *</label>
+              <label className="form-label">{"City / Municipality"} *</label>
               <input
                 type="text"
                 name="city_municipality"
@@ -424,7 +423,7 @@ export default function OfficialApplicationView({
             </div>
 
             <div className="form-group">
-              <label className="form-label">{t('province')} *</label>
+              <label className="form-label">{"Province"} *</label>
               <input
                 type="text"
                 name="province"
@@ -473,12 +472,12 @@ export default function OfficialApplicationView({
           </div>
 
           <h3 className="application-section-heading">
-            {t('disasterDetailsSection')}
+            {"II. Disaster and Damage Details"}
           </h3>
 
           <div className="form-grid">
             <div className="form-group">
-              <label className="form-label">{t('disasterEvent')}</label>
+              <label className="form-label">{"Disaster Event"}</label>
               <input
                 type="text"
                 name="disaster_type"
@@ -489,7 +488,7 @@ export default function OfficialApplicationView({
             </div>
 
             <div className="form-group">
-              <label className="form-label">{t('disasterDate')}</label>
+              <label className="form-label">{"Incident Date"}</label>
               <input
                 type="date"
                 name="incident_date"
@@ -500,7 +499,7 @@ export default function OfficialApplicationView({
             </div>
 
             <div className="form-group">
-              <label className="form-label">{t('estimatedDamage')}</label>
+              <label className="form-label">{"Estimated Damage (₱)"}</label>
               <input
                 type="number"
                 name="estimated_damage_php"
@@ -511,7 +510,7 @@ export default function OfficialApplicationView({
             </div>
 
             <div className="form-group">
-              <label className="form-label">{t('requestedAmount')}</label>
+              <label className="form-label">{"Requested Amount of Aid (₱)"}</label>
               <input
                 type="number"
                 name="requested_amount_php"
@@ -558,7 +557,7 @@ export default function OfficialApplicationView({
           )}
 
           <div className="form-group" style={{ marginTop: 8 }}>
-            <label className="form-label">{t('damageSummary')}</label>
+            <label className="form-label">{"Damage Summary"}</label>
             <textarea
               name="damage_summary"
               rows={3}
@@ -569,7 +568,7 @@ export default function OfficialApplicationView({
           </div>
 
           <div className="form-group">
-            <label className="form-label">{t('declaredNeeds')}</label>
+            <label className="form-label">{"Family Needs"}</label>
             <input
               type="text"
               name="declared_needs"
@@ -589,9 +588,9 @@ export default function OfficialApplicationView({
                 style={{ marginTop: 4 }}
               />
               <span>
-                <strong>{t('attestationConfirmation')}</strong>
+                <strong>{"I confirm the information in this application is true and accurate to the best of my knowledge."}</strong>
                 <span className="field-help" style={{ display: 'block' }}>
-                  {t('attestationConfirmationHelp')}
+                  {"You must check this box before saving or printing. This confirms your statement to Alalai; it does not submit the form to an agency."}
                 </span>
               </span>
             </label>
@@ -599,21 +598,21 @@ export default function OfficialApplicationView({
 
           {/* Household summary */}
           <div style={{ marginTop: 20 }}>
-            <strong style={{ display: 'block', fontSize: 15, marginBottom: 10 }}>{t('householdMembers')}</strong>
+            <strong style={{ display: 'block', fontSize: 15, marginBottom: 10 }}>{"Household Members (Living in the dwelling)"}</strong>
             <div className="form-grid">
               <div className="form-group">
-                <label className="form-label">{t('spouseName')}</label>
+                <label className="form-label">{"Spouse name"}</label>
                 <input
                   type="text"
                   name="spouse_name"
                   value={formData.spouse_name}
                   onChange={handleChange}
                   className="form-input"
-                  placeholder={formData.civil_status.includes('Single') ? 'N/A' : t('spouseName')}
+                  placeholder={formData.civil_status.includes('Single') ? 'N/A' : "Spouse name"}
                 />
               </div>
               <div className="form-group">
-                <label className="form-label">{t('childrenCount')}</label>
+                <label className="form-label">{"Number of children"}</label>
                 <input
                   type="text"
                   name="children_count"
@@ -640,7 +639,7 @@ export default function OfficialApplicationView({
           </div>
           <div className="form-actions-row application-bottom-actions" style={{ flexDirection: 'column', alignItems: 'flex-end' }}>
             <button type="button" className="btn btn-primary btn-lg" disabled={saving} onClick={handleSaveToDatabase}>
-              <Save size={16} /> {saving ? '…' : t('saveBtn')}
+              <Save size={16} /> {saving ? '…' : "Save Application"}
             </button>
           </div>
         </div>
@@ -657,7 +656,7 @@ export default function OfficialApplicationView({
           {activeView === 'preview' && (
           <div className="no-print" style={{ backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 14, padding: '12px 18px', marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
             <div style={{ fontSize: 13, color: '#1e40af' }}>
-              {t('printGuaranteeNotice')}
+              {"A4 format: This form is designed to fit on one standard A4 page (210mm x 297mm). Saving or printing does not submit it to an agency."}
             </div>
             <button
               type="button"
@@ -665,7 +664,7 @@ export default function OfficialApplicationView({
               style={{ fontSize: 13, padding: '8px 18px' }}
               onClick={handleDownloadPdfOrPrint}
             >
-              <Download size={14} /> {t('printBtn')}
+              <Download size={14} /> {"Print / Save as PDF (A4)"}
             </button>
           </div>
           )}
@@ -686,10 +685,10 @@ export default function OfficialApplicationView({
                 </div>
 
                 <div className="official-meta-bar">
-                  <span>{t('referenceNumber')}: <strong>{formData.reference_number || t('toBeSaved')}</strong></span>
-                  <span>{t('dateLabel')}: <strong>{new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</strong></span>
-                  <span>{t('statusLabel')}: <strong>{formData.status}</strong></span>
-                  <span>{t('recoveryCaseLink')}: <strong>{formData.case_id || t('noRecoveryCase')}</strong></span>
+                  <span>{"REFERENCE NO."}: <strong>{formData.reference_number || "TO BE SAVED"}</strong></span>
+                  <span>{"DATE"}: <strong>{new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</strong></span>
+                  <span>{"STATUS"}: <strong>{formData.status}</strong></span>
+                  <span>{"Recovery case"}: <strong>{formData.case_id || "No linked recovery case"}</strong></span>
                 </div>
               </div>
 
@@ -702,11 +701,11 @@ export default function OfficialApplicationView({
                   <tr>
                     <th style={{ width: '25%' }}>Pangalan ng Ulo ng Pamilya</th>
                     <td style={{ width: '45%' }}><strong>{formData.applicant_name || '________________________'}</strong></td>
-                    <th style={{ width: '15%' }}>{t('age')}</th>
+                    <th style={{ width: '15%' }}>{"Age"}</th>
                     <td style={{ width: '15%' }}>{formData.applicant_age || '___'} taong gulang</td>
                   </tr>
                   <tr>
-                    <th>{t('civilStatus')}</th>
+                    <th>{"Civil Status"}</th>
                     <td>{formData.civil_status}</td>
                     <th>Birth date / sex</th>
                     <td>{formData.birth_date || 'N/A'}{formData.sex ? ` • ${formData.sex}` : ''}</td>
@@ -753,7 +752,7 @@ export default function OfficialApplicationView({
                   <tr>
                     <th style={{ width: '25%' }}>Uri ng Kalamidad</th>
                     <td style={{ width: '40%' }}><strong>{formData.disaster_type}</strong></td>
-                    <th style={{ width: '15%' }}>{t('disasterDate')}</th>
+                    <th style={{ width: '15%' }}>{"Incident Date"}</th>
                     <td style={{ width: '20%' }}>{formData.incident_date}</td>
                   </tr>
                   <tr>
@@ -765,7 +764,7 @@ export default function OfficialApplicationView({
                     <td><strong>₱{Number(formData.estimated_damage_php || 0).toLocaleString()}</strong></td>
                   </tr>
                   <tr>
-                    <th>{t('damageSummary')}</th>
+                    <th>{"Damage Summary"}</th>
                     <td colSpan={3} style={{ fontStyle: 'italic', padding: '6px' }}>
                       "{formData.damage_summary || 'Naisagawa ang pagsusuri batay sa testimonya ng mamamayan.'}"
                     </td>
@@ -784,7 +783,7 @@ export default function OfficialApplicationView({
                     </td>
                   </tr>
                   <tr>
-                    <th>{t('declaredNeeds')}</th>
+                    <th>{"Family Needs"}</th>
                     <td colSpan={3}>{formData.declared_needs}</td>
                   </tr>
                   {hasAgriculturalProgram && (
@@ -806,8 +805,8 @@ export default function OfficialApplicationView({
               <table className="official-table">
                 <thead>
                   <tr>
-                    <th style={{ width: '55%' }}>{t('spouseName')}</th>
-                    <th style={{ width: '20%' }}>{t('childrenCount')}</th>
+                    <th style={{ width: '55%' }}>{"Spouse name"}</th>
+                    <th style={{ width: '20%' }}>{"Number of children"}</th>
                     <th style={{ width: '25%' }}>Household relationship</th>
                   </tr>
                 </thead>
@@ -815,7 +814,7 @@ export default function OfficialApplicationView({
                   <tr>
                     <td><strong>{formData.spouse_name || 'N/A'}</strong></td>
                     <td>{formData.children_count || 'N/A'}</td>
-                    <td>{t('spouseAndChildren')}</td>
+                    <td>{"Spouse and children"}</td>
                   </tr>
                 </tbody>
               </table>
@@ -826,32 +825,32 @@ export default function OfficialApplicationView({
               </div>
               <div className="official-checklist-grid">
                 <div>
-                  {t('identityCategoryFiles')}: {attachmentChecklist.identityFiles.length
-                    ? `${attachmentChecklist.identityFiles.length} ${t('vaultFilesRecorded')}`
-                    : t('noVaultFilesRecorded')}
+                  {"Files categorized as identity documents"}: {attachmentChecklist.identityFiles.length
+                    ? `${attachmentChecklist.identityFiles.length} ${"recorded in the Alalai vault"}`
+                    : "none recorded in the Alalai vault"}
                 </div>
                 <div>
-                  {t('damagePhotoCategoryFiles')}: {attachmentChecklist.damagePhotoFiles.length
-                    ? `${attachmentChecklist.damagePhotoFiles.length} ${t('vaultFilesRecorded')}`
-                    : t('noVaultFilesRecorded')}
+                  {"Files categorized as damage photos"}: {attachmentChecklist.damagePhotoFiles.length
+                    ? `${attachmentChecklist.damagePhotoFiles.length} ${"recorded in the Alalai vault"}`
+                    : "none recorded in the Alalai vault"}
                 </div>
-                <div>{t('barangayDocumentsNotVerified')}</div>
-                <div>{t('residencyDocumentsNotVerified')}</div>
+                <div>{"Barangay certificates / indigency: not verified by Alalai; check the files below or confirm requirements with the receiving office."}</div>
+                <div>{"Proof of residence: not verified by Alalai; check the files below or confirm requirements with the receiving office."}</div>
               </div>
               <p className="official-footer-note">
                 {documentsLoading
-                  ? t('documentsStillLoading')
+                  ? "Wait for the vault document list to finish loading before printing."
                   : documentsError
-                    ? t('documentsCouldNotLoad')
+                    ? "The vault document list could not be loaded, so printing is disabled to avoid an inaccurate checklist."
                     : !formData.case_id
-                      ? t('vaultNeedsLinkedCase')
-                      : t('vaultChecklistDisclaimer')}
+                      ? "Link a recovery case to show its vault metadata. Files are not attached to this printout."
+                      : "The list below reflects case-linked vault metadata only. File contents are not independently verified, and vault files are not attached to this printout."}
               </p>
               {caseDocumentsForApplication.length > 0 && (
                 <ul className="official-document-list">
                   {caseDocumentsForApplication.map((document) => (
                     <li key={document.document_id}>
-                      {document.original_filename} ({document.category}) — {t('vaultFileNotAttached')}
+                      {document.original_filename} ({document.category}) — {"stored in the vault, not attached to this printout"}
                     </li>
                   ))}
                 </ul>
@@ -862,7 +861,7 @@ export default function OfficialApplicationView({
                 <strong>SINUMPAANG SALAYSAY (SWORN ATTESTATION):</strong><br />
                 {formData.sworn_attestation
                   ? 'Ako ay taos-pusong nagpapatunay sa ilalim ng parusa ng batas na ang lahat ng impormasyong nakatala sa dokumentong ito ay totoo at tumpak ayon sa aking pinakamahusay na kaalaman. Ang tulong na aking hihilingin ay gagamitin lamang para sa agarang pagbangon ng aming pamilya mula sa sakunang naganap.'
-                  : t('attestationNotConfirmed')}
+                  : "Attestation not confirmed. This is a draft and is not ready to be submitted."}
               </div>
 
               {/* SIGNATURES BLOCK */}
@@ -881,7 +880,7 @@ export default function OfficialApplicationView({
               </div>
 
               <div className="official-footer-note">
-                Alal<span>ai</span> Calamity Portal • {t('printNotSubmittedNotice')}
+                Alal<span>ai</span> Calamity Portal • {"Prepared by the user. Saving or printing this document does not submit it to any agency or confirm approval."}
               </div>
             </div>
           </div>

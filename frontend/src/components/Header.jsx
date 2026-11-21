@@ -8,9 +8,7 @@ export default function Header({
   onOpenLogin,
   onOpenProfile,
   onLogout,
-  onContinueAsGuest,
-  t
-}) {
+  onContinueAsGuest}) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
 
@@ -46,18 +44,18 @@ export default function Header({
   };
 
   const primaryNavItems = [
-    { id: 'landing', label: t('home') },
-    { id: 'dashboard', label: t('dashboard') },
-    { id: 'assessment', label: t('assessment') },
-    { id: 'subsidies', label: t('subsidies') }
+    { id: 'landing', label: "Home" },
+    { id: 'dashboard', label: "Recovery Dashboard" },
+    { id: 'assessment', label: "Damage Assessment" },
+    { id: 'subsidies', label: "Aid Options" }
   ];
 
   const secondaryNavItems = [
-    { id: 'cases', label: t('recoveryCasesNav') },
-    { id: 'saved', label: t('records') },
-    { id: 'tracker', label: t('trackerNav') },
-    { id: 'aid', label: t('aidLedgerNav') },
-    { id: 'vault', label: t('documentVaultNav') }
+    { id: 'cases', label: "Recovery Cases" },
+    { id: 'saved', label: "Saved Applications" },
+    { id: 'tracker', label: "Tracker" },
+    { id: 'aid', label: "Aid Ledger" },
+    { id: 'vault', label: "Document Vault" }
   ];
 
   const navItems = [...primaryNavItems, ...secondaryNavItems];
@@ -79,7 +77,7 @@ export default function Header({
           tabIndex={0}
         >
           <div className="brand-logo">
-            {t('appName')}
+            {"Alalai"}
           </div>
         </div>
 
@@ -102,7 +100,7 @@ export default function Header({
               aria-expanded={moreMenuOpen}
               aria-haspopup="menu"
             >
-              {t('more')}
+              {"More"}
               <ChevronDown size={15} aria-hidden="true" />
             </button>
             {moreMenuOpen && (
@@ -140,20 +138,20 @@ export default function Header({
             <div className="nav-user-cluster">
               <button type="button" className="btn-pill-dark" onClick={onOpenProfile}>
                 <User size={14} />
-                <span>{(user?.name || '').split(' ')[0] || t('guest')}</span>
+                <span>{(user?.name || '').split(' ')[0] || "Guest"}</span>
               </button>
-              <button type="button" className="btn btn-secondary btn-sm" onClick={onLogout} title={t('logout')}>
+              <button type="button" className="btn btn-secondary btn-sm" onClick={onLogout} title={"Sign Out"}>
                 <LogOut size={13} />
               </button>
             </div>
           ) : (
             <div className="nav-user-cluster">
               <button type="button" className="btn btn-secondary" onClick={onContinueAsGuest}>
-                {t('continueAsGuest')}
+                {"Continue as Guest"}
               </button>
               <button type="button" className="btn-pill-dark" onClick={onOpenLogin}>
                 <LogIn size={14} />
-                {t('login')}
+                {"Sign In"}
               </button>
             </div>
           )}
@@ -173,7 +171,7 @@ export default function Header({
         <div className="mobile-drawer-overlay" style={{ display: 'block' }} onClick={() => setMobileMenuOpen(false)}>
           <div className="mobile-drawer" onClick={(e) => e.stopPropagation()}>
             <div className="mobile-drawer-top">
-              <div className="brand-logo">{t('appName')}</div>
+              <div className="brand-logo">{"Alalai"}</div>
               <button type="button" onClick={() => setMobileMenuOpen(false)} className="icon-btn">
                 <X size={20} />
               </button>
@@ -199,15 +197,15 @@ export default function Header({
 
               {user && !user.isGuest ? (
                 <button type="button" className="btn btn-secondary" style={{ width: '100%' }} onClick={onLogout}>
-                  {t('logout')}
+                  {"Sign Out"}
                 </button>
               ) : (
                 <>
                   <button type="button" className="btn btn-secondary" style={{ width: '100%', marginBottom: '8px' }} onClick={() => { onContinueAsGuest(); setMobileMenuOpen(false); }}>
-                    {t('continueAsGuest')}
+                    {"Continue as Guest"}
                   </button>
                   <button type="button" className="btn-pill-dark" style={{ width: '100%' }} onClick={() => { setMobileMenuOpen(false); onOpenLogin(); }}>
-                    {t('login')}
+                    {"Sign In"}
                   </button>
                 </>
               )}

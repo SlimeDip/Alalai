@@ -8,7 +8,7 @@ const emptyProfile = {
 };
 
 export default function AuthModal({
-  isOpen, onClose, onAuth, onProfileUpdate, onContinueAsGuest, user, csrfToken, initialMode = 'signin', t = (k) => k
+  isOpen, onClose, onAuth, onProfileUpdate, onContinueAsGuest, user, csrfToken, initialMode = 'signin'
 }) {
   const [mode, setMode] = useState(initialMode);
   const [formData, setFormData] = useState(emptyProfile);

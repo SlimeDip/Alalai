@@ -17,6 +17,19 @@ const STATUS_OPTIONS = [
   'DECISION_RECEIVED'
 ];
 
+const STATUS_LABELS = {
+  PREPARED: 'Prepared',
+  SUBMITTED: 'Submitted',
+  FOLLOW_UP_NEEDED: 'Follow-up needed',
+  DECISION_RECEIVED: 'Decision received'
+};
+
+const REMINDER_LABELS = {
+  ACTIVE: 'Active',
+  COMPLETED: 'Completed',
+  CANCELLED: 'Cancelled'
+};
+
 const today = () => new Date().toISOString().slice(0, 10);
 
 function applicationPrograms(application) {
@@ -37,7 +50,7 @@ function dateLabel(value) {
   return new Date(value.includes(' ') ? `${value.replace(' ', 'T')}Z` : `${value}T00:00:00`).toLocaleDateString();
 }
 
-function ReminderItem({ reminder, onUpdate, t }) {
+function ReminderItem({ reminder, onUpdate }) {
   const [reminderDate, setReminderDate] = useState(reminder.reminder_date);
   const [note, setNote] = useState(reminder.note || '');
   const overdue = reminder.state === 'ACTIVE' && reminder.reminder_date < today();
@@ -53,13 +66,13 @@ function ReminderItem({ reminder, onUpdate, t }) {
         <Bell size={15} />
         <strong>{dateLabel(reminder.reminder_date)}</strong>
         <span className="badge badge-agency">
-          {overdue ? t('reminderOverdue') : t(`reminder${reminder.state}`)}
+          {overdue ? 'Overdue' : REMINDER_LABELS[reminder.state] || 'Reminder'}
         </span>
       </div>
       {reminder.state === 'ACTIVE' ? (
         <div className="form-grid" style={{ marginTop: 10 }}>
           <label className="form-group">
-            <span className="form-label">{t('reminderDate')}</span>
+            <span className="form-label">{"Reminder date"}</span>
             <input
               type="date"
               className="form-input"
@@ -68,7 +81,7 @@ function ReminderItem({ reminder, onUpdate, t }) {
             />
           </label>
           <label className="form-group">
-            <span className="form-label">{t('reminderNote')}</span>
+            <span className="form-label">{"Reminder note (optional)"}</span>
             <input
               className="form-input"
               value={note}
@@ -81,25 +94,25 @@ function ReminderItem({ reminder, onUpdate, t }) {
       {reminder.state === 'ACTIVE' ? (
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
           <button type="button" className="btn btn-secondary btn-sm" onClick={() => onUpdate(reminder.reminder_id, { reminder_date: reminderDate, note })}>
-            {t('saveReminder')}
+            {"Save reminder"}
           </button>
           <button type="button" className="btn btn-secondary btn-sm" onClick={() => onUpdate(reminder.reminder_id, { action: 'COMPLETE' })}>
-            {t('completeReminder')}
+            {"Complete"}
           </button>
           <button type="button" className="btn btn-secondary btn-sm" onClick={() => onUpdate(reminder.reminder_id, { action: 'DISMISS' })}>
-            {t('dismissReminder')}
+            {"Dismiss"}
           </button>
         </div>
       ) : (
         <button type="button" className="btn btn-secondary btn-sm" style={{ marginTop: 10 }} onClick={() => onUpdate(reminder.reminder_id, { action: 'REOPEN' })}>
-          {t('reopenReminder')}
+          {"Reopen"}
         </button>
       )}
     </div>
   );
 }
 
-export default function ApplicationTracker({ user, csrfToken, initialCaseId = '', onOpenLogin, t }) {
+export default function ApplicationTracker({ user, csrfToken, initialCaseId = '', onOpenLogin}) {
   const [trackedApplications, setTrackedApplications] = useState([]);
   const [applications, setApplications] = useState([]);
   const [cases, setCases] = useState([]);
@@ -239,7 +252,7 @@ export default function ApplicationTracker({ user, csrfToken, initialCaseId = ''
     const id = application.tracked_application_id;
     const reminder = newReminders[id] || {};
     if (!reminder.reminder_date) {
-      setError(t('reminderDateRequired'));
+      setError("Choose a reminder date first.");
       return;
     }
     setSaving(true);
@@ -280,9 +293,9 @@ export default function ApplicationTracker({ user, csrfToken, initialCaseId = ''
   if (!isAccountUser) {
     return (
       <div className="modern-card">
-        <h1 className="card-heading">{t('trackerTitle')}</h1>
-        <p className="card-subheading">{t('trackerSignInNotice')}</p>
-        <button type="button" className="btn btn-primary" onClick={onOpenLogin}>{t('login')}</button>
+        <h1 className="card-heading">{"Application Tracker"}</h1>
+        <p className="card-subheading">{"Sign in to keep your program tracker, history, and reminders with your account."}</p>
+        <button type="button" className="btn btn-primary" onClick={onOpenLogin}>{"Sign In"}</button>
       </div>
     );
   }
@@ -291,12 +304,12 @@ export default function ApplicationTracker({ user, csrfToken, initialCaseId = ''
     <div className="modern-card">
       <div className="modern-card-header">
         <div>
-          <h1 className="card-heading"><CalendarClock size={21} color="var(--primary)" /> {t('trackerTitle')}</h1>
-          <p className="card-subheading">{t('trackerSubtitle')}</p>
-          <p role="note" style={{ color: 'var(--slate-600)', marginTop: 8 }}>{t('trackerSelfReportedNotice')}</p>
+          <h1 className="card-heading"><CalendarClock size={21} color="var(--primary)" /> {"Application Tracker"}</h1>
+          <p className="card-subheading">{"Track each program application separately from your recovery case."}</p>
+          <p role="note" style={{ color: 'var(--slate-600)', marginTop: 8 }}>{"Statuses and reminders are self-managed by you. They are not verified by an agency and do not confirm submission, approval, or aid received."}</p>
         </div>
         <button type="button" className="btn btn-secondary btn-sm" onClick={refresh} disabled={loading}>
-          <RefreshCw size={14} /> {loading ? t('loading') : t('refresh')}
+          <RefreshCw size={14} /> {loading ? "Loading…" : "Refresh"}
         </button>
       </div>
 
@@ -307,10 +320,10 @@ export default function ApplicationTracker({ user, csrfToken, initialCaseId = ''
       )}
 
       <form className="flow-card" onSubmit={handleCreate} style={{ marginBottom: 24 }}>
-        <h2 className="application-section-heading">{t('trackNewProgram')}</h2>
+        <h2 className="application-section-heading">{"Track a program application"}</h2>
         <div className="form-grid">
           <label className="form-group">
-            <span className="form-label">{t('recoveryCase')} *</span>
+            <span className="form-label">{"Recovery case"} *</span>
             <select
               className="form-select"
               required
@@ -324,7 +337,7 @@ export default function ApplicationTracker({ user, csrfToken, initialCaseId = ''
                 notes: ''
               })}
             >
-              <option value="">{t('selectRecoveryCase')}</option>
+              <option value="">{"Select a saved recovery case"}</option>
               {cases.map((item) => (
                 <option key={item.id} value={item.id}>
                   {item.disaster_type} — {item.barangay}, {item.city_municipality}
@@ -333,7 +346,7 @@ export default function ApplicationTracker({ user, csrfToken, initialCaseId = ''
             </select>
           </label>
           <label className="form-group">
-            <span className="form-label">{t('savedApplicationOptional')}</span>
+            <span className="form-label">{"Related saved form (optional)"}</span>
             <select
               className="form-select"
               value={form.application_id}
@@ -349,7 +362,7 @@ export default function ApplicationTracker({ user, csrfToken, initialCaseId = ''
               }}
               disabled={!form.case_id}
             >
-              <option value="">{t('noSavedApplication')}</option>
+              <option value="">{"No related saved form"}</option>
               {selectedCaseApplications.map((item) => (
                 <option key={item.id} value={item.id}>
                   {item.reference_number} — {item.applicant_name}
@@ -358,7 +371,7 @@ export default function ApplicationTracker({ user, csrfToken, initialCaseId = ''
             </select>
           </label>
           <label className="form-group">
-            <span className="form-label">{t('assistanceProgram')} *</span>
+            <span className="form-label">{"Assistance program"} *</span>
             {availablePrograms.length ? (
               <select
                 className="form-select"
@@ -366,7 +379,7 @@ export default function ApplicationTracker({ user, csrfToken, initialCaseId = ''
                 value={form.program_name}
                 onChange={(event) => changeForm('program_name', event.target.value)}
               >
-                <option value="">{t('selectProgram')}</option>
+                <option value="">{"Select a program from this saved form"}</option>
                 {availablePrograms.map((program) => <option key={program} value={program}>{program}</option>)}
               </select>
             ) : (
@@ -376,58 +389,58 @@ export default function ApplicationTracker({ user, csrfToken, initialCaseId = ''
                 maxLength={160}
                 value={form.program_name}
                 onChange={(event) => changeForm('program_name', event.target.value)}
-                placeholder={t('programNamePlaceholder')}
+                placeholder={"Enter the program name you are tracking"}
               />
             )}
           </label>
           <label className="form-group">
-            <span className="form-label">{t('agencySourceOptional')}</span>
+            <span className="form-label">{"Agency / source (optional)"}</span>
             <input className="form-input" maxLength={160} value={form.agency_source} onChange={(event) => changeForm('agency_source', event.target.value)} />
           </label>
           <label className="form-group">
-            <span className="form-label">{t('programReferenceOptional')}</span>
+            <span className="form-label">{"Program reference number (optional)"}</span>
             <input className="form-input" maxLength={120} value={form.reference_number} onChange={(event) => changeForm('reference_number', event.target.value)} />
           </label>
           <label className="form-group">
-            <span className="form-label">{t('trackerNotesOptional')}</span>
+            <span className="form-label">{"Notes (optional)"}</span>
             <input className="form-input" maxLength={2000} value={form.notes} onChange={(event) => changeForm('notes', event.target.value)} />
           </label>
         </div>
         <button className="btn btn-primary" type="submit" disabled={saving || !cases.length}>
-          {saving ? t('saving') : t('trackProgram')}
+          {saving ? "Saving…" : "Add to tracker"}
         </button>
-        {cases.length === 0 && !loading && <p className="card-subheading">{t('trackerNoCases')}</p>}
+        {cases.length === 0 && !loading && <p className="card-subheading">{"Save an account-backed recovery case before tracking a program."}</p>}
       </form>
 
       <div className="form-group" style={{ maxWidth: 280, marginBottom: 18 }}>
-        <label className="form-label" htmlFor="tracker-case-filter">{t('filterByCase')}</label>
+        <label className="form-label" htmlFor="tracker-case-filter">{"Recovery case"}</label>
         <select
           id="tracker-case-filter"
           className="form-select"
           value={caseFilter}
           onChange={(event) => setCaseFilter(event.target.value)}
         >
-          <option value="ALL">{t('allCases')}</option>
+          <option value="ALL">{"All cases"}</option>
           {cases.map((item) => <option key={item.id} value={item.case_id || item.id}>{item.disaster_type} — {item.barangay}, {item.city_municipality}</option>)}
         </select>
       </div>
       <div className="form-group" style={{ maxWidth: 280, marginBottom: 18 }}>
-        <label className="form-label" htmlFor="tracker-status-filter">{t('filterApplications')}</label>
+        <label className="form-label" htmlFor="tracker-status-filter">{"Filter applications"}</label>
         <select
           id="tracker-status-filter"
           className="form-select"
           value={filter}
           onChange={(event) => setFilter(event.target.value)}
         >
-          <option value="ALL">{t('filterAll')}</option>
-          {STATUS_OPTIONS.map((status) => <option key={status} value={status}>{t(`status${status}`)}</option>)}
+          <option value="ALL">{"All applications"}</option>
+          {STATUS_OPTIONS.map((status) => <option key={status} value={status}>{STATUS_LABELS[status]}</option>)}
         </select>
       </div>
 
-      {loading && trackedApplications.length === 0 ? <p role="status">{t('loading')}</p> : null}
+      {loading && trackedApplications.length === 0 ? <p role="status">{"Loading…"}</p> : null}
       {visibleApplications.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--slate-500)' }}>
-          {t('trackerEmpty')}
+          {"No tracked program applications match this filter."}
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
@@ -450,47 +463,47 @@ export default function ApplicationTracker({ user, csrfToken, initialCaseId = ''
                     <p className="card-subheading">
                       {[application.agency_source, caseLocation, application.disaster_type].filter(Boolean).join(' · ')}
                     </p>
-                    {application.reference_number && <p>{t('programReference')}: {application.reference_number}</p>}
+                    {application.reference_number && <p>Program reference: {application.reference_number}</p>}
                     {application.notes && <p>{application.notes}</p>}
                   </div>
-                  <span className="badge badge-agency">{t(`status${application.status}`)}</span>
+                  <span className="badge badge-agency">{STATUS_LABELS[application.status] || application.status}</span>
                 </header>
 
                 <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', margin: '14px 0' }}>
-                  <span>{t('submissionDate')}: {application.submitted_on ? dateLabel(application.submitted_on) : t('notSubmitted')}</span>
-                  <span>{t('lastUpdated')}: {dateLabel(application.updated_at)}</span>
+                  <span>{"Submission date"}: {application.submitted_on ? dateLabel(application.submitted_on) : "Not reported"}</span>
+                  <span>{"Last updated"}: {dateLabel(application.updated_at)}</span>
                 </div>
 
                 <div className="form-grid">
                   <label className="form-group">
-                    <span className="form-label">{t('updateStatus')}</span>
+                    <span className="form-label">{"Update status"}</span>
                     <select className="form-select" value={status} onChange={(event) => setStatusDrafts((previous) => ({ ...previous, [id]: event.target.value }))}>
-                      {STATUS_OPTIONS.map((option) => <option key={option} value={option}>{t(`status${option}`)}</option>)}
+                      {STATUS_OPTIONS.map((option) => <option key={option} value={option}>{STATUS_LABELS[option]}</option>)}
                     </select>
                   </label>
                   {status === 'SUBMITTED' && (
                     <label className="form-group">
-                      <span className="form-label">{t('submissionDate')}</span>
+                      <span className="form-label">{"Submission date"}</span>
                       <input type="date" className="form-input" value={submissionDates[id] || application.submitted_on || today()} onChange={(event) => setSubmissionDates((previous) => ({ ...previous, [id]: event.target.value }))} />
                     </label>
                   )}
                   {status !== application.status && (
                     <label className="form-group">
-                      <span className="form-label">{t('statusNoteOptional')}</span>
+                      <span className="form-label">{"Note for this status change (optional)"}</span>
                       <input className="form-input" maxLength={2000} value={statusNotes[id] || ''} onChange={(event) => setStatusNotes((previous) => ({ ...previous, [id]: event.target.value }))} />
                     </label>
                   )}
                 </div>
                 <button type="button" className="btn btn-secondary btn-sm" disabled={saving || status === application.status} onClick={() => handleStatusUpdate(application)}>
-                  {t('saveStatus')}
+                  {"Save status"}
                 </button>
 
                 <section style={{ marginTop: 20 }}>
-                  <h3 className="application-section-heading">{t('statusTimeline')}</h3>
+                  <h3 className="application-section-heading">{"Status timeline"}</h3>
                   <ol style={{ borderLeft: '2px solid var(--slate-200)', paddingLeft: 20, marginLeft: 8 }}>
                     {application.history.map((entry) => (
                       <li key={entry.history_id} style={{ padding: '0 0 14px 8px' }}>
-                        <strong>{entry.previous_status ? `${t(`status${entry.previous_status}`)} → ` : ''}{t(`status${entry.new_status}`)}</strong>
+                        <strong>{entry.previous_status ? `${STATUS_LABELS[entry.previous_status] || entry.previous_status} → ` : ''}{STATUS_LABELS[entry.new_status] || entry.new_status}</strong>
                         <div style={{ fontSize: 13, color: 'var(--slate-600)' }}>{dateLabel(entry.created_at)}</div>
                         {entry.note && <p>{entry.note}</p>}
                       </li>
@@ -499,27 +512,27 @@ export default function ApplicationTracker({ user, csrfToken, initialCaseId = ''
                 </section>
 
                 <section style={{ marginTop: 18 }}>
-                  <h3 className="application-section-heading">{t('followUpReminders')}</h3>
+                  <h3 className="application-section-heading">{"Follow-up reminders"}</h3>
                   {(application.reminders || []).map((reminder) => (
-                    <ReminderItem key={reminder.reminder_id} reminder={reminder} onUpdate={handleUpdateReminder} t={t} />
+                    <ReminderItem key={reminder.reminder_id} reminder={reminder} onUpdate={handleUpdateReminder} />
                   ))}
                   {activeReminderCount > 0 && (
                     <p className="card-subheading" style={{ marginTop: 10 }}>
-                      <Clock3 size={14} style={{ display: 'inline', verticalAlign: 'middle' }} /> {t('activeRemindersCount')}: {activeReminderCount}
+                      <Clock3 size={14} style={{ display: 'inline', verticalAlign: 'middle' }} /> {"Active reminders"}: {activeReminderCount}
                     </p>
                   )}
                   <div className="form-grid" style={{ marginTop: 10 }}>
                     <label className="form-group">
-                      <span className="form-label">{t('reminderDate')}</span>
+                      <span className="form-label">{"Reminder date"}</span>
                       <input type="date" className="form-input" value={draftReminder.reminder_date} onChange={(event) => setNewReminders((previous) => ({ ...previous, [id]: { ...draftReminder, reminder_date: event.target.value } }))} />
                     </label>
                     <label className="form-group">
-                      <span className="form-label">{t('reminderNote')}</span>
+                      <span className="form-label">{"Reminder note (optional)"}</span>
                       <input className="form-input" maxLength={2000} value={draftReminder.note} onChange={(event) => setNewReminders((previous) => ({ ...previous, [id]: { ...draftReminder, note: event.target.value } }))} />
                     </label>
                   </div>
                   <button type="button" className="btn btn-secondary btn-sm" disabled={saving} onClick={() => handleAddReminder(application)}>
-                    <CheckCircle2 size={14} /> {t('addReminder')}
+                    <CheckCircle2 size={14} /> {"Add reminder"}
                   </button>
                 </section>
               </article>
