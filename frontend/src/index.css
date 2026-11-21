@@ -2804,14 +2804,13 @@ html.dark .application-section-heading {
 html.dark .card,
 html.dark [class*="-card"],
 html.dark [class*="_card"] {
-  border: 1px solid #454545;
+  border: 0;
   box-shadow: none;
-  border-color: #454545;
 }
 
 html.dark .app-main-canvas {
-  border: 1px solid #404040;
-  box-shadow: 0 12px 36px rgb(0 0 0 / 28%);
+  border: 0;
+  box-shadow: 0 12px 36px rgb(0 0 0 / 18%);
 }
 
 html.dark .flow-card,
@@ -2825,7 +2824,7 @@ html.dark .trust-card,
 html.dark .landing-faq,
 html.dark .faq-item {
   background: #242424 !important;
-  border: 1px solid #454545 !important;
+  border: 0 !important;
   box-shadow: none;
 }
 
@@ -2842,7 +2841,7 @@ html.dark .recovery-hero-icon,
 html.dark .recovery-dashboard-metric,
 html.dark .guest-dashboard-notice {
   background: #242424 !important;
-  border-color: #454545 !important;
+  border: 0 !important;
 }
 
 html.dark .recovery-hero .eyebrow,
@@ -2865,7 +2864,7 @@ html.dark .guest-dashboard-notice .btn-secondary {
 html.dark .faq-answer,
 html.dark .faq-answer-inner {
   background: #242424 !important;
-  border-color: #525252 !important;
+  border: 0 !important;
   color: var(--slate-900) !important;
 }
 
@@ -2896,8 +2895,8 @@ html.dark .trust-card,
 html.dark .faq-item,
 html.dark .metric-box,
 html.dark .recovery-case-list-item {
-  border-width: 1px !important;
-  border-color: #454545 !important;
+  border-width: 0 !important;
+  border-color: transparent !important;
   box-shadow: none !important;
 }
 
@@ -2905,7 +2904,7 @@ html.dark .wizard-stepper,
 html.dark .optional-details,
 html.dark .recovery-dashboard-followups {
   background: transparent !important;
-  border-color: #454545 !important;
+  border: 0 !important;
   box-shadow: none !important;
 }
 
