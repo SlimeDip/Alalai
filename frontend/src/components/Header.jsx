@@ -21,15 +21,17 @@ export default function Header({
     const savedTheme = localStorage.getItem('theme');
     const savedFontSize = localStorage.getItem('fontSize');
 
-    if (savedTheme === 'dark') {
-      setIsDarkMode(true);
-      document.documentElement.classList.add('dark');
-    }
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const useDark = savedTheme ? savedTheme === 'dark' : prefersDark;
+    setIsDarkMode(useDark);
+    document.documentElement.classList.toggle('dark', useDark);
     
     const initialSize = savedFontSize ? Number(savedFontSize) : 16;
-    setFontSize(initialSize);
-    document.documentElement.style.setProperty('--base-font-size', `${initialSize}px`);
-    document.documentElement.style.fontSize = `${initialSize}px`;
+    const safeSize = Math.max(14, Math.min(24, Number.isFinite(initialSize) ? initialSize : 16));
+    setFontSize(safeSize);
+    document.documentElement.style.setProperty('--base-font-size', `${safeSize}px`);
+    document.documentElement.style.setProperty('--font-scale', `${safeSize / 16}`);
+    document.documentElement.style.fontSize = `${safeSize}px`;
   }, []);
 
   const toggleTheme = () => {
@@ -51,6 +53,7 @@ export default function Header({
       const newSize = Math.max(14, Math.min(24, prev + step));
       
       document.documentElement.style.setProperty('--base-font-size', `${newSize}px`);
+      document.documentElement.style.setProperty('--font-scale', `${newSize / 16}`);
       document.documentElement.style.fontSize = `${newSize}px`;
       
       localStorage.setItem('fontSize', newSize);

@@ -14,6 +14,7 @@
   --dark-stat: #27272a;          /* Floating stat overlay badge */
   
   --slate-900: #111827;          /* High-contrast black/charcoal text */
+  --slate-800: #1f2937;
   --slate-700: #374151;
   --slate-600: #4b5563;          /* Muted body text */
   --slate-500: #6b7280;
@@ -40,23 +41,23 @@
 
 /* DARK MODE THEME OVERRIDES */
 html.dark {
-  /* Backgrounds */
-  --canvas-bg: #121212;          
-  --card-bg: #1e1e1e;            
-  --bento-cyan: #1e293b;         
-  --white: #1e1e1e;             
-
- 
-  --slate-900: #f9fafb;          
-  --slate-700: #e5e7eb;
-  --slate-600: #d1d5db;         
-  --slate-500: #9ca3af;
-  
-  /* Borders & Highlights */
-  --slate-200: #374151;          
-  --slate-100: #1f2937;
-  --highlight-pill: #1e3a5f;    
-  --highlight-text: #e0f2fe;     
+  --canvas-bg: #0f172a;
+  --card-bg: #111827;
+  --bento-cyan: #172554;
+  --white: #1f2937;
+  --dark-pill: #334155;
+  --dark-card: #1e293b;
+  --dark-stat: #334155;
+  --slate-900: #f8fafc;
+  --slate-800: #e2e8f0;
+  --slate-700: #cbd5e1;
+  --slate-600: #94a3b8;
+  --slate-500: #94a3b8;
+  --slate-200: #334155;
+  --slate-100: #1e293b;
+  --highlight-pill: #1e3a5f;
+  --highlight-text: #e0f2fe;
+  color-scheme: dark;
 }
 * {
   box-sizing: border-box;
@@ -2583,6 +2584,7 @@ body {
     align-items: flex-start;
     flex-wrap: wrap;
   }
+}
 /* =========================================
    MOBILE RESPONSIVENESS FIXES
    ========================================= */
@@ -2614,10 +2616,19 @@ body {
   } 
 
   button.btn, 
-  button[class*="pill"] {
+  .hero-buttons button,
+  .recovery-hero button,
+  .modal-card button {
     width: 100% !important;
     justify-content: center;
     margin-bottom: 8px;
+  }
+
+  .navbar-cta .btn-pill-dark,
+  .navbar-cta .nav-user-cluster button,
+  .navbar-cta .lang-toggle button {
+    width: auto !important;
+    margin-bottom: 0;
   }
 
   .flex-row, 
@@ -2642,19 +2653,13 @@ body {
 /* =========================================
    ACCESSIBILITY: FORCE TEXT RESIZING
    ========================================= */
-p, span, button, input, .landing-lead, .faq-question-text, .faq-answer p {
-  font-size: var(--base-font-size) !important;
-  transition: font-size 0.2s ease-in-out;
+html {
+  font-size: var(--base-font-size);
 }
 
-h1, h2, h3, .landing-title {
-  font-size: calc(var(--base-font-size) * 1.5) !important;
-  transition: font-size 0.2s ease-in-out;
-}
-
-.brand-logo {
-  font-size: calc(var(--base-font-size) * 1.25) !important;
-}
+body {
+  font-size: var(--base-font-size);
+  zoom: var(--font-scale, 1);
 }
 /* =========================================
    DARK MODE: COMPLETE UI, CARDS & BUTTONS FIX
@@ -2714,4 +2719,158 @@ html.dark [class*="card"] button svg,
 html.dark [class*="grid"] button svg {
   color: #38bdf8 !important;
   stroke: #38bdf8 !important;
+}
+
+/* Consistent dark surfaces, including panels that previously used hard-coded white */
+html.dark .app-main-canvas,
+html.dark .modern-card,
+html.dark .flow-card,
+html.dark .modal-card,
+html.dark .mobile-drawer,
+html.dark .navbar-more-menu,
+html.dark .wizard-stepper,
+html.dark .form-input,
+html.dark .form-select,
+html.dark .form-textarea,
+html.dark .application-editor,
+html.dark .application-editor .form-group,
+html.dark .application-editor .form-input,
+html.dark .application-editor .form-select,
+html.dark .application-editor .form-textarea {
+  background-color: var(--card-bg) !important;
+  color: var(--slate-900) !important;
+  border-color: var(--slate-200) !important;
+}
+
+html.dark .recovery-hero,
+html.dark .auth-sheet,
+html.dark .auth-sheet-header,
+html.dark .auth-form-actions,
+html.dark .auth-field input,
+html.dark .auth-secondary-action,
+html.dark .auth-mode-toggle button.active {
+  background-color: var(--card-bg) !important;
+  color: var(--slate-900) !important;
+  border-color: var(--slate-200) !important;
+}
+
+html.dark .auth-sheet-header,
+html.dark .auth-form-actions {
+  border-color: var(--slate-200) !important;
+}
+
+html.dark .auth-field input,
+html.dark .auth-secondary-action,
+html.dark .auth-close-btn,
+html.dark .auth-mode-toggle,
+html.dark .auth-sheet .profile-section,
+html.dark .auth-sheet .auth-section {
+  background-color: var(--slate-100) !important;
+  color: var(--slate-900) !important;
+  border-color: var(--slate-200) !important;
+}
+
+html.dark .application-form-heading,
+html.dark .application-section-heading {
+  background-color: var(--slate-100) !important;
+  color: var(--slate-900) !important;
+  border-color: var(--slate-200) !important;
+}
+
+html.dark .card,
+html.dark [class*="-card"],
+html.dark [class*="_card"] {
+  border-color: var(--slate-200);
+}
+
+html.dark table,
+html.dark th,
+html.dark td {
+  background-color: var(--card-bg);
+  color: var(--slate-900);
+  border-color: var(--slate-200);
+}
+
+@media (max-width: 992px) {
+  .modern-navbar {
+    gap: 12px;
+  }
+
+  .navbar-cta {
+    margin-left: auto;
+  }
+
+  .mobile-drawer {
+    width: min(290px, calc(100vw - 24px));
+  }
+
+  .navbar-more-menu {
+    position: fixed;
+  }
+}
+
+@media (max-width: 640px) {
+  .app-outer-frame {
+    padding: 0;
+  }
+
+  .app-main-canvas {
+    width: 100%;
+    min-height: 100vh;
+    border-radius: 0;
+    padding: 16px 12px 24px;
+  }
+
+  .modern-navbar {
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+  }
+
+  .brand-logo {
+    max-width: 150px;
+    font-size: 20px;
+  }
+
+  .hero-editorial {
+    margin-bottom: 32px;
+  }
+
+  .hero-headline {
+    font-size: 30px;
+  }
+
+  .hero-image-card {
+    min-height: 260px;
+  }
+
+  .flow-card,
+  .modern-card,
+  .modal-card {
+    padding: 18px 14px;
+  }
+
+  .form-grid,
+  .recovery-dashboard-grid,
+  .recovery-summary-grid,
+  .subsidy-detail-columns {
+    grid-template-columns: 1fr !important;
+  }
+
+  .auth-sheet .auth-form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .auth-sheet .auth-primary-action,
+  .auth-sheet .auth-secondary-action {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .application-editor {
+    padding: 12px;
+  }
+
+  .application-editor .form-grid {
+    grid-template-columns: 1fr;
+  }
 }
