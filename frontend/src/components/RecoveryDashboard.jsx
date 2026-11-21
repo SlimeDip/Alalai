@@ -164,7 +164,7 @@ export default function RecoveryDashboard({
       </div>
 
       {!isAccountUser && (
-        <div className="modern-card">
+        <div className="modern-card guest-dashboard-notice">
           <p className="card-subheading">{t('guestDashboardNotice')}</p>
           <button type="button" className="btn btn-secondary" onClick={onStartCase}>
             {t('startNewCase')} <ArrowRight size={15} />

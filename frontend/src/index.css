@@ -41,22 +41,25 @@
 
 /* DARK MODE THEME OVERRIDES */
 html.dark {
-  --canvas-bg: #0f172a;
-  --card-bg: #111827;
-  --bento-cyan: #172554;
-  --white: #1f2937;
-  --dark-pill: #334155;
-  --dark-card: #1e293b;
-  --dark-stat: #334155;
+  --canvas-bg: #171717;
+  --card-bg: #222222;
+  --bento-cyan: #2d2b27;
+  --white: #292929;
+  --dark-pill: #383838;
+  --dark-card: #2a2a2a;
+  --dark-stat: #383838;
+  --primary: #7692ff;
+  --primary-pill: #7692ff;
   --slate-900: #f8fafc;
-  --slate-800: #e2e8f0;
-  --slate-700: #cbd5e1;
-  --slate-600: #94a3b8;
-  --slate-500: #94a3b8;
-  --slate-200: #334155;
-  --slate-100: #1e293b;
-  --highlight-pill: #1e3a5f;
-  --highlight-text: #e0f2fe;
+  --slate-800: #e5e5e5;
+  --slate-700: #d4d4d4;
+  --slate-600: #a3a3a3;
+  --slate-500: #a3a3a3;
+  --slate-50: #292929;
+  --slate-200: #404040;
+  --slate-100: #303030;
+  --highlight-pill: #3a3427;
+  --highlight-text: #abd2fa;
   color-scheme: dark;
 }
 * {
@@ -258,6 +261,26 @@ body {
 
 .recovery-dashboard-action > div {
   min-width: 0;
+}
+
+.recovery-dashboard .guest-dashboard-notice {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 18px 20px;
+}
+
+.recovery-dashboard .guest-dashboard-notice .card-subheading {
+  margin: 0;
+  line-height: 1.55;
+}
+
+.recovery-dashboard .guest-dashboard-notice .btn {
+  width: auto;
+  min-height: 44px;
+  margin: 0;
+  padding: 10px 16px;
 }
 
 .recovery-dashboard-action p {
@@ -2674,9 +2697,9 @@ body {
 
 /* 2. Palitawin ang Dark Mode button at User pill ("Chester") */
 html.dark .btn-pill-dark {
-  background-color: #1e293b !important;
+  background-color: #383838 !important;
   color: #f8fafc !important;
-  border: 1px solid #475569 !important;
+  border: 1px solid #525252 !important;
 }
 
 html.dark .btn-pill-dark span,
@@ -2689,16 +2712,16 @@ html.dark .btn-pill-dark svg {
 html.dark .recovery-hero .btn,
 html.dark .recovery-hero button,
 html.dark button.btn-primary {
-  background-color: #0284c7 !important;
-  color: #ffffff !important;
+  background-color: #7692ff !important;
+  color: #091540 !important;
   border: none !important;
 }
 
 html.dark .recovery-hero .btn *,
 html.dark .recovery-hero button *,
 html.dark button.btn-primary * {
-  color: #ffffff !important;
-  stroke: #ffffff !important;
+  color: #091540 !important;
+  stroke: #091540 !important;
 }
 
 /* 4. Ibalik ang puting text at sky-blue icons sa Disaster Option Cards[cite: 5] */
@@ -2717,8 +2740,8 @@ html.dark [class*="grid"] button {
 html.dark .card button svg,
 html.dark [class*="card"] button svg,
 html.dark [class*="grid"] button svg {
-  color: #38bdf8 !important;
-  stroke: #38bdf8 !important;
+  color: #7692ff !important;
+  stroke: #7692ff !important;
 }
 
 /* Consistent dark surfaces, including panels that previously used hard-coded white */
@@ -2780,7 +2803,89 @@ html.dark .application-section-heading {
 html.dark .card,
 html.dark [class*="-card"],
 html.dark [class*="_card"] {
-  border-color: var(--slate-200);
+  border: 1px solid #525252;
+  box-shadow: inset 0 0 0 1px rgb(148 163 184 / 4%), 0 8px 24px rgb(0 0 0 / 18%);
+  border-color: #525252;
+}
+
+html.dark .app-main-canvas {
+  border: 1px solid #404040;
+  box-shadow: 0 12px 36px rgb(0 0 0 / 28%);
+}
+
+html.dark .flow-card,
+html.dark .modern-card,
+html.dark .wizard-stepper,
+html.dark .subsidy-card,
+html.dark .disaster-card,
+html.dark .method-card,
+html.dark .results-card,
+html.dark .trust-card,
+html.dark .landing-faq,
+html.dark .faq-item {
+  background: #292929 !important;
+  border: 1px solid #525252 !important;
+  box-shadow: 0 6px 18px rgb(0 0 0 / 20%);
+}
+
+html.dark .disaster-card.selected,
+html.dark .method-card.selected,
+html.dark .faq-item.open {
+  background: #091540 !important;
+  border-color: #7692ff !important;
+  box-shadow: 0 0 0 2px rgb(118 146 255 / 18%);
+}
+
+html.dark .recovery-hero,
+html.dark .recovery-hero-icon,
+html.dark .recovery-dashboard-metric,
+html.dark .guest-dashboard-notice {
+  background: #292929 !important;
+  border-color: #525252 !important;
+}
+
+html.dark .recovery-hero .eyebrow,
+html.dark .landing-title-accent,
+html.dark .faq-chevron,
+html.dark .recovery-dashboard-metric-heading svg,
+html.dark .recovery-dashboard-action svg {
+  color: #7692ff !important;
+  stroke: #7692ff !important;
+}
+
+html.dark .guest-dashboard-notice .btn-secondary {
+  background: #091540 !important;
+  border: 1px solid #7692ff !important;
+  color: #abd2fa !important;
+  box-sizing: border-box;
+  border-radius: 9999px;
+}
+
+html.dark .faq-answer,
+html.dark .faq-answer-inner {
+  background: #242424 !important;
+  border-color: #525252 !important;
+  color: var(--slate-900) !important;
+}
+
+html.dark .form-input,
+html.dark .form-select,
+html.dark .form-textarea,
+html.dark input,
+html.dark select,
+html.dark textarea {
+  background: #242424 !important;
+  border: 1px solid #525252 !important;
+  color: #f8fafc !important;
+  box-shadow: inset 0 1px 2px rgb(0 0 0 / 20%);
+}
+
+html.dark .form-input::placeholder,
+html.dark .form-textarea::placeholder,
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #94a3b8;
+  opacity: 1;
 }
 
 html.dark table,
@@ -2872,5 +2977,13 @@ html.dark td {
 
   .application-editor .form-grid {
     grid-template-columns: 1fr;
+  }
+
+  .recovery-dashboard .guest-dashboard-notice {
+    padding: 16px 14px;
+  }
+
+  .recovery-dashboard .guest-dashboard-notice .btn {
+    width: 100% !important;
   }
 }
