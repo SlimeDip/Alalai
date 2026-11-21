@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ArrowRight, BriefcaseBusiness, FileText, HandCoins, RefreshCw, ShieldAlert, FolderOpen } from 'lucide-react';
+import { ArrowRight, FileText, HandCoins, RefreshCw, ShieldAlert } from 'lucide-react';
 import { fetchAccountApplications } from '../utils/applicationStorage';
-import { fetchOwnedRecoveryCases } from '../utils/trackerApi';
+import { fetchOwnedRecoveryCases } from '../utils/assessmentApi';
 import {
   createCaseApplicationContext,
   getRecoveryCaseDetailModel,
@@ -234,14 +234,8 @@ function CaseDetail({
         <button type="button" className="btn btn-primary" onClick={() => onPrepareApplication(recoveryCase)}>
           {"Prepare an application for this case"} <ArrowRight size={15} />
         </button>
-        <button type="button" className="btn btn-secondary" onClick={() => onNavigateToWorkflow('tracker', recoveryCase.case_id)}>
-          <BriefcaseBusiness size={15} /> {"Open tracker for this case"}
-        </button>
         <button type="button" className="btn btn-secondary" onClick={() => onNavigateToWorkflow('aid', recoveryCase.case_id)}>
           <HandCoins size={15} /> {"Open aid ledger for this case"}
-        </button>
-        <button type="button" className="btn btn-secondary" onClick={() => onNavigateToWorkflow('vault', recoveryCase.case_id)}>
-          <FolderOpen size={15} /> {"Open documents for this case"}
         </button>
       </div>
     </article>

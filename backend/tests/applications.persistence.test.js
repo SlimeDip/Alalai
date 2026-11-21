@@ -673,7 +673,6 @@ test('aid ledger separates cash and in-kind totals and enforces validation and o
     method: 'POST',
     body: {
       case_id: caseId,
-      tracked_application_id: trackedId,
       aid_type: 'CASH',
       assistance_description: 'Cash aid',
       amount_php: 15000,
@@ -690,7 +689,6 @@ test('aid ledger separates cash and in-kind totals and enforces validation and o
     method: 'POST',
     body: {
       case_id: caseId,
-      tracked_application_id: secondTrackedId,
       aid_type: 'IN_KIND',
       assistance_description: 'Food packs',
       quantity: '3 packs',
@@ -726,7 +724,6 @@ test('aid ledger separates cash and in-kind totals and enforces validation and o
     method: 'PUT',
     body: {
       case_id: caseId,
-      tracked_application_id: secondTrackedId,
       aid_type: 'IN_KIND',
       assistance_description: 'Food packs',
       quantity: '4 packs',

@@ -18,13 +18,8 @@ import {
   saveBrowserApplication,
   saveAccountApplication
 } from '../utils/applicationStorage';
-import { fetchCaseDocuments } from '../utils/documentApi';
-import { fetchOwnedRecoveryCases } from '../utils/trackerApi';
-import {
-  createApplicationFormData,
-  getApplicationDocuments,
-  getAttachmentChecklist
-} from '../utils/applicationForm';
+import { fetchOwnedRecoveryCases } from '../utils/assessmentApi';
+import { createApplicationFormData } from '../utils/applicationForm';
 
 export default function OfficialApplicationView({
   initialData,
@@ -43,9 +38,6 @@ export default function OfficialApplicationView({
   const [recoveryCases, setRecoveryCases] = useState([]);
   const [casesLoading, setCasesLoading] = useState(false);
   const [casesError, setCasesError] = useState('');
-  const [caseDocuments, setCaseDocuments] = useState([]);
-  const [documentsLoading, setDocumentsLoading] = useState(false);
-  const [documentsError, setDocumentsError] = useState('');
   const isAccountUser = Boolean(user && !user.isGuest);
 
   useEffect(() => {
@@ -73,32 +65,6 @@ export default function OfficialApplicationView({
     return () => { active = false; };
   }, [isAccountUser, user]);
 
-  useEffect(() => {
-    let active = true;
-    if (!isAccountUser || !formData.case_id) {
-      setCaseDocuments([]);
-      setDocumentsError('');
-      setDocumentsLoading(false);
-      return () => { active = false; };
-    }
-
-    setCaseDocuments([]);
-    setDocumentsError('');
-    setDocumentsLoading(true);
-    fetchCaseDocuments(formData.case_id)
-      .then((documents) => {
-        if (active) setCaseDocuments(documents);
-      })
-      .catch((error) => {
-        if (active) setDocumentsError(error.message);
-      })
-      .finally(() => {
-        if (active) setDocumentsLoading(false);
-      });
-
-    return () => { active = false; };
-  }, [formData.case_id, isAccountUser, user]);
-
   const hasAgriculturalProgram = formData.applied_subsidies.some((program) =>
     /sure|crop insurance|pcic|agricultural|farm|fish/i.test(program)
   );
@@ -122,10 +88,6 @@ export default function OfficialApplicationView({
   const handleDownloadPdfOrPrint = () => {
     if (!formData.sworn_attestation) {
       setSaveError("Confirm the sworn attestation before saving or printing this application.");
-      return;
-    }
-    if (documentsLoading || documentsError) {
-      setSaveError(documentsError || "Wait for the vault document list to finish loading before printing.");
       return;
     }
     window.print();
@@ -173,8 +135,6 @@ export default function OfficialApplicationView({
     }
   };
 
-  const caseDocumentsForApplication = getApplicationDocuments(caseDocuments, formData.id);
-  const attachmentChecklist = getAttachmentChecklist(caseDocumentsForApplication);
   const selectedCaseExists = recoveryCases.some(
     (recoveryCase) => recoveryCase.case_id === formData.case_id
   );
@@ -824,37 +784,14 @@ export default function OfficialApplicationView({
                 IV. MGA KALAKIP NA DOKUMENTO (ATTACHMENT CHECKLIST)
               </div>
               <div className="official-checklist-grid">
-                <div>
-                  {"Files categorized as identity documents"}: {attachmentChecklist.identityFiles.length
-                    ? `${attachmentChecklist.identityFiles.length} ${"recorded in the Alalai vault"}`
-                    : "none recorded in the Alalai vault"}
-                </div>
-                <div>
-                  {"Files categorized as damage photos"}: {attachmentChecklist.damagePhotoFiles.length
-                    ? `${attachmentChecklist.damagePhotoFiles.length} ${"recorded in the Alalai vault"}`
-                    : "none recorded in the Alalai vault"}
-                </div>
-                <div>{"Barangay certificates / indigency: not verified by Alalai; check the files below or confirm requirements with the receiving office."}</div>
-                <div>{"Proof of residence: not verified by Alalai; check the files below or confirm requirements with the receiving office."}</div>
+                <div>{"Valid government-issued ID or acceptable local ID"}</div>
+                <div>{"Proof of residence or Barangay certification"}</div>
+                <div>{"Damage photos or inspection documentation"}</div>
+                <div>{"Property, crop, or business loss supporting records"}</div>
               </div>
               <p className="official-footer-note">
-                {documentsLoading
-                  ? "Wait for the vault document list to finish loading before printing."
-                  : documentsError
-                    ? "The vault document list could not be loaded, so printing is disabled to avoid an inaccurate checklist."
-                    : !formData.case_id
-                      ? "Link a recovery case to show its vault metadata. Files are not attached to this printout."
-                      : "The list below reflects case-linked vault metadata only. File contents are not independently verified, and vault files are not attached to this printout."}
+                {"Bring valid copies of the required documents and confirm the latest checklist with the receiving office. Alalai does not verify or store attachments through this printout."}
               </p>
-              {caseDocumentsForApplication.length > 0 && (
-                <ul className="official-document-list">
-                  {caseDocumentsForApplication.map((document) => (
-                    <li key={document.document_id}>
-                      {document.original_filename} ({document.category}) — {"stored in the vault, not attached to this printout"}
-                    </li>
-                  ))}
-                </ul>
-              )}
 
               {/* SECTION 5 */}
               <div className="official-attestation-box">

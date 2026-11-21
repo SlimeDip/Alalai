@@ -304,6 +304,53 @@ body {
   margin: 4px 0 0;
 }
 
+.aid-ledger {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.aid-ledger-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.aid-ledger-stat {
+  padding: 16px;
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-md);
+  background: var(--slate-50);
+}
+
+.aid-ledger-stat strong {
+  display: block;
+  color: var(--slate-600);
+  font-size: 13px;
+}
+
+.aid-ledger-stat p {
+  margin-top: 6px;
+  color: var(--slate-900);
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.aid-ledger-form,
+.aid-ledger-history {
+  padding: 20px;
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-lg);
+  background: var(--white);
+}
+
+.aid-ledger-record {
+  padding: 16px;
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-md);
+  background: var(--white);
+}
+
 .recovery-hero {
   display: flex;
   align-items: center;
@@ -2850,6 +2897,15 @@ html.dark .recovery-hero-icon,
 html.dark .recovery-dashboard-metric,
 html.dark .guest-dashboard-notice {
   background: #242424 !important;
+}
+
+html.dark .aid-ledger-stat,
+html.dark .aid-ledger-form,
+html.dark .aid-ledger-history,
+html.dark .aid-ledger-record {
+  background: #242424 !important;
+  border-color: #525252 !important;
+  box-shadow: none !important;
 }
 
 html.dark .recovery-hero .eyebrow,

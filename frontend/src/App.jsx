@@ -7,9 +7,7 @@ import DamageAssessmentForm from './components/DamageAssessmentForm';
 import SubsidyCatalog from './components/SubsidyCatalog';
 import OfficialApplicationView from './components/OfficialApplicationView';
 import SavedApplicationsList from './components/SavedApplicationsList';
-import ApplicationTracker from './components/ApplicationTracker';
 import AidLedger from './components/AidLedger';
-import DocumentVault from './components/DocumentVault';
 import RecoveryCaseWorkspace from './components/RecoveryCaseWorkspace';
 import { createCaseApplicationContext } from './utils/recoveryCaseWorkspace';
 
@@ -182,9 +180,7 @@ export default function App() {
     onOpenCases: (caseId) => handleNavigateToCaseWorkflow('cases', caseId),
     onPrepareApplication: handleDashboardPrepareApplication,
     onOpenApplication: handleDashboardOpenApplication,
-    onOpenTracker: (caseId) => handleNavigateToCaseWorkflow('tracker', caseId),
-    onOpenAidLedger: (caseId) => handleNavigateToCaseWorkflow('aid', caseId),
-    onOpenVault: (caseId) => handleNavigateToCaseWorkflow('vault', caseId)
+    onOpenAidLedger: (caseId) => handleNavigateToCaseWorkflow('aid', caseId)
   };
 
   return (
@@ -274,15 +270,6 @@ export default function App() {
             />
           )}
 
-          {activeTab === 'tracker' && (
-            <ApplicationTracker
-              user={user}
-              csrfToken={csrfToken}
-              initialCaseId={workflowCaseId}
-              onOpenLogin={() => { setAuthModalMode('signin'); setAuthModalOpen(true); }}
-            />
-          )}
-
           {activeTab === 'aid' && (
             <AidLedger
               user={user}
@@ -292,14 +279,6 @@ export default function App() {
             />
           )}
 
-          {activeTab === 'vault' && (
-            <DocumentVault
-              user={user}
-              csrfToken={csrfToken}
-              initialCaseId={workflowCaseId}
-              onOpenLogin={() => { setAuthModalMode('signin'); setAuthModalOpen(true); }}
-            />
-          )}
         </main>
 
         <footer className="site-footer no-print">

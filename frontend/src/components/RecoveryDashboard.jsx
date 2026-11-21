@@ -8,9 +8,8 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { fetchAccountApplications } from '../utils/applicationStorage';
-import { fetchCaseDocuments } from '../utils/documentApi';
 import { fetchAidLedger } from '../utils/aidApi';
-import { fetchTrackedApplications, fetchOwnedRecoveryCases } from '../utils/trackerApi';
+import { fetchOwnedRecoveryCases } from '../utils/assessmentApi';
 import {
   getRecoveryDashboardNextActions,
   getRecoveryDashboardView,
@@ -18,20 +17,10 @@ import {
 } from '../utils/recoveryDashboard';
 import { getCaseLocation } from '../utils/recoveryCaseWorkspace';
 
-const STATUS_LABELS = {
-  PREPARED: 'Prepared',
-  SUBMITTED: 'Submitted',
-  FOLLOW_UP_NEEDED: 'Follow-up needed',
-  DECISION_RECEIVED: 'Decision received'
-};
-
 const ACTION_LABELS = {
   'start-case': 'Start a new recovery case',
   'prepare-application': 'Prepare an application',
-  'review-application': 'Review saved application',
-  'review-tracker': 'Review application tracker',
-  'follow-up': 'Complete a follow-up',
-  'open-vault': 'Open document vault'
+  'review-application': 'Review saved application'
 };
 
 function dateLabel(value) {
@@ -73,9 +62,7 @@ export default function RecoveryDashboard({
   onOpenCases,
   onPrepareApplication,
   onOpenApplication,
-  onOpenTracker,
-  onOpenAidLedger,
-  onOpenVault}) {
+  onOpenAidLedger}) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -96,32 +83,15 @@ export default function RecoveryDashboard({
 
     const loadDashboard = async () => {
       try {
-        const [cases, applications, trackedApplications, aidResult] = await Promise.all([
+        const [cases, applications, aidResult] = await Promise.all([
           fetchOwnedRecoveryCases(),
           fetchAccountApplications(),
-          fetchTrackedApplications(),
           fetchAidLedger()
         ]);
-        let documentCount = null;
-        let documentError = cases.length === 0 ? 'no-cases' : '';
-        if (cases.length) {
-          try {
-            const caseDocuments = await Promise.all(
-              cases.map((recoveryCase) => fetchCaseDocuments(recoveryCase.case_id))
-            );
-            documentCount = caseDocuments.reduce((total, documents) => total + documents.length, 0);
-          } catch {
-            documentError = true;
-          }
-        }
-
         const summary = summarizeRecoveryDashboard({
           cases,
           applications,
-          trackedApplications,
-          aidSummary: aidResult.summary,
-          documentCount,
-          documentError
+          aidSummary: aidResult.summary
         });
         if (active) setData(summary);
       } catch (requestError) {
@@ -145,10 +115,6 @@ export default function RecoveryDashboard({
     if (action.type === 'start-case') onStartCase();
     if (action.type === 'prepare-application') onPrepareApplication(action.recoveryCase);
     if (action.type === 'review-application') onOpenApplication(action.application);
-    if (action.type === 'review-tracker' || action.type === 'follow-up') {
-      onOpenTracker(action.caseId);
-    }
-    if (action.type === 'open-vault') onOpenVault(action.caseId);
   };
 
   return (
@@ -158,7 +124,7 @@ export default function RecoveryDashboard({
         <div>
           <p className="eyebrow">{"Recovery workspace"}</p>
           <h1 className="card-heading-lg">{"Plan your recovery"}</h1>
-          <p className="card-subheading-lg">{"Review account-backed recovery cases, applications, recorded aid, and documents. Guest assessments are not recoverable across devices."}</p>
+          <p className="card-subheading-lg">{"Review account-backed recovery cases, applications, and aid records. Guest assessments are not recoverable across devices."}</p>
         </div>
         {isAccountUser ? (
           <button
@@ -238,32 +204,7 @@ export default function RecoveryDashboard({
 
             <DashboardMetric title={"Saved applications"} icon={FileText}>
               <p className="recovery-dashboard-total">{data.applicationCount}</p>
-              <button type="button" className="btn btn-secondary btn-sm" onClick={() => onOpenTracker()}>
-                {"Open application tracker"}
-              </button>
-              <div className="recovery-dashboard-statuses">
-                {Object.entries(data.trackerStatusCounts).map(([status, count]) => (
-                  <div key={status}>
-                    <span>{STATUS_LABELS[status] || status}</span>
-                    <strong>{count}</strong>
-                  </div>
-                ))}
-              </div>
-              {data.followUpApplications.length > 0 && (
-                <div className="recovery-dashboard-followups">
-                  <strong>{"Needs follow-up"}</strong>
-                  {data.followUpApplications.slice(0, 3).map((application) => (
-                    <button
-                      type="button"
-                      key={application.tracked_application_id}
-                      onClick={() => onOpenTracker(application.case_id)}
-                    >
-                      {application.program_name}
-                      {application.disaster_type ? ` · ${application.disaster_type}` : ''}
-                    </button>
-                  ))}
-                </div>
-              )}
+              <p className="card-subheading">{"Saved application records remain available from your account."}</p>
             </DashboardMetric>
 
             <DashboardMetric title={"Assistance recorded as received"} icon={HandCoins}>
@@ -283,25 +224,6 @@ export default function RecoveryDashboard({
               </button>
             </DashboardMetric>
 
-            <DashboardMetric title={"Documents"} icon={FolderOpen}>
-              <p className="recovery-dashboard-total">
-                {data.documentCount == null ? "Unavailable" : data.documentCount}
-              </p>
-              <p className="card-subheading">
-                {data.documentError
-                  ? (data.documentError === 'no-cases'
-                    ? 'No documents are needed until you save a recovery case.'
-                    : 'Documents could not be counted from the private vault.')
-                  : "The total is counted from the private vault lists for your saved cases."}
-              </p>
-              <button
-                type="button"
-                className="btn btn-secondary btn-sm"
-                onClick={() => onOpenVault(data.cases[0]?.case_id)}
-              >
-                {"Open document vault"}
-              </button>
-            </DashboardMetric>
           </div>
 
           {nextActions.length > 0 && (

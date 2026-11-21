@@ -35,3 +35,22 @@ export async function runDamageAssessment(formPayload, csrfToken) {
   error.isRelevanceError = error.code === 'IRRELEVANT_IMAGE';
   throw error;
 }
+
+export async function fetchOwnedRecoveryCases() {
+  const cases = [];
+  let page = 1;
+  let totalPages = 1;
+  while (page <= totalPages) {
+    const response = await fetch(`/api/assessments?limit=100&page=${page}`, {
+      credentials: 'include'
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || !result.success) {
+      throw new Error(result.error || 'Unable to load recovery cases.');
+    }
+    cases.push(...(result.data || []));
+    totalPages = result.pagination?.totalPages || 1;
+    page += 1;
+  }
+  return cases;
+}

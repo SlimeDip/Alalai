@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { HandCoins, RefreshCw, Trash2, Pencil, X } from 'lucide-react';
-import { fetchOwnedRecoveryCases } from '../utils/trackerApi';
+import { fetchOwnedRecoveryCases } from '../utils/assessmentApi';
 import {
   createAidRecord,
   deleteAidRecord,
@@ -10,7 +10,6 @@ import {
 
 const emptyForm = {
   case_id: '',
-  tracked_application_id: '',
   aid_type: 'CASH',
   assistance_description: '',
   amount_php: '',
@@ -34,7 +33,6 @@ function php(value) {
 
 export default function AidLedger({ user, csrfToken, initialCaseId = '', onOpenLogin}) {
   const [cases, setCases] = useState([]);
-  const [trackedApplications, setTrackedApplications] = useState([]);
   const [records, setRecords] = useState([]);
   const [summary, setSummary] = useState({
     cash_total_php: 0,
@@ -55,24 +53,17 @@ export default function AidLedger({ user, csrfToken, initialCaseId = '', onOpenL
   const refresh = useCallback(async () => {
     if (!isAccountUser) {
       setCases([]);
-      setTrackedApplications([]);
       setRecords([]);
       return;
     }
     setLoading(true);
     setError('');
     try {
-      const [recoveryCases, trackedResult, ledgerResult] = await Promise.all([
+      const [recoveryCases, ledgerResult] = await Promise.all([
         fetchOwnedRecoveryCases(),
-        fetch('/api/tracker', { credentials: 'include' }).then(async (response) => {
-          const result = await response.json();
-          if (!response.ok || !result.success) throw new Error(result.error || 'Unable to load tracked applications.');
-          return result.data;
-        }),
         fetchAidLedger(caseFilter)
       ]);
       setCases(recoveryCases);
-      setTrackedApplications(trackedResult);
       setRecords(ledgerResult.data);
       setSummary(ledgerResult.summary);
     } catch (requestError) {
@@ -89,10 +80,9 @@ export default function AidLedger({ user, csrfToken, initialCaseId = '', onOpenL
   useEffect(() => {
     if (!initialCaseId) return;
     setCaseFilter(initialCaseId);
-    setForm((previous) => ({ ...previous, case_id: initialCaseId, tracked_application_id: '' }));
+    setForm((previous) => ({ ...previous, case_id: initialCaseId }));
   }, [initialCaseId]);
 
-  const linkedPrograms = trackedApplications.filter((application) => application.case_id === form.case_id);
   const visibleRecords = useMemo(() => {
     const filtered = typeFilter === 'ALL'
       ? records
@@ -117,7 +107,6 @@ export default function AidLedger({ user, csrfToken, initialCaseId = '', onOpenL
     setError('');
     const payload = {
       ...form,
-      tracked_application_id: form.tracked_application_id || null,
       amount_php: form.aid_type === 'CASH' ? form.amount_php : '',
       estimated_value_php: form.aid_type === 'IN_KIND' ? form.estimated_value_php : ''
     };
@@ -140,7 +129,6 @@ export default function AidLedger({ user, csrfToken, initialCaseId = '', onOpenL
     setEditingId(record.aid_id);
     setForm({
       case_id: record.case_id,
-      tracked_application_id: record.tracked_application_id || '',
       aid_type: record.aid_type,
       assistance_description: record.assistance_description || '',
       amount_php: record.amount_php ?? '',
@@ -166,7 +154,7 @@ export default function AidLedger({ user, csrfToken, initialCaseId = '', onOpenL
 
   if (!isAccountUser) {
     return (
-      <div className="modern-card">
+      <div className="aid-ledger">
         <h1 className="card-heading">{"Aid Received Ledger"}</h1>
         <p className="card-subheading">{"Sign in to privately save and access aid records across your devices."}</p>
         <button type="button" className="btn btn-primary" onClick={onOpenLogin}>{"Sign In"}</button>
@@ -193,24 +181,24 @@ export default function AidLedger({ user, csrfToken, initialCaseId = '', onOpenL
         </div>
       )}
 
-      <section className="form-grid" aria-label={"Aid summary"} style={{ margin: '18px 0 24px' }}>
-        <div className="flow-card">
+      <section className="aid-ledger-summary" aria-label={"Aid summary"}>
+        <div className="aid-ledger-stat">
           <strong>{"Cash assistance received"}</strong>
-          <p className="card-heading">{php(summary.cash_total_php)}</p>
+          <p>{php(summary.cash_total_php)}</p>
         </div>
-        <div className="flow-card">
+        <div className="aid-ledger-stat">
           <strong>{"In-kind assistance entries"}</strong>
-          <p className="card-heading">{summary.in_kind_entries || 0}</p>
+          <p>{summary.in_kind_entries || 0}</p>
         </div>
         {summary.valued_in_kind_entries > 0 && (
-          <div className="flow-card">
+          <div className="aid-ledger-stat">
             <strong>{"Estimated in-kind value (recorded values only)"}</strong>
-            <p className="card-heading">{php(summary.in_kind_estimated_value_php)}</p>
+            <p>{php(summary.in_kind_estimated_value_php)}</p>
           </div>
         )}
       </section>
 
-      <form className="flow-card" onSubmit={handleSubmit} style={{ marginBottom: 24 }}>
+      <form className="aid-ledger-form" onSubmit={handleSubmit}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
           <h2 className="application-section-heading">{editingId ? "Edit aid record" : "Record aid received"}</h2>
           {editingId && <button type="button" className="btn btn-secondary btn-sm" onClick={resetForm}><X size={14} /> Cancel</button>}
@@ -218,7 +206,7 @@ export default function AidLedger({ user, csrfToken, initialCaseId = '', onOpenL
         <div className="form-grid">
           <label className="form-group">
             <span className="form-label">{"Recovery case"} *</span>
-            <select className="form-select" required value={form.case_id} onChange={(event) => setForm((previous) => ({ ...previous, case_id: event.target.value, tracked_application_id: '' }))}>
+            <select className="form-select" required value={form.case_id} onChange={(event) => setField('case_id', event.target.value)}>
               <option value="">{"Select a saved recovery case"}</option>
               {cases.map((item) => <option key={item.id} value={item.id}>{caseLabel(item)}</option>)}
             </select>
@@ -272,15 +260,6 @@ export default function AidLedger({ user, csrfToken, initialCaseId = '', onOpenL
             </>
           )}
           <label className="form-group">
-            <span className="form-label">{"Related program application (optional)"}</span>
-            <select className="form-select" value={form.tracked_application_id} onChange={(event) => setField('tracked_application_id', event.target.value)} disabled={!form.case_id}>
-              <option value="">{"None"}</option>
-              {linkedPrograms.map((application) => (
-                <option key={application.tracked_application_id} value={application.tracked_application_id}>{application.program_name}</option>
-              ))}
-            </select>
-          </label>
-          <label className="form-group">
             <span className="form-label">{"Notes (optional)"}</span>
             <input className="form-input" maxLength={2000} value={form.notes} onChange={(event) => setField('notes', event.target.value)} />
           </label>
@@ -291,7 +270,7 @@ export default function AidLedger({ user, csrfToken, initialCaseId = '', onOpenL
         {cases.length === 0 && !loading && <p className="card-subheading">{"Save an account-backed recovery case before tracking a program."}</p>}
       </form>
 
-      <section>
+      <section className="aid-ledger-history">
         <h2 className="application-section-heading">{"Aid records"}</h2>
         <div className="form-grid" style={{ marginBottom: 16 }}>
           <label className="form-group">
@@ -322,7 +301,7 @@ export default function AidLedger({ user, csrfToken, initialCaseId = '', onOpenL
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {visibleRecords.map((record) => (
-              <article key={record.aid_id} className="flow-card">
+              <article key={record.aid_id} className="aid-ledger-record">
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                   <div>
                     <span className="badge badge-agency">{record.aid_type === 'CASH' ? "Cash" : "In-kind"}</span>

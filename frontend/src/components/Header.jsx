@@ -53,9 +53,7 @@ export default function Header({
   const secondaryNavItems = [
     { id: 'cases', label: "Recovery Cases" },
     { id: 'saved', label: "Saved Applications" },
-    { id: 'tracker', label: "Tracker" },
-    { id: 'aid', label: "Aid Ledger" },
-    { id: 'vault', label: "Document Vault" }
+    { id: 'aid', label: "Aid Ledger" }
   ];
 
   const navItems = [...primaryNavItems, ...secondaryNavItems];

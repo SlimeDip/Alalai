@@ -53,11 +53,6 @@ function validate(body, existing = null) {
   }
 
   const caseId = text(body.case_id ?? existing?.case_id, 'case_id', 100, { required: true });
-  const trackedApplicationId = body.tracked_application_id === undefined
-    ? { value: existing?.tracked_application_id || null }
-    : body.tracked_application_id == null || body.tracked_application_id === ''
-      ? { value: null }
-      : text(body.tracked_application_id, 'tracked_application_id', 100, { required: true });
   const description = text(
     body.assistance_description ?? existing?.assistance_description,
     'assistance_description',
@@ -77,7 +72,6 @@ function validate(body, existing = null) {
   );
   const errors = [
     caseId,
-    trackedApplicationId,
     description,
     quantity,
     source,
@@ -99,7 +93,6 @@ function validate(body, existing = null) {
   return {
     value: {
       case_id: caseId.value,
-      tracked_application_id: trackedApplicationId.value,
       aid_type: aidType,
       assistance_description: description.value,
       amount_php: aidType === 'CASH' ? amount.value : null,
@@ -117,16 +110,6 @@ function validateRelationships(value, userId) {
     SELECT 1 FROM recovery_cases WHERE case_id = ? AND user_id = ?
   `).get(value.case_id, userId)) {
     return 'Recovery case not found.';
-  }
-  if (value.tracked_application_id) {
-    const tracked = db.prepare(`
-      SELECT case_id FROM tracked_applications
-      WHERE tracked_application_id = ? AND user_id = ?
-    `).get(value.tracked_application_id, userId);
-    if (!tracked) return 'Tracked application not found.';
-    if (tracked.case_id !== value.case_id) {
-      return 'The tracked application and recovery case do not match.';
-    }
   }
   return null;
 }
@@ -179,11 +162,11 @@ router.post('/', (req, res) => {
     const id = `AID-${crypto.randomUUID()}`;
     db.prepare(`
       INSERT INTO aid_ledger (
-        aid_id, user_id, case_id, tracked_application_id, aid_type,
+        aid_id, user_id, case_id, aid_type,
         assistance_description, amount_php, quantity, estimated_value_php,
         source, received_on, notes
       ) VALUES (
-        @aid_id, @user_id, @case_id, @tracked_application_id, @aid_type,
+        @aid_id, @user_id, @case_id, @aid_type,
         @assistance_description, @amount_php, @quantity, @estimated_value_php,
         @source, @received_on, @notes
       )
@@ -211,7 +194,6 @@ router.put('/:id', (req, res) => {
     db.prepare(`
       UPDATE aid_ledger SET
         case_id = @case_id,
-        tracked_application_id = @tracked_application_id,
         aid_type = @aid_type,
         assistance_description = @assistance_description,
         amount_php = @amount_php,

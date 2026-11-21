@@ -19,39 +19,24 @@ const cases = [
   }
 ];
 
-test('dashboard summary counts saved records and all existing tracker statuses', () => {
+test('dashboard summary counts saved cases, applications, and aid', () => {
   const summary = summarizeRecoveryDashboard({
     cases,
     applications: [{ id: 'APP-1', case_id: 'CASE-NEW' }],
-    trackedApplications: [
-      { status: 'PREPARED' },
-      { status: 'SUBMITTED' },
-      { status: 'FOLLOW_UP_NEEDED' },
-      { status: 'DECISION_RECEIVED' },
-      { status: 'UNKNOWN' }
-    ],
     aidSummary: {
       cash_total_php: 2500,
       in_kind_entries: 3,
       valued_in_kind_entries: 1,
       in_kind_estimated_value_php: 900
-    },
-    documentCount: 4
+    }
   });
 
   assert.equal(summary.caseCount, 2);
   assert.deepEqual(summary.recentCases.map((item) => item.case_id), ['CASE-NEW', 'CASE-OLD']);
   assert.equal(summary.applicationCount, 1);
-  assert.deepEqual(summary.trackerStatusCounts, {
-    PREPARED: 1,
-    SUBMITTED: 1,
-    FOLLOW_UP_NEEDED: 1,
-    DECISION_RECEIVED: 1
-  });
   assert.equal(summary.cashTotal, 2500);
   assert.equal(summary.inKindCount, 3);
   assert.equal(summary.inKindEstimatedValue, 900);
-  assert.equal(summary.documentCount, 4);
 });
 
 test('dashboard keeps cash and in-kind measures separate and does not invent missing amounts', () => {
@@ -67,27 +52,18 @@ test('dashboard keeps cash and in-kind measures separate and does not invent mis
   assert.equal(summary.cashTotal, null);
   assert.equal(summary.inKindCount, 2);
   assert.equal(summary.inKindEstimatedValue, null);
-  assert.equal(summary.documentCount, null);
 });
 
-test('dashboard next actions reflect empty, prepared, follow-up, and document states', () => {
+test('dashboard next actions reflect empty and unlinked application states', () => {
   const emptySummary = summarizeRecoveryDashboard({});
   assert.deepEqual(getRecoveryDashboardNextActions(emptySummary), [{ type: 'start-case' }]);
 
   const summary = summarizeRecoveryDashboard({
     cases,
-    applications: [{ id: 'APP-NEW', case_id: 'CASE-NEW' }],
-    trackedApplications: [
-      { tracked_application_id: 'TRACK-1', application_id: 'APP-NEW', case_id: 'CASE-NEW', status: 'PREPARED' },
-      { tracked_application_id: 'TRACK-2', case_id: 'CASE-OLD', program_name: 'Relief', status: 'FOLLOW_UP_NEEDED' }
-    ],
-    documentCount: 0
+    applications: [{ id: 'APP-NEW', case_id: 'CASE-NEW' }]
   });
   assert.deepEqual(getRecoveryDashboardNextActions(summary), [
-    { type: 'prepare-application', recoveryCase: cases[0] },
-    { type: 'review-application', application: { id: 'APP-NEW', case_id: 'CASE-NEW' } },
-    { type: 'follow-up', caseId: 'CASE-OLD' },
-    { type: 'open-vault', caseId: 'CASE-NEW' }
+    { type: 'prepare-application', recoveryCase: cases[0] }
   ]);
 });
 
