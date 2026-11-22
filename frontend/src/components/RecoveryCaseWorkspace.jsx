@@ -7,8 +7,7 @@ import {
   getRecoveryCaseDetailModel,
   getRecoveryCaseListView,
   getRelatedCaseApplications,
-  isUnavailableCaseValue,
-  normalizeRecoverySeverity
+  isUnavailableCaseValue
 } from '../utils/recoveryCaseWorkspace';
 import { getAssessmentEligibilityModel } from '../utils/subsidyPresentation';
 
@@ -47,25 +46,6 @@ function displayCaseValue(value, fallback) {
   return isUnavailableCaseValue(value) ? fallback : value;
 }
 
-function caseDateLabel(value, lang, fallback) {
-  const displayValue = displayCaseValue(value, fallback);
-  return displayValue === fallback ? fallback : dateLabel(displayValue, lang);
-}
-
-function severityPresentation(value) {
-  const severity = normalizeRecoverySeverity(value);
-  const labels = {
-    severe: 'Severe',
-    moderate: 'Moderate',
-    low: 'Low',
-    unknown: 'Severity unavailable'
-  };
-  return {
-    label: labels[severity],
-    className: `badge recovery-case-severity recovery-case-severity--${severity}`
-  };
-}
-
 function CaseDetail({
   recoveryCase,
   applications,
@@ -88,15 +68,7 @@ function CaseDetail({
     household_size: "Household members",
     household_members_count: "Household members"
   };
-  const householdFacts = [
-    ['applicant_name', detail.household.applicant_name],
-    ['contact_number', detail.household.contact_number],
-    ...(detail.household.household_size != null
-      ? [['household_size', detail.household.household_size]]
-      : detail.household.household_members_count != null
-        ? [['household_members_count', detail.household.household_members_count]]
-        : [])
-  ];
+  const hasHouseholdDetails = Object.keys(detail.household).length > 0;
   const hasAssessmentDetails = Boolean(
     recoveryCase.damage_summary
     || recoveryCase.raw_description
@@ -104,12 +76,6 @@ function CaseDetail({
     || recoveryCase.estimated_cost_min != null
     || recoveryCase.estimated_cost_max != null
   );
-  const unavailableInformation = 'Case information unavailable';
-  const incidentDate = displayCaseValue(recoveryCase.incident_date, unavailableInformation);
-  const caseCreatedDate = displayCaseValue(recoveryCase.created_at, unavailableInformation);
-  const disasterType = displayCaseValue(recoveryCase.disaster_type, 'Disaster type unavailable');
-  const severity = severityPresentation(recoveryCase.severity_level);
-
   return (
     <article className="modern-card recovery-case-detail">
       <header className="modern-card-header">
