@@ -3415,3 +3415,95 @@ html.dark .auth-sheet .auth-section { background: #292929; border-color: #404040
   .app-main-canvas { padding-left: 10px; padding-right: 10px; }
   .brand-logo { font-size: 20px; }
 }
+
+/* ======================================================= */
+/* SPACING: the global reset zeroes margins, so cards need  */
+/* explicit rhythm between their children                   */
+/* ======================================================= */
+.modern-card > p + p,
+.modern-card > p + div,
+.modern-card > p + .btn,
+.modern-card > .card-subheading + .btn { margin-top: 12px; }
+
+.modern-card > .recovery-case-actions { margin-top: 18px; }
+
+.recovery-case-guest,
+.recovery-case-empty,
+.aid-ledger.modern-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.recovery-case-guest > .modern-card-header,
+.recovery-case-detail > .modern-card-header { margin-bottom: 0; }
+
+.recovery-case-guest > p,
+.recovery-case-empty > p { line-height: 1.55; }
+
+.recovery-case-guest .recovery-case-actions { margin-top: 6px; }
+
+.recovery-case-empty { align-items: center; padding-top: 40px; padding-bottom: 40px; }
+.recovery-case-placeholder { align-self: stretch; justify-content: center; }
+
+.recovery-case-workspace-header { margin-bottom: 0; }
+.recovery-case-workspace-header .card-subheading { margin-top: 6px; }
+
+.recovery-case-list-heading { margin-bottom: 14px; }
+
+.recovery-case-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.recovery-case-detail .eyebrow { margin-bottom: 6px; }
+.recovery-case-detail .card-heading-lg { margin-bottom: 6px; }
+.recovery-case-detail .card-subheading + .card-subheading { margin-top: 2px; }
+
+.recovery-case-back { display: none; align-self: flex-start; }
+
+.recovery-case-section { margin: 0; }
+
+.recovery-case-section-panel > * + * { margin-top: 12px; }
+.recovery-case-section-panel ul,
+.recovery-case-section-panel ol { padding-left: 20px; }
+.recovery-case-section-panel li + li { margin-top: 4px; }
+.recovery-case-section-panel .chip-row { margin-top: 12px; }
+
+.recovery-case-section-toggle > .recovery-case-section-count { justify-self: end; }
+
+.recovery-case-loss strong { margin-bottom: 2px; }
+
+.recovery-case-related-application + .recovery-case-related-application { margin-top: 0; }
+
+.recovery-case-disclaimer { margin: 0; }
+
+.recovery-case-error span { flex: 1; min-width: 0; }
+
+.recovery-case-program-details[hidden],
+.recovery-case-section-panel[hidden] { display: none; }
+
+.recovery-case-action-layout .btn { justify-content: center; }
+
+html.dark .recovery-case-disclaimer { background: #292929; }
+
+@media (max-width: 800px) {
+  .recovery-case-back { display: inline-flex; }
+  .recovery-case-workspace-grid.has-selection .recovery-case-list-panel { display: none; }
+  .recovery-case-placeholder { display: none; }
+}
+
+@media (max-width: 640px) {
+  .recovery-case-guest,
+  .recovery-case-empty { gap: 12px; }
+  .recovery-case-empty { padding-top: 28px; padding-bottom: 28px; }
+  .recovery-case-workspace-header .recovery-case-actions { width: 100%; }
+  .recovery-case-workspace-header .recovery-case-actions .btn { flex: 1; width: auto; }
+  .recovery-case-guest .recovery-case-actions { flex-direction: column; }
+  .recovery-case-program-summary { grid-template-columns: 1fr; }
+  .recovery-case-program-summary .subsidy-outcome { justify-self: start; text-align: left; }
+}
+
+.recovery-case-guest > p,
+.recovery-case-empty > p { font-size: 15px; color: var(--slate-600); max-width: 62ch; }

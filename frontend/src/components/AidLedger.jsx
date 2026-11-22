@@ -154,10 +154,10 @@ export default function AidLedger({ user, csrfToken, initialCaseId = '', onOpenL
 
   if (!isAccountUser) {
     return (
-      <div className="aid-ledger">
+      <div className="modern-card aid-ledger">
         <h1 className="card-heading">{"Aid Received Ledger"}</h1>
         <p className="card-subheading">{"Sign in to privately save and access aid records across your devices."}</p>
-        <button type="button" className="btn btn-primary" onClick={onOpenLogin}>{"Sign In"}</button>
+        <button type="button" className="btn btn-primary" style={{ alignSelf: 'flex-start' }} onClick={onOpenLogin}>{"Sign In"}</button>
       </div>
     );
   }
