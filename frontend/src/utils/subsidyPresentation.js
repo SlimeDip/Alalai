@@ -36,8 +36,11 @@ export function getAssessmentEligibilityModel(assessment) {
         outcomeKey,
         outcomeClass,
         reasons: stringList(program.reasons),
+        reasonsReturned: Array.isArray(program.reasons),
         missingInformation: stringList(program.missing_information),
-        restrictions: stringList(program.restrictions)
+        missingInformationReturned: Array.isArray(program.missing_information),
+        restrictions: stringList(program.restrictions),
+        restrictionsReturned: Array.isArray(program.restrictions)
       };
     })
     .filter((program) => program.outcomeKey !== 'noCurrentMatch')
@@ -51,11 +54,32 @@ export function getAssessmentEligibilityModel(assessment) {
   };
 }
 
+export function getVisiblePrograms(programs, showAll, limit = 3) {
+  const availablePrograms = Array.isArray(programs) ? programs : [];
+  return {
+    total: availablePrograms.length,
+    visiblePrograms: showAll ? availablePrograms : availablePrograms.slice(0, limit),
+    hasToggle: availablePrograms.length > limit
+  };
+}
+
+export function toggleExpandedRecommendation(expandedIds, id) {
+  const nextExpandedIds = new Set(expandedIds);
+  if (nextExpandedIds.has(id)) {
+    nextExpandedIds.delete(id);
+  } else {
+    nextExpandedIds.add(id);
+  }
+  return nextExpandedIds;
+}
+
 export function getCatalogProgramPresentation(program) {
   return {
+    agency: typeof program?.agency === 'string' ? program.agency : '',
     purpose: typeof program?.short_description === 'string' && program.short_description.trim()
       ? program.short_description
       : typeof program?.details === 'string' ? program.details : '',
+    description: typeof program?.details === 'string' ? program.details : '',
     requirements: stringList(program?.requirements),
     applicationSteps: stringList(program?.application_steps),
     sourceUrl: typeof program?.source_url === 'string' && program.source_url.trim()

@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Layers, ArrowRight, Search, SlidersHorizontal, X, ExternalLink, CheckCircle2, ListChecks } from 'lucide-react';
-import { getCatalogProgramPresentation } from '../utils/subsidyPresentation';
+import { getCatalogProgramPresentation, getVisiblePrograms } from '../utils/subsidyPresentation';
+
+const INITIAL_PROGRAM_LIMIT = 6;
 
 export default function SubsidyCatalog({ onSelectSubsidyForApplication, t, lang = 'en' }) {
   const [subsidies, setSubsidies] = useState([]);
@@ -9,6 +11,7 @@ export default function SubsidyCatalog({ onSelectSubsidyForApplication, t, lang 
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedModalSubsidy, setSelectedModalSubsidy] = useState(null);
+  const [showAllPrograms, setShowAllPrograms] = useState(false);
 
   useEffect(() => {
     const loadSubsidies = async () => {
@@ -58,6 +61,7 @@ export default function SubsidyCatalog({ onSelectSubsidyForApplication, t, lang 
   const selectedProgram = selectedModalSubsidy
     ? getCatalogProgramPresentation(selectedModalSubsidy)
     : null;
+  const programList = getVisiblePrograms(filtered, showAllPrograms, INITIAL_PROGRAM_LIMIT);
 
   return (
     <div>
@@ -65,6 +69,7 @@ export default function SubsidyCatalog({ onSelectSubsidyForApplication, t, lang 
         <h2 className="card-heading-lg">
           <Layers size={22} color="var(--primary)" style={{ verticalAlign: 'middle', marginRight: 8 }} />
           {t('subsidiesTitle')}
+          {!isLoading && !loadError && ` (${programList.total})`}
         </h2>
         <p className="card-subheading-lg">{t('subsidiesSubtitle')}</p>
         <div className="form-group" style={{ marginTop: 20, maxWidth: 480 }}>
@@ -72,7 +77,10 @@ export default function SubsidyCatalog({ onSelectSubsidyForApplication, t, lang 
           <input
             type="search"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setShowAllPrograms(false);
+            }}
             placeholder={t('searchReliefPlaceholder')}
             className="form-input form-input-lg"
           />
@@ -81,7 +89,14 @@ export default function SubsidyCatalog({ onSelectSubsidyForApplication, t, lang 
           <label className="form-label">
             <SlidersHorizontal size={15} /> {t('filterAidType')}
           </label>
-          <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="form-select form-input-lg">
+          <select
+            value={categoryFilter}
+            onChange={(e) => {
+              setCategoryFilter(e.target.value);
+              setShowAllPrograms(false);
+            }}
+            className="form-select form-input-lg"
+          >
             <option value="all">{t('allAidTypes')}</option>
             <option value="general">{t('generalRelief')}</option>
             <option value="food">{t('foodEssentials')}</option>
@@ -102,8 +117,8 @@ export default function SubsidyCatalog({ onSelectSubsidyForApplication, t, lang 
             {t('noProgramsLoaded')}
           </p>
         )}
-        <div className="subsidy-grid" style={{ marginTop: 20 }}>
-            {filtered.map((sub) => {
+        <div className="subsidy-grid" id="subsidy-catalog-program-list" style={{ marginTop: 20 }}>
+            {programList.visiblePrograms.map((sub) => {
               const program = getCatalogProgramPresentation(sub);
               return (
               <div key={sub.id} className="subsidy-card">
@@ -139,6 +154,17 @@ export default function SubsidyCatalog({ onSelectSubsidyForApplication, t, lang 
               <p className="field-help">{t('noProgramsMatchFilter')}</p>
             )}
         </div>
+        {programList.hasToggle && (
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm subsidy-list-toggle"
+            aria-expanded={showAllPrograms}
+            aria-controls="subsidy-catalog-program-list"
+            onClick={() => setShowAllPrograms((current) => !current)}
+          >
+            {t(showAllPrograms ? 'showLessPrograms' : 'showMorePrograms')}
+          </button>
+        )}
       </div>
 
       {selectedModalSubsidy && (
