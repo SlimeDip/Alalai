@@ -10,12 +10,7 @@ import {
   isUnavailableCaseValue,
   normalizeRecoverySeverity
 } from '../utils/recoveryCaseWorkspace';
-import {
-  getAssessmentEligibilityModel,
-  getCatalogProgramPresentation,
-  getVisiblePrograms,
-  toggleExpandedRecommendation
-} from '../utils/subsidyPresentation';
+import { getAssessmentEligibilityModel } from '../utils/subsidyPresentation';
 
 const SCREENING_OUTCOME_LABELS = {
   eligible: 'Likely eligible',
@@ -57,61 +52,18 @@ function caseDateLabel(value, lang, fallback) {
   return displayValue === fallback ? fallback : dateLabel(displayValue, lang);
 }
 
-function severityPresentation(value, t) {
+function severityPresentation(value) {
   const severity = normalizeRecoverySeverity(value);
   const labels = {
     severe: 'Severe',
     moderate: 'Moderate',
     low: 'Low',
-    unknown: t('severityUnavailable')
+    unknown: 'Severity unavailable'
   };
   return {
     label: labels[severity],
     className: `badge recovery-case-severity recovery-case-severity--${severity}`
   };
-}
-
-function CaseSection({
-  sectionId,
-  title,
-  headingText,
-  description,
-  expanded,
-  onToggle,
-  headerMeta,
-  className = '',
-  children,
-  t
-}) {
-  const panelId = `recovery-case-section-${sectionId}`;
-  return (
-    <section className={`recovery-case-section ${className}`}>
-      <h3 className="recovery-case-section-title">
-        <button
-          type="button"
-          id={`${panelId}-toggle`}
-          className="recovery-case-section-toggle"
-          aria-expanded={expanded}
-          aria-controls={panelId}
-          aria-label={`${t(expanded ? 'collapseCaseSection' : 'expandCaseSection')}: ${headingText}`}
-          onClick={onToggle}
-        >
-          <span className="recovery-case-section-title-text">{title}</span>
-          {headerMeta}
-          <ChevronDown className={expanded ? 'is-expanded' : ''} size={18} aria-hidden="true" />
-        </button>
-      </h3>
-      <div
-        className="recovery-case-section-panel"
-        id={panelId}
-        aria-labelledby={`${panelId}-toggle`}
-        hidden={!expanded}
-      >
-        {description && <p className="recovery-case-section-description">{description}</p>}
-        {children}
-      </div>
-    </section>
-  );
 }
 
 function CaseDetail({
@@ -127,20 +79,9 @@ function CaseDetail({
     eligibility_results: recoveryCase.eligibility_results,
     matched_subsidies: recoveryCase.recommended_subsidies
   });
-  const recommendationList = getVisiblePrograms(
-    eligibility.programs,
-    showAllRecommendations
-  );
   const losses = detail.losses;
   const relatedApplications = getRelatedCaseApplications(applications, recoveryCase.case_id);
-  const location = displayCaseValue(detail.location, t('locationUnavailable'));
-  const sectionExpanded = (sectionId) => !collapsedSections.has(sectionId);
-  const toggleSection = (sectionId) => setCollapsedSections((current) => {
-    const next = new Set(current);
-    if (next.has(sectionId)) next.delete(sectionId);
-    else next.add(sectionId);
-    return next;
-  });
+  const location = displayCaseValue(detail.location, 'Location unavailable');
   const householdLabels = {
     applicant_name: "Applicant Full Name",
     contact_number: "Contact Number",
@@ -163,11 +104,11 @@ function CaseDetail({
     || recoveryCase.estimated_cost_min != null
     || recoveryCase.estimated_cost_max != null
   );
-  const unavailableInformation = t('caseInformationUnavailable');
+  const unavailableInformation = 'Case information unavailable';
   const incidentDate = displayCaseValue(recoveryCase.incident_date, unavailableInformation);
   const caseCreatedDate = displayCaseValue(recoveryCase.created_at, unavailableInformation);
-  const disasterType = displayCaseValue(recoveryCase.disaster_type, t('disasterTypeUnavailable'));
-  const severity = severityPresentation(recoveryCase.severity_level, t);
+  const disasterType = displayCaseValue(recoveryCase.disaster_type, 'Disaster type unavailable');
+  const severity = severityPresentation(recoveryCase.severity_level);
 
   return (
     <article className="modern-card recovery-case-detail">

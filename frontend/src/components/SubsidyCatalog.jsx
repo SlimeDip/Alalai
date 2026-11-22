@@ -151,7 +151,7 @@ export default function SubsidyCatalog({ onSelectSubsidyForApplication}) {
             aria-controls="subsidy-catalog-program-list"
             onClick={() => setShowAllPrograms((current) => !current)}
           >
-            {t(showAllPrograms ? 'showLessPrograms' : 'showMorePrograms')}
+            {showAllPrograms ? "Show less" : "Show more"}
           </button>
         )}
       </div>
