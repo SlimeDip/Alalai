@@ -176,7 +176,7 @@ export default function AidLedger({ user, csrfToken, initialCaseId = '', onOpenL
       </div>
 
       {error && (
-        <div role="alert" style={{ backgroundColor: '#fff1f2', border: '1px solid #fecdd3', color: '#9f1239', padding: '10px 14px', borderRadius: 10, marginBottom: 16 }}>
+        <div role="alert" className="alert alert-error">
           {error}
         </div>
       )}
@@ -199,8 +199,8 @@ export default function AidLedger({ user, csrfToken, initialCaseId = '', onOpenL
       </section>
 
       <form className="aid-ledger-form" onSubmit={handleSubmit}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
-          <h2 className="application-section-heading">{editingId ? "Edit aid record" : "Record aid received"}</h2>
+        <div className="modern-card-header" style={{ borderBottom: 0, paddingBottom: 0, marginBottom: 8 }}>
+          <h2 className="application-section-heading" style={{ margin: 0, borderBottom: 0 }}>{editingId ? "Edit aid record" : "Record aid received"}</h2>
           {editingId && <button type="button" className="btn btn-secondary btn-sm" onClick={resetForm}><X size={14} /> Cancel</button>}
         </div>
         <div className="form-grid">
@@ -297,9 +297,9 @@ export default function AidLedger({ user, csrfToken, initialCaseId = '', onOpenL
           </label>
         </div>
         {visibleRecords.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '30px 0', color: 'var(--slate-500)' }}>{"No aid received has been recorded yet."}</div>
+          <div className="empty-state">{"No aid received has been recorded yet."}</div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div className="record-list">
             {visibleRecords.map((record) => (
               <article key={record.aid_id} className="aid-ledger-record">
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
@@ -319,7 +319,7 @@ export default function AidLedger({ user, csrfToken, initialCaseId = '', onOpenL
                       )}
                     {record.notes && <p>{record.notes}</p>}
                   </div>
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                  <div className="record-actions">
                     <button type="button" className="btn btn-secondary btn-sm" onClick={() => beginEdit(record)}><Pencil size={14} /> {"Edit"}</button>
                     <button type="button" className="btn btn-secondary btn-sm" onClick={() => handleDelete(record)}><Trash2 size={14} /> {"Delete"}</button>
                   </div>

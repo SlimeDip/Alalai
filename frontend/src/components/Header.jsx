@@ -120,12 +120,12 @@ export default function Header({
         </div>
 
         <div className="navbar-cta">
-          <div className="flex items-center gap-2 mr-2 hidden md:flex" style={{ gap: '8px', marginRight: '12px' }}>
-            <button 
-              onClick={toggleTheme} 
-              className="btn-pill-dark"
-              style={{ padding: '6px 12px' }}
+          <div className="header-tools">
+            <button
+              onClick={toggleTheme}
+              className="btn-pill-dark theme-toggle"
               title="Toggle Dark Mode"
+              aria-label="Toggle dark mode"
               type="button"
             >
               {isDarkMode ? <Sun size={14} /> : <Moon size={14} />}
@@ -138,13 +138,13 @@ export default function Header({
                 <User size={14} />
                 <span>{(user?.name || '').split(' ')[0] || "Guest"}</span>
               </button>
-              <button type="button" className="btn btn-secondary btn-sm" onClick={onLogout} title={"Sign Out"}>
+              <button type="button" className="btn btn-secondary btn-sm nav-logout-btn" onClick={onLogout} title={"Sign Out"} aria-label="Sign out">
                 <LogOut size={13} />
               </button>
             </div>
           ) : (
             <div className="nav-user-cluster">
-              <button type="button" className="btn btn-secondary" onClick={onContinueAsGuest}>
+              <button type="button" className="btn btn-secondary nav-guest-btn" onClick={onContinueAsGuest}>
                 {"Continue as Guest"}
               </button>
               <button type="button" className="btn-pill-dark" onClick={onOpenLogin}>
@@ -170,7 +170,7 @@ export default function Header({
           <div className="mobile-drawer" onClick={(e) => e.stopPropagation()}>
             <div className="mobile-drawer-top">
               <div className="brand-logo">{"Alalai"}</div>
-              <button type="button" onClick={() => setMobileMenuOpen(false)} className="icon-btn">
+              <button type="button" onClick={() => setMobileMenuOpen(false)} className="icon-btn" aria-label="Close menu">
                 <X size={20} />
               </button>
             </div>
@@ -187,16 +187,21 @@ export default function Header({
               ))}
             </div>
             <div className="mobile-drawer-footer">
-              <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', justifyContent: 'flex-end' }}>
-                <button onClick={toggleTheme} className="btn-pill-dark" type="button">
+              <div className="header-tools" style={{ marginBottom: 12, justifyContent: 'flex-end' }}>
+                <button onClick={toggleTheme} className="btn-pill-dark theme-toggle" type="button" aria-label="Toggle dark mode">
                   {isDarkMode ? <Sun size={14} /> : <Moon size={14} />}
                 </button>
               </div>
 
               {user && !user.isGuest ? (
-                <button type="button" className="btn btn-secondary" style={{ width: '100%' }} onClick={onLogout}>
-                  {"Sign Out"}
-                </button>
+                <>
+                  <button type="button" className="btn btn-secondary" style={{ width: '100%', marginBottom: 8 }} onClick={() => { setMobileMenuOpen(false); onOpenProfile(); }}>
+                    <User size={14} /> {(user?.name || '').split(' ')[0] || "Profile"}
+                  </button>
+                  <button type="button" className="btn btn-secondary" style={{ width: '100%' }} onClick={onLogout}>
+                    <LogOut size={14} /> {"Sign Out"}
+                  </button>
+                </>
               ) : (
                 <>
                   <button type="button" className="btn btn-secondary" style={{ width: '100%', marginBottom: '8px' }} onClick={() => { onContinueAsGuest(); setMobileMenuOpen(false); }}>
