@@ -6,7 +6,8 @@ import {
   createCaseApplicationContext,
   getRecoveryCaseDetailModel,
   getRecoveryCaseListView,
-  getRelatedCaseApplications
+  getRelatedCaseApplications,
+  isUnavailableCaseValue
 } from '../utils/recoveryCaseWorkspace';
 import { getAssessmentEligibilityModel } from '../utils/subsidyPresentation';
 
@@ -41,6 +42,10 @@ function peso(value) {
   })}`;
 }
 
+function displayCaseValue(value, fallback) {
+  return isUnavailableCaseValue(value) ? fallback : value;
+}
+
 function CaseDetail({
   recoveryCase,
   applications,
@@ -56,7 +61,7 @@ function CaseDetail({
   });
   const losses = detail.losses;
   const relatedApplications = getRelatedCaseApplications(applications, recoveryCase.case_id);
-  const location = detail.location;
+  const location = displayCaseValue(detail.location, 'Location unavailable');
   const householdLabels = {
     applicant_name: "Applicant Full Name",
     contact_number: "Contact Number",
@@ -66,11 +71,11 @@ function CaseDetail({
   const hasHouseholdDetails = Object.keys(detail.household).length > 0;
   const hasAssessmentDetails = Boolean(
     recoveryCase.damage_summary
+    || recoveryCase.raw_description
     || recoveryCase.severity_level
     || recoveryCase.estimated_cost_min != null
     || recoveryCase.estimated_cost_max != null
   );
-
   return (
     <article className="modern-card recovery-case-detail">
       <header className="modern-card-header">
@@ -394,6 +399,7 @@ export default function RecoveryCaseWorkspace({
 
           {selectedCase ? (
             <CaseDetail
+              key={selectedCase.case_id}
               recoveryCase={selectedCase}
               applications={applications}
               applicationsLoading={applicationsLoading}

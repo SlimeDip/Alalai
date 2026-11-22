@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Layers, ArrowRight, Search, SlidersHorizontal, X, ExternalLink, CheckCircle2, ListChecks } from 'lucide-react';
-import { getCatalogProgramPresentation } from '../utils/subsidyPresentation';
+import { getCatalogProgramPresentation, getVisiblePrograms } from '../utils/subsidyPresentation';
+
+const INITIAL_PROGRAM_LIMIT = 6;
 
 export default function SubsidyCatalog({ onSelectSubsidyForApplication}) {
   const [subsidies, setSubsidies] = useState([]);
@@ -9,6 +11,7 @@ export default function SubsidyCatalog({ onSelectSubsidyForApplication}) {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedModalSubsidy, setSelectedModalSubsidy] = useState(null);
+  const [showAllPrograms, setShowAllPrograms] = useState(false);
 
   useEffect(() => {
     const loadSubsidies = async () => {
@@ -58,6 +61,7 @@ export default function SubsidyCatalog({ onSelectSubsidyForApplication}) {
   const selectedProgram = selectedModalSubsidy
     ? getCatalogProgramPresentation(selectedModalSubsidy)
     : null;
+  const programList = getVisiblePrograms(filtered, showAllPrograms, INITIAL_PROGRAM_LIMIT);
 
   return (
     <div>
@@ -102,8 +106,8 @@ export default function SubsidyCatalog({ onSelectSubsidyForApplication}) {
             {"No aid programs are currently available in the catalog."}
           </p>
         )}
-        <div className="subsidy-grid" style={{ marginTop: 20 }}>
-            {filtered.map((sub) => {
+        <div className="subsidy-grid" id="subsidy-catalog-program-list" style={{ marginTop: 20 }}>
+            {programList.visiblePrograms.map((sub) => {
               const program = getCatalogProgramPresentation(sub);
               return (
               <div key={sub.id} className="subsidy-card">
@@ -139,6 +143,17 @@ export default function SubsidyCatalog({ onSelectSubsidyForApplication}) {
               <p className="field-help">{"No catalog programs match the current search or filter."}</p>
             )}
         </div>
+        {programList.hasToggle && (
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm subsidy-list-toggle"
+            aria-expanded={showAllPrograms}
+            aria-controls="subsidy-catalog-program-list"
+            onClick={() => setShowAllPrograms((current) => !current)}
+          >
+            {showAllPrograms ? "Show less" : "Show more"}
+          </button>
+        )}
       </div>
 
       {selectedModalSubsidy && (

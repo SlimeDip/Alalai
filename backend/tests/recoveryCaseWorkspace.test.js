@@ -4,7 +4,8 @@ import {
   createCaseApplicationContext,
   getRecoveryCaseDetailModel,
   getRecoveryCaseListView,
-  getRelatedCaseApplications
+  getRelatedCaseApplications,
+  normalizeRecoverySeverity
 } from '../../frontend/src/utils/recoveryCaseWorkspace.js';
 
 const recoveryCase = {
@@ -48,6 +49,17 @@ test('case list view distinguishes loading, errors, empty results, and available
   );
 });
 
+test('recovery workspace severity presentation normalizes recognized and unavailable values', () => {
+  assert.equal(normalizeRecoverySeverity('Severe'), 'severe');
+  assert.equal(normalizeRecoverySeverity(' catastrophic '), 'severe');
+  assert.equal(normalizeRecoverySeverity('MODERATE'), 'moderate');
+  assert.equal(normalizeRecoverySeverity('Low'), 'low');
+  assert.equal(normalizeRecoverySeverity('Unknown'), 'unknown');
+  assert.equal(normalizeRecoverySeverity('Not recorded'), 'unknown');
+  assert.equal(normalizeRecoverySeverity('Unexpected level'), 'unknown');
+  assert.equal(normalizeRecoverySeverity(null), 'unknown');
+});
+
 test('case details expose only saved household, assessment, and loss information', () => {
   const detail = getRecoveryCaseDetailModel(recoveryCase);
   assert.equal(detail.location, 'Barangay 1, Tacloban, Leyte');
@@ -59,6 +71,18 @@ test('case details expose only saved household, assessment, and loss information
   assert.deepEqual(sparseDetail.household, {});
   assert.deepEqual(sparseDetail.losses, []);
   assert.deepEqual(sparseDetail.damageCategories, []);
+
+  const partiallySpecifiedLocation = getRecoveryCaseDetailModel({
+    barangay: ' Unspecified ',
+    city_municipality: 'Tacloban',
+    province: 'Not specified'
+  });
+  assert.equal(partiallySpecifiedLocation.location, 'Tacloban');
+  assert.equal(getRecoveryCaseDetailModel({
+    barangay: 'Unspecified',
+    city_municipality: 'Unknown',
+    province: 'N/A'
+  }).location, '');
 });
 
 test('application context and related applications use the exact recovery case ID', () => {

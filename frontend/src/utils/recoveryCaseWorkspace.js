@@ -1,3 +1,32 @@
+const unavailableCaseValues = new Set([
+  'unspecified',
+  'not specified',
+  'not recorded',
+  'unknown',
+  'n/a',
+  'na',
+  'none',
+  'null',
+  'hindi tinukoy',
+  'hindi naitala'
+]);
+
+export function isUnavailableCaseValue(value) {
+  return value == null || (
+    typeof value === 'string'
+    && (!value.trim() || unavailableCaseValues.has(value.trim().toLowerCase()))
+  );
+}
+
+export function normalizeRecoverySeverity(value) {
+  if (isUnavailableCaseValue(value)) return 'unknown';
+  const normalized = String(value).trim().toLowerCase();
+  if (normalized === 'catastrophic' || normalized === 'severe') return 'severe';
+  if (normalized === 'moderate') return 'moderate';
+  if (normalized === 'low') return 'low';
+  return 'unknown';
+}
+
 export function getRecoveryCaseListView({ cases, loading, error }) {
   if (loading) return { state: 'loading', cases: [] };
   if (error && !cases.length) return { state: 'error', cases: [] };
@@ -10,7 +39,13 @@ export function getCaseLocation(recoveryCase) {
     recoveryCase.barangay,
     recoveryCase.city_municipality,
     recoveryCase.province
-  ].filter(Boolean).join(', ');
+  ]
+    .filter((value) => (
+      typeof value === 'string'
+      && !isUnavailableCaseValue(value)
+    ))
+    .map((value) => value.trim())
+    .join(', ');
 }
 
 export function getCaseLossRecords(recoveryCase) {
