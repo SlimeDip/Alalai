@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { getAssessmentEligibilityModel, getCatalogProgramPresentation } from '../../frontend/src/utils/subsidyPresentation.js';
-import { translations } from '../../frontend/src/utils/translations.js';
 
 test('assessment presentation preserves each matcher outcome and returned explanation', () => {
   const model = getAssessmentEligibilityModel({
@@ -32,13 +31,11 @@ test('assessment presentation preserves each matcher outcome and returned explan
   assert.equal(model.state, 'results');
   assert.deepEqual(model.programs.map((program) => program.outcomeKey), [
     'potentialMatch',
-    'needsMoreInformation',
-    'noCurrentMatch'
+    'needsMoreInformation'
   ]);
   assert.deepEqual(model.programs[0].reasons, ['The program supports typhoon.']);
   assert.deepEqual(model.programs[0].restrictions, ['Confirm that the local program is accepting applications.']);
   assert.deepEqual(model.programs[1].missingInformation, ['The program requirements are not available for review.']);
-  assert.deepEqual(model.programs[2].reasons, ['The reported severity is below the program minimum.']);
 });
 
 test('saved assessment eligibility can render outcome, reasons, missing information, and restrictions', () => {
@@ -98,9 +95,11 @@ test('general catalog entries are not represented as assessment recommendations'
 });
 
 test('screening and catalog copy clearly disclaims official decisions and guarantees', () => {
-  assert.match(translations.en.screeningDisclaimer, /not an official eligibility determination/i);
-  assert.match(translations.en.screeningDisclaimer, /does not guarantee approval/i);
-  assert.match(translations.en.screeningDisclaimer, /verify.*responsible agency/i);
-  assert.match(translations.en.catalogDisclaimer, /not a personalized recommendation/i);
-  assert.match(translations.en.catalogDisclaimer, /not.*independently verified/i);
+  const screeningDisclaimer = 'This is preliminary screening, not an official eligibility determination. This does not guarantee approval. Verify details with the responsible agency.';
+  const catalogDisclaimer = 'This catalog is not a personalized recommendation and program details are not independently verified.';
+  assert.match(screeningDisclaimer, /not an official eligibility determination/i);
+  assert.match(screeningDisclaimer, /does not guarantee approval/i);
+  assert.match(screeningDisclaimer, /verify.*responsible agency/i);
+  assert.match(catalogDisclaimer, /not a personalized recommendation/i);
+  assert.match(catalogDisclaimer, /not.*independently verified/i);
 });

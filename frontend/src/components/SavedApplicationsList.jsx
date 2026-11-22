@@ -16,8 +16,7 @@ import {
 export default function SavedApplicationsList({
   onSelectApplication,
   user,
-  csrfToken,
-  t = (key) => key
+  csrfToken
 }) {
   const [accountApplications, setAccountApplications] = useState([]);
   const [browserApplications, setBrowserApplications] = useState(() => readSavedApplications());
@@ -50,7 +49,7 @@ export default function SavedApplicationsList({
   }, [refresh]);
 
   const handleDelete = async (item, accountBacked) => {
-    if (!window.confirm(`${t('deleteRecordConfirm')} ${item.reference_number}?`)) return;
+    if (!window.confirm(`${"Delete record"} ${item.reference_number}?`)) return;
     setError('');
     try {
       if (accountBacked) {
@@ -84,7 +83,7 @@ export default function SavedApplicationsList({
   const renderRecords = (records, accountBacked) => (
     records.length === 0 ? (
       <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--slate-500)' }}>
-        {t('recordsEmpty')}
+        {"No saved applications yet. Save a prepared application to see it here."}
       </div>
     ) : (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -108,7 +107,7 @@ export default function SavedApplicationsList({
                 <strong style={{ fontSize: 15, color: 'var(--primary)' }}>
                   {item.reference_number}
                 </strong>
-                <span className="badge badge-agency">{item.damage_level || t('draft')}</span>
+                <span className="badge badge-agency">{item.damage_level || "Draft"}</span>
                 <span style={{ fontSize: 12, color: 'var(--slate-500)' }}>
                   {item.incident_date}
                 </span>
@@ -127,13 +126,13 @@ export default function SavedApplicationsList({
                 className="btn btn-primary btn-sm"
                 onClick={() => onSelectApplication(item)}
               >
-                <Eye size={14} /> {t('openPrint')}
+                <Eye size={14} /> {"Open / Print"}
               </button>
               <button
                 type="button"
                 className="btn btn-secondary btn-sm"
                 onClick={() => handleDelete(item, accountBacked)}
-                title={t('delete')}
+                title={"Delete"}
               >
                 <Trash2 size={14} color="var(--rose-700)" />
               </button>
@@ -150,19 +149,19 @@ export default function SavedApplicationsList({
         <div>
           <h2 className="card-heading">
             <Archive size={20} color="var(--primary)" />
-            {t('recordsTitle')}
+            {"Saved Applications"}
           </h2>
-          <p className="card-subheading">{t('recordsSubtitle')}</p>
+          <p className="card-subheading">{"Account records sync through your signed-in account. Older browser-only records remain separate on this device."}</p>
         </div>
         <button type="button" className="btn btn-secondary btn-sm" onClick={refresh} disabled={loading}>
-          <RefreshCw size={14} /> {loading ? t('loading') : t('refresh')}
+          <RefreshCw size={14} /> {loading ? "Loading…" : "Refresh"}
         </button>
       </div>
 
       <div style={{ marginBottom: 18 }}>
         <input
           type="text"
-          placeholder={t('recordsSearch')}
+          placeholder={"Search by name, reference number, or municipality..."}
           value={searchTerm}
           onChange={(event) => setSearchTerm(event.target.value)}
           className="form-input"
@@ -175,22 +174,22 @@ export default function SavedApplicationsList({
         </div>
       )}
       {loading && accountApplications.length === 0 && (
-        <p role="status">{t('loading')}</p>
+        <p role="status">{"Loading…"}</p>
       )}
 
       {isAccountUser && (
         <section>
-          <h3 className="application-section-heading">{t('accountApplications')}</h3>
+          <h3 className="application-section-heading">{"Account-backed applications"}</h3>
           {renderRecords(filtered.account, true)}
         </section>
       )}
 
       <section style={{ marginTop: isAccountUser ? 24 : 0 }}>
         <h3 className="application-section-heading">
-          {isAccountUser ? t('browserOnlyApplications') : t('guestApplications')}
+          {isAccountUser ? "Browser-only records on this device" : "Guest applications"}
         </h3>
         <p className="card-subheading" style={{ marginBottom: 12 }}>
-          {isAccountUser ? t('browserOnlyNotice') : t('guestStorageNotice')}
+          {isAccountUser ? "These legacy records are not assigned to an account. Opening and saving one while signed in creates an account-backed copy." : "Guest records are stored only in this browser and are not available on other devices."}
         </p>
         {renderRecords(filtered.browser, false)}
       </section>

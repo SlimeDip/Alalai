@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, X, LogOut, LogIn, User, Moon, Sun, Minus, Plus, ChevronDown } from 'lucide-react';
+import { Menu, X, LogOut, LogIn, User, Moon, Sun, ChevronDown } from 'lucide-react';
 
 export default function Header({
   activeTab,
@@ -8,28 +8,17 @@ export default function Header({
   onOpenLogin,
   onOpenProfile,
   onLogout,
-  onContinueAsGuest,
-  lang,
-  setLang,
-  t
-}) {
+  onContinueAsGuest}) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [fontSize, setFontSize] = useState(16);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme');
-    const savedFontSize = localStorage.getItem('fontSize');
 
-    if (savedTheme === 'dark') {
-      setIsDarkMode(true);
-      document.documentElement.classList.add('dark');
-    }
-    
-    const initialSize = savedFontSize ? Number(savedFontSize) : 16;
-    setFontSize(initialSize);
-    document.documentElement.style.setProperty('--base-font-size', `${initialSize}px`);
-    document.documentElement.style.fontSize = `${initialSize}px`;
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const useDark = savedTheme ? savedTheme === 'dark' : prefersDark;
+    setIsDarkMode(useDark);
+    document.documentElement.classList.toggle('dark', useDark);
   }, []);
 
   const toggleTheme = () => {
@@ -46,17 +35,6 @@ export default function Header({
     });
   };
 
-  const changeFontSize = (step) => {
-    setFontSize((prev) => {
-      const newSize = Math.max(14, Math.min(24, prev + step));
-      
-      document.documentElement.style.setProperty('--base-font-size', `${newSize}px`);
-      document.documentElement.style.fontSize = `${newSize}px`;
-      
-      localStorage.setItem('fontSize', newSize);
-      return newSize;
-    });
-  };
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
 
   const handleNavClick = (tab) => {
@@ -66,18 +44,16 @@ export default function Header({
   };
 
   const primaryNavItems = [
-    { id: 'landing', label: t('home') },
-    { id: 'dashboard', label: t('dashboard') },
-    { id: 'assessment', label: t('assessment') },
-    { id: 'subsidies', label: t('subsidies') }
+    { id: 'landing', label: "Home" },
+    { id: 'dashboard', label: "Recovery Dashboard" },
+    { id: 'assessment', label: "Damage Assessment" },
+    { id: 'subsidies', label: "Aid Options" }
   ];
 
   const secondaryNavItems = [
-    { id: 'cases', label: t('recoveryCasesNav') },
-    { id: 'saved', label: t('records') },
-    { id: 'tracker', label: t('trackerNav') },
-    { id: 'aid', label: t('aidLedgerNav') },
-    { id: 'vault', label: t('documentVaultNav') }
+    { id: 'cases', label: "Recovery Cases" },
+    { id: 'saved', label: "Saved Applications" },
+    { id: 'aid', label: "Aid Ledger" }
   ];
 
   const navItems = [...primaryNavItems, ...secondaryNavItems];
@@ -99,7 +75,7 @@ export default function Header({
           tabIndex={0}
         >
           <div className="brand-logo">
-            {t('appName')}
+            {"Alalai"}
           </div>
         </div>
 
@@ -122,7 +98,7 @@ export default function Header({
               aria-expanded={moreMenuOpen}
               aria-haspopup="menu"
             >
-              {t('more')}
+              {"More"}
               <ChevronDown size={15} aria-hidden="true" />
             </button>
             {moreMenuOpen && (
@@ -145,24 +121,6 @@ export default function Header({
 
         <div className="navbar-cta">
           <div className="flex items-center gap-2 mr-2 hidden md:flex" style={{ gap: '8px', marginRight: '12px' }}>
-            <div className="lang-toggle" style={{ margin: 0 }}>
-              <button 
-                onClick={() => changeFontSize(-2)} 
-                className="lang-btn" 
-                title="Decrease Font Size"
-                type="button"
-              >
-                <Minus size={14} /> A
-              </button>
-              <button 
-                onClick={() => changeFontSize(2)} 
-                className="lang-btn" 
-                title="Increase Font Size"
-                type="button"
-              >
-                A <Plus size={14} />
-              </button>
-            </div>
             <button 
               onClick={toggleTheme} 
               className="btn-pill-dark"
@@ -174,41 +132,24 @@ export default function Header({
             </button>
           </div>
 
-          <div className="lang-toggle" role="group" aria-label="Language">
-            <button
-              type="button"
-              className={lang === 'en' ? 'lang-btn active' : 'lang-btn'}
-              onClick={() => setLang('en')}
-            >
-              {t('languageEn')}
-            </button>
-            <button
-              type="button"
-              className={lang === 'tl' ? 'lang-btn active' : 'lang-btn'}
-              onClick={() => setLang('tl')}
-            >
-              {t('languageTl')}
-            </button>
-          </div>
-
           {user && !user.isGuest ? (
             <div className="nav-user-cluster">
               <button type="button" className="btn-pill-dark" onClick={onOpenProfile}>
                 <User size={14} />
-                <span>{(user?.name || '').split(' ')[0] || t('guest')}</span>
+                <span>{(user?.name || '').split(' ')[0] || "Guest"}</span>
               </button>
-              <button type="button" className="btn btn-secondary btn-sm" onClick={onLogout} title={t('logout')}>
+              <button type="button" className="btn btn-secondary btn-sm" onClick={onLogout} title={"Sign Out"}>
                 <LogOut size={13} />
               </button>
             </div>
           ) : (
             <div className="nav-user-cluster">
               <button type="button" className="btn btn-secondary" onClick={onContinueAsGuest}>
-                {t('continueAsGuest')}
+                {"Continue as Guest"}
               </button>
               <button type="button" className="btn-pill-dark" onClick={onOpenLogin}>
                 <LogIn size={14} />
-                {t('login')}
+                {"Sign In"}
               </button>
             </div>
           )}
@@ -228,7 +169,7 @@ export default function Header({
         <div className="mobile-drawer-overlay" style={{ display: 'block' }} onClick={() => setMobileMenuOpen(false)}>
           <div className="mobile-drawer" onClick={(e) => e.stopPropagation()}>
             <div className="mobile-drawer-top">
-              <div className="brand-logo">{t('appName')}</div>
+              <div className="brand-logo">{"Alalai"}</div>
               <button type="button" onClick={() => setMobileMenuOpen(false)} className="icon-btn">
                 <X size={20} />
               </button>
@@ -246,39 +187,23 @@ export default function Header({
               ))}
             </div>
             <div className="mobile-drawer-footer">
-              <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', justifyContent: 'space-between' }}>
-                <div className="lang-toggle" style={{ margin: 0, flex: 1 }}>
-                  <button onClick={() => changeFontSize(-2)} className="lang-btn" type="button" style={{ width: '50%' }}>
-                    <Minus size={14} /> A
-                  </button>
-                  <button onClick={() => changeFontSize(2)} className="lang-btn" type="button" style={{ width: '50%' }}>
-                    A <Plus size={14} />
-                  </button>
-                </div>
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', justifyContent: 'flex-end' }}>
                 <button onClick={toggleTheme} className="btn-pill-dark" type="button">
                   {isDarkMode ? <Sun size={14} /> : <Moon size={14} />}
                 </button>
               </div>
 
-              <div className="lang-toggle" style={{ marginBottom: 12 }}>
-                <button type="button" className={lang === 'en' ? 'lang-btn active' : 'lang-btn'} onClick={() => setLang('en')}>
-                  EN
-                </button>
-                <button type="button" className={lang === 'tl' ? 'lang-btn active' : 'lang-btn'} onClick={() => setLang('tl')}>
-                  TL
-                </button>
-              </div>
               {user && !user.isGuest ? (
                 <button type="button" className="btn btn-secondary" style={{ width: '100%' }} onClick={onLogout}>
-                  {t('logout')}
+                  {"Sign Out"}
                 </button>
               ) : (
                 <>
                   <button type="button" className="btn btn-secondary" style={{ width: '100%', marginBottom: '8px' }} onClick={() => { onContinueAsGuest(); setMobileMenuOpen(false); }}>
-                    {t('continueAsGuest')}
+                    {"Continue as Guest"}
                   </button>
                   <button type="button" className="btn-pill-dark" style={{ width: '100%' }} onClick={() => { setMobileMenuOpen(false); onOpenLogin(); }}>
-                    {t('login')}
+                    {"Sign In"}
                   </button>
                 </>
               )}

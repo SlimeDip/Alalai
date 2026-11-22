@@ -8,9 +8,8 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { fetchAccountApplications } from '../utils/applicationStorage';
-import { fetchCaseDocuments } from '../utils/documentApi';
 import { fetchAidLedger } from '../utils/aidApi';
-import { fetchTrackedApplications, fetchOwnedRecoveryCases } from '../utils/trackerApi';
+import { fetchOwnedRecoveryCases } from '../utils/assessmentApi';
 import {
   getRecoveryDashboardNextActions,
   getRecoveryDashboardView,
@@ -18,21 +17,27 @@ import {
 } from '../utils/recoveryDashboard';
 import { getCaseLocation } from '../utils/recoveryCaseWorkspace';
 
-function dateLabel(value, lang) {
+const ACTION_LABELS = {
+  'start-case': 'Start a new recovery case',
+  'prepare-application': 'Prepare an application',
+  'review-application': 'Review saved application'
+};
+
+function dateLabel(value) {
   if (!value) return '';
   const dateValue = String(value);
   const date = new Date(dateValue.includes(' ') ? `${dateValue.replace(' ', 'T')}Z` : `${dateValue}T00:00:00`);
   return Number.isNaN(date.getTime())
     ? dateValue
-    : date.toLocaleDateString(lang === 'tl' ? 'fil-PH' : 'en-US', {
+    : date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
     });
 }
 
-function peso(value, lang) {
-  return `₱${Number(value).toLocaleString(lang === 'tl' ? 'fil-PH' : 'en-PH', {
+function peso(value) {
+  return `₱${Number(value).toLocaleString('en-PH', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   })}`;
@@ -57,12 +62,7 @@ export default function RecoveryDashboard({
   onOpenCases,
   onPrepareApplication,
   onOpenApplication,
-  onOpenTracker,
-  onOpenAidLedger,
-  onOpenVault,
-  t,
-  lang = 'en'
-}) {
+  onOpenAidLedger}) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -83,32 +83,15 @@ export default function RecoveryDashboard({
 
     const loadDashboard = async () => {
       try {
-        const [cases, applications, trackedApplications, aidResult] = await Promise.all([
+        const [cases, applications, aidResult] = await Promise.all([
           fetchOwnedRecoveryCases(),
           fetchAccountApplications(),
-          fetchTrackedApplications(),
           fetchAidLedger()
         ]);
-        let documentCount = null;
-        let documentError = cases.length === 0 ? 'no-cases' : '';
-        if (cases.length) {
-          try {
-            const caseDocuments = await Promise.all(
-              cases.map((recoveryCase) => fetchCaseDocuments(recoveryCase.case_id))
-            );
-            documentCount = caseDocuments.reduce((total, documents) => total + documents.length, 0);
-          } catch {
-            documentError = true;
-          }
-        }
-
         const summary = summarizeRecoveryDashboard({
           cases,
           applications,
-          trackedApplications,
-          aidSummary: aidResult.summary,
-          documentCount,
-          documentError
+          aidSummary: aidResult.summary
         });
         if (active) setData(summary);
       } catch (requestError) {
@@ -132,10 +115,6 @@ export default function RecoveryDashboard({
     if (action.type === 'start-case') onStartCase();
     if (action.type === 'prepare-application') onPrepareApplication(action.recoveryCase);
     if (action.type === 'review-application') onOpenApplication(action.application);
-    if (action.type === 'review-tracker' || action.type === 'follow-up') {
-      onOpenTracker(action.caseId);
-    }
-    if (action.type === 'open-vault') onOpenVault(action.caseId);
   };
 
   return (
@@ -143,9 +122,9 @@ export default function RecoveryDashboard({
       <div className="modern-card recovery-hero">
         <div className="recovery-hero-icon"><LayoutDashboard size={26} /></div>
         <div>
-          <p className="eyebrow">{t('recoveryDashboardEyebrow')}</p>
-          <h1 className="card-heading-lg">{t('recoveryDashboardTitle')}</h1>
-          <p className="card-subheading-lg">{t('recoveryDashboardSubtitle')}</p>
+          <p className="eyebrow">{"Recovery workspace"}</p>
+          <h1 className="card-heading-lg">{"Plan your recovery"}</h1>
+          <p className="card-subheading-lg">{"Review account-backed recovery cases, applications, and aid records. Guest assessments are not recoverable across devices."}</p>
         </div>
         {isAccountUser ? (
           <button
@@ -154,36 +133,36 @@ export default function RecoveryDashboard({
             onClick={() => setRefreshVersion((version) => version + 1)}
             disabled={loading}
           >
-            <RefreshCw size={14} /> {loading ? t('loading') : t('refresh')}
+            <RefreshCw size={14} /> {loading ? "Loading…" : "Refresh"}
           </button>
         ) : (
           <button type="button" className="btn btn-primary btn-lg" onClick={onOpenLogin}>
-            {t('login')} <ArrowRight size={17} />
+            {"Sign In"} <ArrowRight size={17} />
           </button>
         )}
       </div>
 
       {!isAccountUser && (
-        <div className="modern-card">
-          <p className="card-subheading">{t('guestDashboardNotice')}</p>
+        <div className="modern-card guest-dashboard-notice">
+          <p className="card-subheading">{"Sign in to see recovery records saved to your account. Guest assessment results are not available in this account dashboard."}</p>
           <button type="button" className="btn btn-secondary" onClick={onStartCase}>
-            {t('startNewCase')} <ArrowRight size={15} />
+            {"Start New Case"} <ArrowRight size={15} />
           </button>
         </div>
       )}
 
       {isAccountUser && view.state === 'loading' && (
-        <div role="status" className="modern-card">{t('dashboardLoading')}</div>
+        <div role="status" className="modern-card">{"Loading your recovery overview…"}</div>
       )}
       {isAccountUser && view.state === 'error' && (
         <div role="alert" className="modern-card recovery-dashboard-error">
-          <p>{t('dashboardLoadError')}</p>
+          <p>{"The recovery overview could not be loaded."}</p>
           <button
             type="button"
             className="btn btn-primary"
             onClick={() => setRefreshVersion((version) => version + 1)}
           >
-            {t('retry')}
+            {"Try again"}
           </button>
         </div>
       )}
@@ -192,14 +171,14 @@ export default function RecoveryDashboard({
         <>
           {view.refreshError && (
             <div role="alert" className="modern-card recovery-dashboard-error">
-              {t('dashboardRefreshError')}
+              {"The latest updates could not be loaded. The information shown may be out of date."}
             </div>
           )}
           <div className="recovery-dashboard-grid">
-            <DashboardMetric title={t('dashboardCases')} icon={FolderOpen}>
+            <DashboardMetric title={"Recovery cases"} icon={FolderOpen}>
               <p className="recovery-dashboard-total">{data.caseCount}</p>
               <button type="button" className="btn btn-secondary btn-sm" onClick={() => onOpenCases()}>
-                {t('openRecoveryCases')}
+                {"Open recovery cases"}
               </button>
               <div className="recovery-dashboard-recent-list">
                 {data.recentCases.map((recoveryCase) => (
@@ -209,96 +188,54 @@ export default function RecoveryDashboard({
                     key={recoveryCase.case_id}
                     onClick={() => onOpenCases(recoveryCase.case_id)}
                   >
-                    <strong>{recoveryCase.disaster_type || t('disasterTypeUnavailable')}</strong>
-                    <span>{getCaseLocation(recoveryCase) || t('locationUnavailable')}</span>
+                    <strong>{recoveryCase.disaster_type || "Disaster type not recorded"}</strong>
+                    <span>{getCaseLocation(recoveryCase) || "Location not recorded"}</span>
                     {recoveryCase.incident_date && (
-                      <span>{t('disasterDate')}: {dateLabel(recoveryCase.incident_date, lang)}</span>
+                      <span>{"Incident Date"}: {dateLabel(recoveryCase.incident_date)}</span>
                     )}
                     {recoveryCase.created_at && (
-                      <span>{t('caseCreated')}: {dateLabel(recoveryCase.created_at, lang)}</span>
+                      <span>{"Created"}: {dateLabel(recoveryCase.created_at)}</span>
                     )}
                   </button>
                 ))}
-                {data.caseCount === 0 && <p className="card-subheading">{t('noRecoveryCases')}</p>}
+                {data.caseCount === 0 && <p className="card-subheading">{"No saved recovery cases yet"}</p>}
               </div>
             </DashboardMetric>
 
-            <DashboardMetric title={t('dashboardApplications')} icon={FileText}>
+            <DashboardMetric title={"Saved applications"} icon={FileText}>
               <p className="recovery-dashboard-total">{data.applicationCount}</p>
-              <button type="button" className="btn btn-secondary btn-sm" onClick={() => onOpenTracker()}>
-                {t('openApplicationTracker')}
-              </button>
-              <div className="recovery-dashboard-statuses">
-                {Object.entries(data.trackerStatusCounts).map(([status, count]) => (
-                  <div key={status}>
-                    <span>{t(`status${status}`)}</span>
-                    <strong>{count}</strong>
-                  </div>
-                ))}
-              </div>
-              {data.followUpApplications.length > 0 && (
-                <div className="recovery-dashboard-followups">
-                  <strong>{t('dashboardFollowUpNeeded')}</strong>
-                  {data.followUpApplications.slice(0, 3).map((application) => (
-                    <button
-                      type="button"
-                      key={application.tracked_application_id}
-                      onClick={() => onOpenTracker(application.case_id)}
-                    >
-                      {application.program_name}
-                      {application.disaster_type ? ` · ${application.disaster_type}` : ''}
-                    </button>
-                  ))}
-                </div>
-              )}
+              <p className="card-subheading">{"Saved application records remain available from your account."}</p>
             </DashboardMetric>
 
-            <DashboardMetric title={t('dashboardAssistance')} icon={HandCoins}>
-              <p className="recovery-dashboard-assistance-label">{t('dashboardRecordedCash')}</p>
+            <DashboardMetric title={"Assistance recorded as received"} icon={HandCoins}>
+              <p className="recovery-dashboard-assistance-label">{"Recorded cash assistance (self-reported)"}</p>
               <p className="recovery-dashboard-total">
-                {data.cashTotal == null ? t('dashboardMetricUnavailable') : peso(data.cashTotal, lang)}
+                {data.cashTotal == null ? "Unavailable" : peso(data.cashTotal)}
               </p>
               <p className="recovery-dashboard-assistance-label">
-                {t('dashboardInKindEntries')}: {data.inKindCount == null ? t('dashboardMetricUnavailable') : data.inKindCount}
+                {"In-kind entries recorded"}: {data.inKindCount == null ? "Unavailable" : data.inKindCount}
               </p>
               {data.inKindEstimatedValue != null && (
-                <p>{t('dashboardInKindEstimatedValue')}: {peso(data.inKindEstimatedValue, lang)}</p>
+                <p>{"Estimated in-kind value (self-reported)"}: {peso(data.inKindEstimatedValue)}</p>
               )}
-              <p role="note" className="recovery-dashboard-disclaimer">{t('dashboardAidDisclaimer')}</p>
+              <p role="note" className="recovery-dashboard-disclaimer">{"These are user-recorded entries, not independently verified government assistance, approvals, or official receipts."}</p>
               <button type="button" className="btn btn-secondary btn-sm" onClick={() => onOpenAidLedger()}>
-                {t('openAidLedger')}
+                {"Open aid ledger"}
               </button>
             </DashboardMetric>
 
-            <DashboardMetric title={t('dashboardDocuments')} icon={FolderOpen}>
-              <p className="recovery-dashboard-total">
-                {data.documentCount == null ? t('dashboardMetricUnavailable') : data.documentCount}
-              </p>
-              <p className="card-subheading">
-                {data.documentError
-                  ? t(data.documentError === 'no-cases'
-                    ? 'dashboardDocumentsNoCases'
-                    : 'dashboardDocumentsUnavailable')
-                  : t('dashboardDocumentsDescription')}
-              </p>
-              <button
-                type="button"
-                className="btn btn-secondary btn-sm"
-                onClick={() => onOpenVault(data.cases[0]?.case_id)}
-              >
-                {t('openDocumentVault')}
-              </button>
-            </DashboardMetric>
           </div>
 
           {nextActions.length > 0 && (
-            <section className="modern-card recovery-dashboard-next-actions">
-              <h2 className="application-section-heading">{t('dashboardNextActions')}</h2>
+            <section className="recovery-dashboard-next-actions" aria-labelledby="recovery-next-actions-heading">
+              <h2 id="recovery-next-actions-heading" className="recovery-section-heading">
+                {"Next actions from your records"}
+              </h2>
               <div className="recovery-dashboard-action-list">
                 {nextActions.map((action, index) => (
                   <div className="recovery-dashboard-action" key={`${action.type}-${action.caseId || action.application?.id || index}`}>
                     <div>
-                      <strong>{t(`dashboardAction${action.type.replace(/(^|-)([a-z])/g, (_, separator, character) => character.toUpperCase())}`)}</strong>
+                      <strong>{ACTION_LABELS[action.type] || 'Continue recovery workflow'}</strong>
                       {action.recoveryCase && (
                         <p className="card-subheading">
                           {[action.recoveryCase.disaster_type, getCaseLocation(action.recoveryCase)].filter(Boolean).join(' · ')}
@@ -306,7 +243,7 @@ export default function RecoveryDashboard({
                       )}
                     </div>
                     <button type="button" className="btn btn-secondary btn-sm" onClick={() => runNextAction(action)}>
-                      {t('continue')} <ArrowRight size={14} />
+                      {"Continue"} <ArrowRight size={14} />
                     </button>
                   </div>
                 ))}

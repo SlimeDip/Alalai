@@ -11,7 +11,11 @@ import {
 const serviceDirectory = path.dirname(fileURLToPath(import.meta.url));
 export const privateDocumentRoot = path.resolve(
   process.env.PRIVATE_DOCUMENTS_DIR
-    || path.join(serviceDirectory, '..', 'private-documents')
+    || (
+      process.platform === 'win32' && process.env.LOCALAPPDATA
+        ? path.join(process.env.LOCALAPPDATA, 'WebSysGroup12', 'private-documents')
+        : path.join(serviceDirectory, '..', 'private-documents')
+    )
 );
 
 const allowedTypes = new Map([
