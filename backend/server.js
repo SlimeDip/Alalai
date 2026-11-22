@@ -6,10 +6,7 @@ import { initDatabase } from './database.js';
 import authRouter, { requireAuthenticatedUser } from './routes/auth.js';
 import assessmentsRouter from './routes/assessments.js';
 import applicationsRouter from './routes/applications.js';
-import trackerRouter from './routes/tracker.js';
 import aidRouter from './routes/aid.js';
-import documentsRouter from './routes/documents.js';
-import packetsRouter from './routes/packets.js';
 import subsidiesRouter from './routes/subsidies.js';
 import { isGeminiConfigured } from './services/aiService.js';
 
@@ -33,10 +30,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/assessments', assessmentsRouter);
 app.use('/api/subsidies', subsidiesRouter);
 app.use('/api/applications', requireAuthenticatedUser, applicationsRouter);
-app.use('/api/tracker', requireAuthenticatedUser, trackerRouter);
 app.use('/api/aid', requireAuthenticatedUser, aidRouter);
-app.use('/api/documents', requireAuthenticatedUser, documentsRouter);
-app.use('/api/packets', requireAuthenticatedUser, packetsRouter);
 
 app.use((error, req, res, next) => {
   if (error instanceof SyntaxError && error.status === 400 && Object.hasOwn(error, 'body')) {

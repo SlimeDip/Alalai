@@ -6,7 +6,6 @@ import {
   ensureSubsidyCatalogStatusColumn,
   importSubsidyCatalog
 } from './services/subsidyImporter.js';
-import { validatePrivateDocumentStorageForStartup } from './services/privateStorageStartup.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -122,7 +121,6 @@ function migrateLegacyAssessments() {
 
 // Initialize database schema
 export function initDatabase() {
-  validatePrivateDocumentStorageForStartup();
   migrateColumnNames();
 
   db.exec(`
@@ -285,54 +283,10 @@ export function initDatabase() {
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
-    CREATE TABLE IF NOT EXISTS tracked_applications (
-      tracked_application_id TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
-      case_id TEXT NOT NULL REFERENCES recovery_cases(case_id) ON DELETE CASCADE,
-      application_id TEXT REFERENCES applications(application_id) ON DELETE SET NULL,
-      program_name TEXT NOT NULL,
-      agency_source TEXT NOT NULL DEFAULT '',
-      status TEXT NOT NULL DEFAULT 'PREPARED'
-        CHECK (status IN ('PREPARED', 'SUBMITTED', 'FOLLOW_UP_NEEDED', 'DECISION_RECEIVED')),
-      submitted_on TEXT,
-      reference_number TEXT NOT NULL DEFAULT '',
-      notes TEXT NOT NULL DEFAULT '',
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE (application_id, program_name)
-    );
-
-    CREATE TABLE IF NOT EXISTS tracked_application_history (
-      history_sequence INTEGER PRIMARY KEY AUTOINCREMENT,
-      history_id TEXT NOT NULL UNIQUE,
-      tracked_application_id TEXT NOT NULL
-        REFERENCES tracked_applications(tracked_application_id) ON DELETE CASCADE,
-      previous_status TEXT,
-      new_status TEXT NOT NULL
-        CHECK (new_status IN ('PREPARED', 'SUBMITTED', 'FOLLOW_UP_NEEDED', 'DECISION_RECEIVED')),
-      note TEXT NOT NULL DEFAULT '',
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS follow_up_reminders (
-      reminder_id TEXT PRIMARY KEY,
-      tracked_application_id TEXT NOT NULL
-        REFERENCES tracked_applications(tracked_application_id) ON DELETE CASCADE,
-      user_id TEXT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
-      reminder_date TEXT NOT NULL,
-      note TEXT NOT NULL DEFAULT '',
-      state TEXT NOT NULL DEFAULT 'ACTIVE'
-        CHECK (state IN ('ACTIVE', 'COMPLETED', 'DISMISSED')),
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-
     CREATE TABLE IF NOT EXISTS aid_ledger (
       aid_id TEXT PRIMARY KEY,
       user_id TEXT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
       case_id TEXT NOT NULL REFERENCES recovery_cases(case_id) ON DELETE CASCADE,
-      tracked_application_id TEXT
-        REFERENCES tracked_applications(tracked_application_id) ON DELETE SET NULL,
       aid_type TEXT NOT NULL CHECK (aid_type IN ('CASH', 'IN_KIND')),
       assistance_description TEXT NOT NULL DEFAULT '',
       amount_php REAL,
@@ -351,62 +305,10 @@ export function initDatabase() {
       )
     );
 
-    CREATE TABLE IF NOT EXISTS recovery_documents (
-      document_id TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
-      case_id TEXT NOT NULL REFERENCES recovery_cases(case_id) ON DELETE CASCADE,
-      application_id TEXT REFERENCES applications(application_id) ON DELETE SET NULL,
-      original_filename TEXT NOT NULL,
-      stored_name TEXT NOT NULL UNIQUE,
-      media_type TEXT NOT NULL,
-      file_size INTEGER NOT NULL CHECK (file_size > 0),
-      category TEXT NOT NULL DEFAULT 'OTHER'
-        CHECK (category IN ('DAMAGE_PHOTO', 'IDENTITY', 'RECEIPT', 'SUPPORTING', 'OTHER')),
-      description TEXT NOT NULL DEFAULT '',
-      uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS recovery_document_cleanup (
-      document_id TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL,
-      stored_name TEXT NOT NULL,
-      tombstone_name TEXT NOT NULL,
-      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS document_lifecycle_operations (
-      operation_id TEXT PRIMARY KEY,
-      operation_type TEXT NOT NULL CHECK (operation_type IN ('UPLOAD', 'DELETE')),
-      state TEXT NOT NULL CHECK (state IN (
-        'UPLOAD_PENDING', 'UPLOAD_FILE_WRITTEN', 'UPLOAD_METADATA_INSERTED',
-        'DELETE_REQUESTED', 'DELETE_TOMBSTONE_LINKED', 'DELETE_ORIGINAL_REMOVED'
-      )),
-      document_id TEXT NOT NULL,
-      user_id TEXT NOT NULL,
-      case_id TEXT NOT NULL,
-      application_id TEXT,
-      stored_name TEXT NOT NULL,
-      tombstone_name TEXT,
-      document_json TEXT NOT NULL,
-      file_device TEXT,
-      file_inode TEXT,
-      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE (operation_type, document_id)
-    );
-
     CREATE INDEX IF NOT EXISTS idx_loss_records_case_id ON loss_records(case_id);
     CREATE INDEX IF NOT EXISTS idx_recovery_plans_case_id ON recovery_plans(case_id);
-    CREATE INDEX IF NOT EXISTS idx_tracked_applications_user_case
-      ON tracked_applications(user_id, case_id);
-    CREATE INDEX IF NOT EXISTS idx_tracked_application_history_id
-      ON tracked_application_history(tracked_application_id, history_sequence);
-    CREATE INDEX IF NOT EXISTS idx_follow_up_reminders_owner_date
-      ON follow_up_reminders(user_id, state, reminder_date);
     CREATE INDEX IF NOT EXISTS idx_aid_ledger_owner_case_date
       ON aid_ledger(user_id, case_id, received_on);
-    CREATE INDEX IF NOT EXISTS idx_recovery_documents_owner_case
-      ON recovery_documents(user_id, case_id, uploaded_at);
 
   `);
 

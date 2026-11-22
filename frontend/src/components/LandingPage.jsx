@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
 import { ChevronDown, HelpCircle } from 'lucide-react';
 
-export default function LandingPage({ onStartAssessment, onOpenLogin, t }) {
+export default function LandingPage({ onStartAssessment, onOpenLogin}) {
   const [openFaqIndex, setOpenFaqIndex] = useState(null);
 
   const faqs = [
-    { q: t('faq1Q'), a: t('faq1A') },
-    { q: t('faq2Q'), a: t('faq2A') },
-    { q: t('faq3Q'), a: t('faq3A') },
-    { q: t('faq4Q'), a: t('faq4A') },
-    { q: t('faq5Q'), a: t('faq5A') },
-    { q: t('faq6Q'), a: t('faq6A') }
+    { q: "Is this an official government website?", a: "No. We are an independent, free public-service aid navigator. We are NOT affiliated with any government agency. We help you calculate your damages and prepare a neat, printable intake application form that you can take to your local Barangay or relief desk." },
+    { q: "Do I have to pay or create an account to use this?", a: "No. The service is 100% free. You can continue as a Guest without creating any account or password." },
+    { q: "Will the printed form fit on standard A4 paper?", a: "Yes. Our intake slip is strictly calibrated to fit squarely on 1 single sheet of A4 paper (210mm x 297mm) without spilling over onto a second page." },
+    { q: "How does the damage assessment work?", a: "You can choose between the AI Smart Assistant (just type in your own words what got damaged) or the Manual Damage Checklist (simply check the boxes for what happened)." },
+    { q: "Can I do this on my smartphone or tablet?", a: "Yes. The portal is designed with large text and big buttons so you can easily fill it out on any smartphone, tablet, or desktop computer." },
+    { q: "Where do I bring the printed form?", a: "Bring it to your local Barangay disaster desk or community relief office, along with your valid ID. Programs and requirements vary by area." }
   ];
 
   const toggleFaq = (index) => {
@@ -21,19 +21,19 @@ export default function LandingPage({ onStartAssessment, onOpenLogin, t }) {
     <div className="landing-simple">
       <section className="landing-hero-simple">
         <h1 className="landing-title">
-          {t('landingHeroTitle1')}
+          {"DISASTER RELIEF"}
           <br />
-          {t('landingHeroTitle2')}
+          {"ASSISTANCE & AID"}
           <br />
-          <span className="landing-title-accent">{t('landingHeroTitle3')}</span>
+          <span className="landing-title-accent">{"FOR EVERY FAMILY"}</span>
         </h1>
-        <p className="landing-lead">{t('landingSubtitle')}</p>
+        <p className="landing-lead">{"Assess your disaster damage, find available emergency aid, and prepare a printable application form in minutes. Fast, simple, and free."}</p>
         <div className="landing-cta-row">
           <button type="button" className="btn btn-primary btn-lg" onClick={onStartAssessment}>
-            {t('startNewCase')}
+            {"Start New Case"}
           </button>
           <button type="button" className="btn btn-secondary btn-lg" onClick={onOpenLogin}>
-            {t('login')}
+            {"Sign In"}
           </button>
         </div>
       </section>
@@ -42,8 +42,8 @@ export default function LandingPage({ onStartAssessment, onOpenLogin, t }) {
         <div className="landing-faq-header">
           <HelpCircle size={22} color="var(--primary)" aria-hidden />
           <div>
-            <h2>{t('faqTitle')}</h2>
-            <p>{t('faqSubtitle')}</p>
+            <h2>{"Frequently Asked Questions"}</h2>
+            <p>{"Simple answers to help older adults and affected families"}</p>
           </div>
         </div>
         

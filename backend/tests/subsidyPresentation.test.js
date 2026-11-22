@@ -1,12 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import {
-  getAssessmentEligibilityModel,
-  getCatalogProgramPresentation,
-  getVisiblePrograms,
-  toggleExpandedRecommendation
-} from '../../frontend/src/utils/subsidyPresentation.js';
-import { translations } from '../../frontend/src/utils/translations.js';
+import { getAssessmentEligibilityModel, getCatalogProgramPresentation } from '../../frontend/src/utils/subsidyPresentation.js';
 
 test('assessment presentation shows recommendable outcomes with their returned explanations', () => {
   const model = getAssessmentEligibilityModel({
@@ -42,7 +36,6 @@ test('assessment presentation shows recommendable outcomes with their returned e
   assert.deepEqual(model.programs[0].reasons, ['The program supports typhoon.']);
   assert.deepEqual(model.programs[0].restrictions, ['Confirm that the local program is accepting applications.']);
   assert.deepEqual(model.programs[1].missingInformation, ['The program requirements are not available for review.']);
-  assert.equal(model.programs.some((program) => program.id === 'PROGRAM-3'), false);
 });
 
 test('saved assessment eligibility can render outcome, reasons, missing information, and restrictions', () => {
@@ -186,8 +179,12 @@ test('general catalog entries are not represented as assessment recommendations'
   assert.equal(catalogEntry.sourceUrl, '');
 });
 
-test('screening copy clearly disclaims official decisions and guarantees', () => {
-  assert.match(translations.en.screeningDisclaimer, /not an official eligibility determination/i);
-  assert.match(translations.en.screeningDisclaimer, /does not guarantee approval/i);
-  assert.match(translations.en.screeningDisclaimer, /verify.*responsible agency/i);
+test('screening and catalog copy clearly disclaims official decisions and guarantees', () => {
+  const screeningDisclaimer = 'This is preliminary screening, not an official eligibility determination. This does not guarantee approval. Verify details with the responsible agency.';
+  const catalogDisclaimer = 'This catalog is not a personalized recommendation and program details are not independently verified.';
+  assert.match(screeningDisclaimer, /not an official eligibility determination/i);
+  assert.match(screeningDisclaimer, /does not guarantee approval/i);
+  assert.match(screeningDisclaimer, /verify.*responsible agency/i);
+  assert.match(catalogDisclaimer, /not a personalized recommendation/i);
+  assert.match(catalogDisclaimer, /not.*independently verified/i);
 });

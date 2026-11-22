@@ -14,6 +14,7 @@
   --dark-stat: #27272a;          /* Floating stat overlay badge */
   
   --slate-900: #111827;          /* High-contrast black/charcoal text */
+  --slate-800: #1f2937;
   --slate-700: #374151;
   --slate-600: #4b5563;          /* Muted body text */
   --slate-500: #6b7280;
@@ -24,7 +25,6 @@
   /* Added for Accessibility & Dark Mode */
   --bg-color: var(--canvas-bg);
   --text-color: var(--slate-900);
-  --base-font-size: 16px;
   
   --emerald-700: #047857;
   --amber-700: #b45309;
@@ -40,23 +40,26 @@
 
 /* DARK MODE THEME OVERRIDES */
 html.dark {
-  /* Backgrounds */
-  --canvas-bg: #121212;          
-  --card-bg: #1e1e1e;            
-  --bento-cyan: #1e293b;         
-  --white: #1e1e1e;             
-
- 
-  --slate-900: #f9fafb;          
-  --slate-700: #e5e7eb;
-  --slate-600: #d1d5db;         
-  --slate-500: #9ca3af;
-  
-  /* Borders & Highlights */
-  --slate-200: #374151;          
-  --slate-100: #1f2937;
-  --highlight-pill: #1e3a5f;    
-  --highlight-text: #e0f2fe;     
+  --canvas-bg: #171717;
+  --card-bg: #222222;
+  --bento-cyan: #2d2b27;
+  --white: #292929;
+  --dark-pill: #383838;
+  --dark-card: #2a2a2a;
+  --dark-stat: #383838;
+  --primary: #7692ff;
+  --primary-pill: #7692ff;
+  --slate-900: #f8fafc;
+  --slate-800: #e5e5e5;
+  --slate-700: #d4d4d4;
+  --slate-600: #a3a3a3;
+  --slate-500: #a3a3a3;
+  --slate-50: #292929;
+  --slate-200: #404040;
+  --slate-100: #303030;
+  --highlight-pill: #3a3427;
+  --highlight-text: #abd2fa;
+  color-scheme: dark;
 }
 * {
   box-sizing: border-box;
@@ -238,12 +241,29 @@ body {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  margin-top: 4px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.recovery-section-heading {
+  margin: 0;
+  padding: 0 0 10px;
+  border: 0;
+  background: transparent;
+  color: var(--slate-900);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .recovery-dashboard-action-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 0;
 }
 
 .recovery-dashboard-action {
@@ -251,7 +271,8 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding-top: 10px;
+  padding: 12px 0;
+  border: 0;
   border-top: 1px solid var(--slate-100);
 }
 
@@ -259,8 +280,75 @@ body {
   min-width: 0;
 }
 
+.recovery-dashboard .guest-dashboard-notice {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 18px 20px;
+}
+
+.recovery-dashboard .guest-dashboard-notice .card-subheading {
+  margin: 0;
+  line-height: 1.55;
+}
+
+.recovery-dashboard .guest-dashboard-notice .btn {
+  width: auto;
+  min-height: 44px;
+  margin: 0;
+  padding: 10px 16px;
+}
+
 .recovery-dashboard-action p {
   margin: 4px 0 0;
+}
+
+.aid-ledger {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.aid-ledger-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.aid-ledger-stat {
+  padding: 16px;
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-md);
+  background: var(--slate-50);
+}
+
+.aid-ledger-stat strong {
+  display: block;
+  color: var(--slate-600);
+  font-size: 13px;
+}
+
+.aid-ledger-stat p {
+  margin-top: 6px;
+  color: var(--slate-900);
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.aid-ledger-form,
+.aid-ledger-history {
+  padding: 20px;
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-lg);
+  background: var(--white);
+}
+
+.aid-ledger-record {
+  padding: 16px;
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-md);
+  background: var(--white);
 }
 
 .recovery-hero {
@@ -672,11 +760,6 @@ body {
   flex-direction: column;
   justify-content: center;
   cursor: pointer;
-  transition: transform 0.15s ease;
-}
-
-.bento-card-cyan:hover {
-  transform: translateY(-2px);
 }
 
 .bento-item-row {
@@ -728,11 +811,6 @@ body {
   flex-direction: column;
   justify-content: space-between;
   cursor: pointer;
-  transition: transform 0.15s ease;
-}
-
-.bento-card-dark:hover {
-  transform: translateY(-2px);
 }
 
 .bento-dark-text {
@@ -933,10 +1011,11 @@ body {
 
 .application-section-heading {
   margin: 20px 0 14px;
-  padding: 7px 10px;
-  border: 1px solid #111827;
-  background-color: #f1f5f9;
-  color: #111827;
+  padding: 0 0 8px;
+  border: 0;
+  border-bottom: 1px solid var(--slate-200);
+  background: transparent;
+  color: var(--slate-900);
   font-size: 13px;
   font-weight: 900;
   letter-spacing: .04em;
@@ -2017,11 +2096,6 @@ body {
 .faq-chevron {
   color: var(--primary);
   flex-shrink: 0;
-  transition: transform 0.2s ease;
-}
-
-.faq-item.open .faq-chevron {
-  transform: rotate(180deg);
 }
 
 .faq-answer {
@@ -2074,31 +2148,6 @@ body {
 
 .brand-block {
   cursor: pointer;
-}
-
-.lang-toggle {
-  display: inline-flex;
-  background: var(--slate-100);
-  border-radius: var(--radius-pill);
-  padding: 3px;
-  gap: 2px;
-}
-
-.lang-btn {
-  border: none;
-  background: transparent;
-  font-size: 13px;
-  font-weight: 600;
-  padding: 6px 12px;
-  border-radius: var(--radius-pill);
-  cursor: pointer;
-  color: var(--slate-600);
-}
-
-.lang-btn.active {
-  background: var(--white);
-  color: var(--slate-900);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .nav-user-cluster {
@@ -2192,7 +2241,8 @@ body {
 }
 
 .method-card:hover {
-  border-color: var(--primary);
+  border-color: var(--slate-500);
+  background: var(--slate-50);
 }
 
 .method-card p {
@@ -2431,10 +2481,14 @@ body {
   overflow-wrap: anywhere;
 }
 
-.recovery-case-list-item:hover,
+.recovery-case-list-item:hover {
+  border-color: var(--slate-500);
+  background: var(--slate-50);
+}
+
 .recovery-case-list-item.is-selected {
-  border-color: var(--primary);
-  background: #f0f9ff;
+  border-color: var(--slate-900);
+  background: var(--slate-50);
 }
 
 .recovery-case-list-item:focus-visible {
@@ -2912,6 +2966,7 @@ body {
     align-items: flex-start;
     flex-wrap: wrap;
   }
+}
 /* =========================================
    MOBILE RESPONSIVENESS FIXES
    ========================================= */
@@ -2921,7 +2976,6 @@ body {
   }
   
   .navbar-cta > div[style*="display: flex"],
-  .navbar-cta .lang-toggle,
   .navbar-cta .nav-user-cluster {
     display: none !important;
   }
@@ -2943,10 +2997,18 @@ body {
   } 
 
   button.btn, 
-  button[class*="pill"] {
+  .hero-buttons button,
+  .recovery-hero button,
+  .modal-card button {
     width: 100% !important;
     justify-content: center;
     margin-bottom: 8px;
+  }
+
+  .navbar-cta .btn-pill-dark,
+  .navbar-cta .nav-user-cluster button {
+    width: auto !important;
+    margin-bottom: 0;
   }
 
   .flex-row, 
@@ -2969,23 +3031,6 @@ body {
 } 
 
 /* =========================================
-   ACCESSIBILITY: FORCE TEXT RESIZING
-   ========================================= */
-p, span, button, input, .landing-lead, .faq-question-text, .faq-answer p {
-  font-size: var(--base-font-size) !important;
-  transition: font-size 0.2s ease-in-out;
-}
-
-h1, h2, h3, .landing-title {
-  font-size: calc(var(--base-font-size) * 1.5) !important;
-  transition: font-size 0.2s ease-in-out;
-}
-
-.brand-logo {
-  font-size: calc(var(--base-font-size) * 1.25) !important;
-}
-}
-/* =========================================
    DARK MODE: COMPLETE UI, CARDS & BUTTONS FIX
    ========================================= */
 /* 1. Ayusin ang spacing ng A-/A+ at Dark Mode button sa header */
@@ -2998,9 +3043,9 @@ h1, h2, h3, .landing-title {
 
 /* 2. Palitawin ang Dark Mode button at User pill ("Chester") */
 html.dark .btn-pill-dark {
-  background-color: #1e293b !important;
+  background-color: #383838 !important;
   color: #f8fafc !important;
-  border: 1px solid #475569 !important;
+  border: 1px solid #525252 !important;
 }
 
 html.dark .btn-pill-dark span,
@@ -3013,16 +3058,17 @@ html.dark .btn-pill-dark svg {
 html.dark .recovery-hero .btn,
 html.dark .recovery-hero button,
 html.dark button.btn-primary {
-  background-color: #0284c7 !important;
-  color: #ffffff !important;
-  border: none !important;
+  background-color: #343434 !important;
+  color: #f8fafc !important;
+  border: 1px solid #626a82 !important;
+  box-shadow: none !important;
 }
 
 html.dark .recovery-hero .btn *,
 html.dark .recovery-hero button *,
 html.dark button.btn-primary * {
-  color: #ffffff !important;
-  stroke: #ffffff !important;
+  color: #f8fafc !important;
+  stroke: #7692ff !important;
 }
 
 /* 4. Ibalik ang puting text at sky-blue icons sa Disaster Option Cards[cite: 5] */
@@ -3041,145 +3087,352 @@ html.dark [class*="grid"] button {
 html.dark .card button svg,
 html.dark [class*="card"] button svg,
 html.dark [class*="grid"] button svg {
-  color: #38bdf8 !important;
-  stroke: #38bdf8 !important;
+  color: #7692ff !important;
+  stroke: #7692ff !important;
 }
 
-/* Recovery case workspace refinements */
-.recovery-case-detail,
-.recovery-case-section,
-.recovery-case-section-panel {
-  min-width: 0;
+/* Consistent dark surfaces, including panels that previously used hard-coded white */
+html.dark .app-main-canvas,
+html.dark .modern-card,
+html.dark .flow-card,
+html.dark .modal-card,
+html.dark .mobile-drawer,
+html.dark .navbar-more-menu,
+html.dark .wizard-stepper,
+html.dark .form-input,
+html.dark .form-select,
+html.dark .form-textarea,
+html.dark .application-editor,
+html.dark .application-editor .form-group,
+html.dark .application-editor .form-input,
+html.dark .application-editor .form-select,
+html.dark .application-editor .form-textarea {
+  background-color: var(--card-bg) !important;
+  color: var(--slate-900) !important;
+  border-color: var(--slate-200) !important;
 }
 
-.recovery-case-section-toggle:focus-visible,
-.recovery-case-program-toggle:focus-visible,
-.recovery-case-recommendation-list-toggle:focus-visible,
-.recovery-case-action-section .btn:focus-visible {
-  outline: 3px solid var(--primary);
-  outline-offset: 3px;
-  position: relative;
-  z-index: 1;
+html.dark .recovery-hero,
+html.dark .auth-sheet,
+html.dark .auth-sheet-header,
+html.dark .auth-form-actions,
+html.dark .auth-field input,
+html.dark .auth-secondary-action,
+html.dark .auth-mode-toggle button.active {
+  background-color: var(--card-bg) !important;
+  color: var(--slate-900) !important;
+  border-color: var(--slate-200) !important;
 }
 
-.recovery-case-incident-facts,
-.recovery-case-household-facts {
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
+html.dark .auth-sheet-header,
+html.dark .auth-form-actions {
+  border-color: var(--slate-200) !important;
 }
 
-.recovery-case-severity {
-  width: fit-content;
-  max-width: 100%;
-  white-space: normal;
-  text-align: left;
-  text-transform: none;
-  overflow-wrap: anywhere;
+html.dark .auth-field input,
+html.dark .auth-secondary-action,
+html.dark .auth-close-btn,
+html.dark .auth-mode-toggle,
+html.dark .auth-sheet .profile-section,
+html.dark .auth-sheet .auth-section {
+  background-color: var(--slate-100) !important;
+  color: var(--slate-900) !important;
+  border-color: var(--slate-200) !important;
 }
 
-.recovery-case-severity--severe {
-  background: #fee2e2;
-  color: #991b1b;
-  border-color: #fecaca;
+html.dark .application-form-heading,
+html.dark .application-section-heading {
+  background: transparent !important;
+  color: var(--slate-900) !important;
+  border: 0 !important;
+  border-bottom: 1px solid #525252 !important;
 }
 
-.recovery-case-severity--moderate {
-  background: #fef3c7;
-  color: #92400e;
-  border-color: #fcd34d;
+html.dark .card,
+html.dark [class*="-card"],
+html.dark [class*="_card"] {
+  box-shadow: none;
 }
 
-.recovery-case-severity--low {
-  background: #dcfce7;
-  color: #166534;
-  border-color: #bbf7d0;
+html.dark .app-main-canvas {
+  border: 0;
+  box-shadow: 0 12px 36px rgb(0 0 0 / 18%);
 }
 
-.recovery-case-severity--unknown {
-  background: var(--slate-100);
-  color: var(--slate-700);
+html.dark .flow-card,
+html.dark .modern-card,
+html.dark .wizard-stepper,
+html.dark .subsidy-card,
+html.dark .disaster-card,
+html.dark .method-card,
+html.dark .results-card,
+html.dark .trust-card,
+html.dark .landing-faq,
+html.dark .faq-item {
+  background: #242424 !important;
+  box-shadow: none;
+}
+
+html.dark .disaster-card.selected,
+html.dark .method-card.selected,
+html.dark .faq-item.open {
+  background: #303030 !important;
+  border-color: #7692ff !important;
+  box-shadow: none;
+}
+
+html.dark .recovery-case-list-panel {
+  border: 1px solid #525252 !important;
+  background: #242424 !important;
+  box-shadow: none !important;
+}
+
+html.dark .recovery-case-list-item {
+  background: #242424 !important;
+  border: 1px solid #525252 !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: none !important;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+html.dark .recovery-case-list-item:hover {
+  background: #303030 !important;
+  border-color: #737373 !important;
+  box-shadow: none !important;
+}
+
+html.dark .recovery-case-list-item.is-selected {
+  background: #303030 !important;
+  border-color: #7692ff !important;
+  box-shadow: none !important;
+}
+
+html.dark .disaster-card,
+html.dark .method-card {
+  border-radius: var(--radius-md) !important;
+  box-shadow: none !important;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+html.dark .disaster-card:hover,
+html.dark .method-card:hover {
+  background: #303030 !important;
+  border-color: #737373 !important;
+  box-shadow: none !important;
+}
+
+html.dark .recovery-hero,
+html.dark .recovery-hero-icon,
+html.dark .recovery-dashboard-metric,
+html.dark .guest-dashboard-notice {
+  background: #242424 !important;
+}
+
+html.dark .aid-ledger-stat,
+html.dark .aid-ledger-form,
+html.dark .aid-ledger-history,
+html.dark .aid-ledger-record {
+  background: #242424 !important;
+  border-color: #525252 !important;
+  box-shadow: none !important;
+}
+
+html.dark .recovery-hero .eyebrow,
+html.dark .landing-title-accent,
+html.dark .faq-chevron,
+html.dark .recovery-dashboard-metric-heading svg,
+html.dark .recovery-dashboard-action svg,
+html.dark .recovery-section-heading {
+  color: #7692ff !important;
+  stroke: #7692ff !important;
+}
+
+html.dark .guest-dashboard-notice .btn-secondary {
+  background: #343434 !important;
+  border: 1px solid #626a82 !important;
+  color: #f8fafc !important;
+  box-sizing: border-box;
+  border-radius: 9999px;
+}
+
+html.dark .faq-answer,
+html.dark .faq-answer-inner {
+  background: #242424 !important;
+  color: var(--slate-900) !important;
+}
+
+html.dark .form-input,
+html.dark .form-select,
+html.dark .form-textarea,
+html.dark input,
+html.dark select,
+html.dark textarea {
+  background: #242424 !important;
+  border: 1px solid #525252 !important;
+  color: #f8fafc !important;
+  box-shadow: inset 0 1px 2px rgb(0 0 0 / 20%);
+}
+
+html.dark .form-input::placeholder,
+html.dark .form-textarea::placeholder,
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #94a3b8;
+  opacity: 1;
+}
+
+html.dark .disaster-card,
+html.dark .method-card,
+html.dark .subsidy-card,
+html.dark .trust-card,
+html.dark .faq-item,
+html.dark .metric-box,
+html.dark .recovery-case-list-item {
+  box-shadow: none !important;
+}
+
+html.dark .flow-card,
+html.dark .modern-card,
+html.dark .subsidy-card,
+html.dark .trust-card,
+html.dark .landing-faq,
+html.dark .faq-item,
+html.dark .metric-box,
+html.dark .recovery-case-list-item {
+  border-style: solid;
+  border-width: 1px;
+  border-color: #525252;
+}
+
+html.dark .disaster-card,
+html.dark .method-card {
+  border-style: solid;
+  border-width: 2px;
+  border-color: #525252;
+}
+
+html.dark .disaster-card.selected,
+html.dark .method-card.selected {
+  border-color: #7692ff;
+}
+
+html.dark .wizard-stepper,
+html.dark .optional-details,
+html.dark .recovery-dashboard-followups {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html.dark .btn-pill-primary,
+html.dark .btn-primary {
+  background: #343434 !important;
+  color: #f8fafc !important;
+  border: 1px solid #626a82 !important;
+  box-shadow: none !important;
+}
+
+html.dark .btn-pill-primary *,
+html.dark .btn-primary * {
+  color: #f8fafc !important;
+  stroke: #7692ff !important;
+}
+
+html.dark table,
+html.dark th,
+html.dark td {
+  background-color: var(--card-bg);
+  color: var(--slate-900);
   border-color: var(--slate-200);
 }
 
-.recovery-case-assessment-severity {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 12px 0 0;
-}
-
-.recovery-case-list-item .recovery-case-severity {
-  flex: 0 1 auto;
-}
-
-.recovery-case-list-item .recovery-case-severity--severe {
-  color: #991b1b;
-}
-
-.recovery-case-list-item .recovery-case-severity--moderate {
-  color: #92400e;
-}
-
-.recovery-case-list-item .recovery-case-severity--low {
-  color: #166534;
-}
-
-.recovery-case-list-item .recovery-case-severity--unknown {
-  color: var(--slate-700);
-}
-
-.recovery-case-recommendation.is-expanded .recovery-case-program-toggle {
-  background: var(--slate-50);
-}
-
-@media (max-width: 560px) {
-  .recovery-case-program-summary {
-    grid-template-columns: minmax(0, 1fr);
-    justify-items: start;
+@media (max-width: 992px) {
+  .modern-navbar {
+    gap: 12px;
   }
 
-  .recovery-case-program-summary .subsidy-outcome {
-    justify-self: start;
+  .navbar-cta {
+    margin-left: auto;
+  }
+
+  .mobile-drawer {
+    width: min(290px, calc(100vw - 24px));
+  }
+
+  .navbar-more-menu {
+    position: fixed;
   }
 }
 
-html.dark .recovery-case-severity--severe {
-  background: #451a1a;
-  color: #fecaca;
-  border-color: #7f1d1d;
-}
+@media (max-width: 640px) {
+  .app-outer-frame {
+    padding: 0;
+  }
 
-html.dark .recovery-case-severity--moderate {
-  background: #422006;
-  color: #fde68a;
-  border-color: #854d0e;
-}
+  .app-main-canvas {
+    width: 100%;
+    min-height: 100vh;
+    border-radius: 0;
+    padding: 16px 12px 24px;
+  }
 
-html.dark .recovery-case-severity--low {
-  background: #052e16;
-  color: #bbf7d0;
-  border-color: #166534;
-}
+  .modern-navbar {
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+  }
 
-html.dark .recovery-case-severity--unknown {
-  background: #1e293b;
-  color: #e2e8f0;
-  border-color: #475569;
-}
+  .brand-logo {
+    max-width: 150px;
+    font-size: 20px;
+  }
 
-html.dark .recovery-case-list-item .recovery-case-severity--severe {
-  color: #fecaca !important;
-}
+  .hero-editorial {
+    margin-bottom: 32px;
+  }
 
-html.dark .recovery-case-list-item .recovery-case-severity--moderate {
-  color: #fde68a !important;
-}
+  .hero-headline {
+    font-size: 30px;
+  }
 
-html.dark .recovery-case-list-item .recovery-case-severity--low {
-  color: #bbf7d0 !important;
-}
+  .hero-image-card {
+    min-height: 260px;
+  }
 
-html.dark .recovery-case-list-item .recovery-case-severity--unknown {
-  color: #e2e8f0 !important;
-}
+  .flow-card,
+  .modern-card,
+  .modal-card {
+    padding: 18px 14px;
+  }
 
+  .form-grid,
+  .recovery-dashboard-grid,
+  .recovery-summary-grid,
+  .subsidy-detail-columns {
+    grid-template-columns: 1fr !important;
+  }
+
+  .auth-sheet .auth-form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .auth-sheet .auth-primary-action,
+  .auth-sheet .auth-secondary-action {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .application-editor {
+    padding: 12px;
+  }
+
+  .application-editor .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .recovery-dashboard .guest-dashboard-notice {
+    padding: 16px 14px;
+  }
+
+  .recovery-dashboard .guest-dashboard-notice .btn {
+    width: 100% !important;
+  }
+}

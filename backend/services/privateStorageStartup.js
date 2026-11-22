@@ -8,6 +8,7 @@ export function validatePrivateDocumentStorageForStartup({
   root = privateDocumentRoot,
   storage = privateDocumentStorage
 } = {}) {
+  storage.ensureDirectory();
   storage.validatePermissions();
   validateLifecycleLockDatabase(root);
 }
