@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { ChevronDown, HelpCircle } from 'lucide-react';
+import { ChevronDown, HelpCircle, CheckCircle2 } from 'lucide-react';
 import RecoveryDashboard from './RecoveryDashboard';
 
-export default function LandingPage({ onStartAssessment, t }) {
+export default function LandingPage({ onStartAssessment, t, lang = 'en' }) {
   const [openItems, setOpenItems] = useState([]);
 
   const faqs = [
@@ -22,19 +22,71 @@ export default function LandingPage({ onStartAssessment, t }) {
     );
   };
 
+  const highlights = lang === 'tl'
+    ? [
+        'Libre at Gabay para sa Mamamayan',
+        'AI at Checklist Damage Assessment',
+        'Wikang English at Tagalog'
+      ]
+    : [
+        'Free & Citizen-Centered Guide',
+        'AI & Checklist Damage Assessment',
+        'Available in English & Tagalog'
+      ];
+
   return (
     <div className="landing-simple">
-      <section className="landing-hero-simple">
-        <h1 className="landing-title">
-          {t('landingHeroTitle1')}
-          <br />
-          {t('landingHeroTitle2')}
+      <section
+        className="landing-hero-simple"
+        style={{
+          maxWidth: '100%',
+          padding: '12px 0 0',
+          marginBottom: 20
+        }}
+      >
+        <h1
+          className="landing-title"
+          style={{
+            maxWidth: '100%',
+            margin: '0 0 14px',
+            lineHeight: 1.15
+          }}
+        >
+          {t('landingHeroTitle1')} {t('landingHeroTitle2')}
           <br />
           <span className="landing-title-accent">{t('landingHeroTitle3')}</span>
         </h1>
 
-        <p className="landing-lead">{t('landingSubtitle')}</p>
+        <p
+          className="landing-lead"
+          style={{
+            maxWidth: '68ch',
+            margin: 0
+          }}
+        >
+          {t('landingSubtitle')}
+        </p>
 
+        <div
+          style={{
+            marginTop: 20,
+            paddingTop: 14,
+            borderTop: '1px solid rgba(148, 163, 184, 0.22)',
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '10px 28px',
+            fontSize: 13.5,
+            fontWeight: 500,
+            color: 'var(--slate-600)'
+          }}
+        >
+          {highlights.map((item) => (
+            <span key={item} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <CheckCircle2 size={15} color="var(--primary)" />
+              {item}
+            </span>
+          ))}
+        </div>
       </section>
 
       <RecoveryDashboard onStartCase={onStartAssessment} t={t} />

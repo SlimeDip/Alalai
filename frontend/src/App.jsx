@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { ShieldCheck, PhoneCall } from 'lucide-react';
 import Header from './components/Header';
 import LandingPage from './components/LandingPage';
 import AuthModal from './components/AuthModal';
@@ -132,6 +133,11 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const navigateAndScroll = (tab) => {
+    setActiveTab(tab);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <div className="app-outer-frame">
       <div className="app-main-canvas">
@@ -151,11 +157,9 @@ export default function App() {
         <main className="main-content-area">
           {activeTab === 'landing' && (
             <LandingPage
-              onStartAssessment={() => {
-                setActiveTab('assessment');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
+              onStartAssessment={() => navigateAndScroll('assessment')}
               t={t}
+              lang={lang}
             />
           )}
 
@@ -200,9 +204,120 @@ export default function App() {
           )}
         </main>
 
-        <footer className="site-footer no-print">
-          <strong>{t('appName')}</strong>
-          <span> — {t('footerDisclaimer')}</span>
+        <footer
+          className="site-footer no-print"
+          style={{
+            textAlign: 'left',
+            padding: '32px 24px 20px',
+            marginTop: 40,
+            borderTop: '2px solid rgba(148, 163, 184, 0.25)'
+          }}
+        >
+          <div
+            style={{
+              maxWidth: 1120,
+              margin: '0 auto',
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+              gap: 28,
+              paddingBottom: 22,
+              borderBottom: '1px solid rgba(148, 163, 184, 0.2)'
+            }}
+          >
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                <ShieldCheck size={21} color="var(--primary)" />
+                <strong style={{ fontSize: 17, letterSpacing: '-0.01em' }}>{t('appName')}</strong>
+              </div>
+              <p style={{ fontSize: 13.5, color: 'var(--slate-600)', lineHeight: 1.6, margin: 0 }}>
+                {lang === 'tl'
+                  ? 'Isang digital na gabay para sa mabilis na pagtatasa ng pinsala at paghahanap ng opisyal na tulong para sa mga pamilyang Pilipino na naapektuhan ng sakuna.'
+                  : 'A citizen-centered disaster recovery portal helping Filipino families assess calamity damage and connect with verified relief programs.'}
+              </p>
+            </div>
+
+            <div>
+              <h4 style={{ fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 12px' }}>
+                {lang === 'tl' ? 'Nabigasyon' : 'Portal Navigation'}
+              </h4>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8, fontSize: 13.5 }}>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => navigateAndScroll('landing')}
+                    style={{ background: 'none', border: 'none', padding: 0, color: 'var(--slate-600)', cursor: 'pointer', fontSize: 13.5 }}
+                  >
+                    {lang === 'tl' ? 'Home / Dashboard' : 'Home & Recovery Dashboard'}
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => navigateAndScroll('assessment')}
+                    style={{ background: 'none', border: 'none', padding: 0, color: 'var(--primary)', fontWeight: 600, cursor: 'pointer', fontSize: 13.5 }}
+                  >
+                    {t('startNewCase')}
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => navigateAndScroll('subsidies')}
+                    style={{ background: 'none', border: 'none', padding: 0, color: 'var(--slate-600)', cursor: 'pointer', fontSize: 13.5 }}
+                  >
+                    {t('subsidiesTitle')}
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => navigateAndScroll('saved')}
+                    style={{ background: 'none', border: 'none', padding: 0, color: 'var(--slate-600)', cursor: 'pointer', fontSize: 13.5 }}
+                  >
+                    {lang === 'tl' ? 'Mga Naka-save na Aplikasyon' : 'Saved Applications'}
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 style={{ fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 12px' }}>
+                {lang === 'tl' ? 'Emergency Hotlines' : 'Emergency Contacts'}
+              </h4>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8, fontSize: 13.5, color: 'var(--slate-600)' }}>
+                <li style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <PhoneCall size={14} color="var(--primary)" /> <strong>National Emergency:</strong> 911
+                </li>
+                <li style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <PhoneCall size={14} color="var(--primary)" /> <strong>Philippine Red Cross:</strong> 143
+                </li>
+                <li style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <PhoneCall size={14} color="var(--primary)" /> <strong>NDRRMC:</strong> (02) 8911-5061
+                </li>
+                <li style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <PhoneCall size={14} color="var(--primary)" /> <strong>DSWD Hotline:</strong> (02) 8931-8101
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div
+            style={{
+              maxWidth: 1120,
+              margin: '0 auto',
+              paddingTop: 16,
+              display: 'flex',
+              flexWrap: 'wrap',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: 10,
+              fontSize: 12.5,
+              color: 'var(--slate-600)'
+            }}
+          >
+            <span>© 2026 {t('appName')} — WebSys Group 12. All rights reserved.</span>
+            <span>{t('footerDisclaimer')}</span>
+          </div>
         </footer>
       </div>
 

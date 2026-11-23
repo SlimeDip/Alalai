@@ -99,51 +99,73 @@ export default function SubsidyCatalog({ onSelectSubsidyForApplication, t, lang 
           </p>
         )}
         <div className="subsidy-grid" style={{ marginTop: 20 }}>
-            {filtered.map((sub) => (
-              <div key={sub.id} className="subsidy-card">
-                <div>
-                  <span className="subsidy-agency">{sub.agency}</span>
-                  <h3 style={{ fontSize: 17, fontWeight: 700, margin: '5px 0 6px' }}>{sub.title}</h3>
-                  <p style={{ fontSize: 14, color: 'var(--slate-600)', marginBottom: 10 }}>{sub.short_description}</p>
-                  <div className="subsidy-amount">
-                    {Number(sub.amount_display) > 0 ? `₱${Number(sub.amount_display).toLocaleString()}` : t('amountVaries')}
-                  </div>
-                  <p className="subsidy-meta">Verified: {sub.last_verified_on}</p>
-                </div>
-                <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-                  <button type="button" className="btn btn-secondary btn-sm" style={{ flex: 1 }} onClick={() => setSelectedModalSubsidy(sub)}>
-                    {t('details')}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-primary btn-sm"
-                    style={{ flex: 1 }}
-                    onClick={() => onSelectSubsidyForApplication({ subsidy: sub, returnTab: 'subsidies' })}
-                  >
-                    {t('applySubsidyBtn')}
-                    <ArrowRight size={14} />
-                  </button>
+          {filtered.map((sub) => (
+            <div key={sub.id} className="subsidy-card">
+              <div>
+                <h3 style={{ fontSize: 17, fontWeight: 700, margin: '0 0 8px' }}>{sub.title}</h3>
+                <p
+                  style={{
+                    fontSize: 14,
+                    color: 'var(--slate-600)',
+                    marginBottom: 12,
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden'
+                  }}
+                >
+                  {sub.short_description}
+                </p>
+                <div className="subsidy-amount">
+                  {Number(sub.amount_display) > 0 ? `₱${Number(sub.amount_display).toLocaleString()}` : t('amountVaries')}
                 </div>
               </div>
-            ))}
+              <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+                <button type="button" className="btn btn-secondary btn-sm" style={{ flex: 1 }} onClick={() => setSelectedModalSubsidy(sub)}>
+                  {t('details')}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm"
+                  style={{ flex: 1 }}
+                  onClick={() => onSelectSubsidyForApplication({ subsidy: sub, returnTab: 'subsidies' })}
+                >
+                  {t('applySubsidyBtn')}
+                  <ArrowRight size={14} />
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
       {selectedModalSubsidy && (
         <div className="modal-overlay" onClick={() => setSelectedModalSubsidy(null)}>
           <div className="modal-card" style={{ maxWidth: 560 }} onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header-row">
-              <h3>{selectedModalSubsidy.title}</h3>
+            <div className="modal-header-row" style={{ alignItems: 'flex-start' }}>
+              <div>
+                <span className="subsidy-agency" style={{ display: 'inline-block', marginBottom: 6 }}>
+                  {selectedModalSubsidy.agency}
+                </span>
+                <h3 style={{ margin: 0 }}>{selectedModalSubsidy.title}</h3>
+              </div>
               <button type="button" className="icon-btn" onClick={() => setSelectedModalSubsidy(null)}>
                 <X size={20} />
               </button>
             </div>
-            <div className="subsidy-amount">
-              {Number(selectedModalSubsidy.amount_display) > 0
-                ? `₱${Number(selectedModalSubsidy.amount_display).toLocaleString()}`
-                : t('amountVaries')}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
+              <div className="subsidy-amount" style={{ margin: 0 }}>
+                {Number(selectedModalSubsidy.amount_display) > 0
+                  ? `₱${Number(selectedModalSubsidy.amount_display).toLocaleString()}`
+                  : t('amountVaries')}
+              </div>
+              {selectedModalSubsidy.last_verified_on && (
+                <p className="subsidy-meta" style={{ margin: 0 }}>
+                  Verified: {selectedModalSubsidy.last_verified_on}
+                </p>
+              )}
             </div>
-            <p style={{ fontSize: 15, marginTop: 10 }}>{selectedModalSubsidy.details}</p>
+            <p style={{ fontSize: 15, marginTop: 12 }}>{selectedModalSubsidy.details}</p>
             <p className="subsidy-channel">{selectedModalSubsidy.application_channel}</p>
             <div className="subsidy-detail-columns">
               <div>

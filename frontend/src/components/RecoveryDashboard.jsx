@@ -3,7 +3,7 @@ import { ArrowRight, LayoutDashboard } from 'lucide-react';
 
 export default function RecoveryDashboard({ onStartCase, t }) {
   return (
-    <div className="recovery-dashboard">
+    <div className="recovery-dashboard" style={{ marginTop: 0 }}>
       <div className="modern-card recovery-hero">
         <div className="recovery-hero-icon"><LayoutDashboard size={26} /></div>
         <div>
@@ -15,7 +15,6 @@ export default function RecoveryDashboard({ onStartCase, t }) {
           {t('startNewCase')} <ArrowRight size={17} />
         </button>
       </div>
-
     </div>
   );
 }
