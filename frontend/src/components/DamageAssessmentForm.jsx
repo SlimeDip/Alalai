@@ -242,63 +242,14 @@ export default function DamageAssessmentForm({ user, csrfToken, onSelectSubsidyF
     <div>
       {/* DYNAMIC TRANSLATED POPUP MODAL */}
       {errorMsg && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(15, 23, 42, 0.65)',
-            backdropFilter: 'blur(4px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 9999,
-            padding: '1rem'
-          }}
-          onClick={() => setErrorMsg('')}
-        >
-          <div
-            style={{
-              backgroundColor: '#ffffff',
-              borderRadius: '16px',
-              maxWidth: '440px',
-              width: '100%',
-              padding: '24px',
-              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
-              textAlign: 'center',
-              position: 'relative'
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div
-              style={{
-                width: '56px',
-                height: '56px',
-                borderRadius: '50%',
-                backgroundColor: '#fef2f2',
-                color: '#dc2626',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                margin: '0 auto 16px'
-              }}
-            >
+        <div className="modal-overlay" onClick={() => setErrorMsg('')}>
+          <div className="modal-card notice-modal" role="alertdialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+            <div className="notice-modal-icon">
               <AlertTriangle size={28} />
             </div>
-            <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#0f172a', marginBottom: '8px' }}>
-              {"Assessment Notice"}
-            </h3>
-            <p style={{ fontSize: '14px', color: '#475569', lineHeight: '1.5', marginBottom: '20px' }}>
-              {errorMsg}
-            </p>
-            <button
-              type="button"
-              className="btn btn-primary"
-              style={{ width: '100%', padding: '10px 16px', fontWeight: '600', borderRadius: '8px' }}
-              onClick={() => setErrorMsg('')}
-            >
+            <h3>{"Assessment Notice"}</h3>
+            <p>{errorMsg}</p>
+            <button type="button" className="btn btn-primary" style={{ width: '100%' }} onClick={() => setErrorMsg('')}>
               {"Got It"}
             </button>
           </div>

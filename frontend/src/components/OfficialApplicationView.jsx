@@ -156,11 +156,10 @@ export default function OfficialApplicationView({
             <button type="button" className="btn btn-secondary btn-sm" onClick={onBack}>
               <ArrowLeft size={14} /> {backLabel || "Back to assessment"}
             </button>
-            <div style={{ display: 'inline-flex', backgroundColor: 'var(--slate-100)', padding: 3, borderRadius: 9999 }}>
+            <div className="segmented">
               <button
                 type="button"
                 className={`btn btn-sm ${activeView === 'editor' ? 'btn-primary' : 'btn-secondary'}`}
-                style={{ border: 'none' }}
                 onClick={() => setActiveView('editor')}
               >
                 <Edit3 size={14} /> {"Edit Details"}
@@ -168,7 +167,6 @@ export default function OfficialApplicationView({
               <button
                 type="button"
                 className={`btn btn-sm ${activeView === 'preview' ? 'btn-primary' : 'btn-secondary'}`}
-                style={{ border: 'none' }}
                 onClick={() => setActiveView('preview')}
               >
                 <Eye size={14} /> {"A4 Print Preview"}
@@ -189,13 +187,13 @@ export default function OfficialApplicationView({
         </div>
 
         {saveSuccess && (
-          <div style={{ backgroundColor: '#ecfdf5', border: '1px solid #a7f3d0', color: '#065f46', padding: '10px 14px', borderRadius: 10, marginTop: 14, display: 'flex', alignItems: 'center', gap: 8, fontSize: 14 }}>
+          <div role="status" className="alert alert-success">
             <CheckCircle2 size={16} />
             <strong>{saveSuccess}</strong>
           </div>
         )}
         {saveError && (
-          <div role="alert" style={{ backgroundColor: '#fff1f2', border: '1px solid #fecdd3', color: '#9f1239', padding: '10px 14px', borderRadius: 10, marginTop: 14, fontSize: 14 }}>
+          <div role="alert" className="alert alert-error">
             {saveError}
           </div>
         )}
@@ -592,8 +590,8 @@ export default function OfficialApplicationView({
         }
       >
           {activeView === 'preview' && (
-          <div className="no-print" style={{ backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 14, padding: '12px 18px', marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
-            <div style={{ fontSize: 13, color: '#1e40af' }}>
+          <div className="no-print alert alert-info alert-info-bar" style={{ marginTop: 0 }}>
+            <div>
               {"A4 format: This form is designed to fit on one standard A4 page (210mm x 297mm). Saving or printing does not submit it to an agency."}
             </div>
             <button

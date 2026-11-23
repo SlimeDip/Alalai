@@ -210,46 +210,21 @@ export default function LocationFields({
   const citySuggestions = filterMatches(cities, values.cityMunicipality);
   const barangaySuggestions = filterMatches(barangays, values.barangay);
 
-  const dropdownStyle = {
-    position: 'absolute',
-    top: '100%',
-    left: 0,
-    right: 0,
-    zIndex: 50,
-    backgroundColor: '#ffffff',
-    border: '1px solid #cbd5e1',
-    borderRadius: '8px',
-    marginTop: '4px',
-    maxHeight: '180px',
-    overflowY: 'auto',
-    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-    listStyle: 'none',
-    padding: '4px 0',
-  };
-
-  const itemStyle = {
-    padding: '8px 12px',
-    fontSize: '14px',
-    cursor: 'pointer',
-    color: '#0f172a',
-  };
-
   return (
     <div ref={wrapperRef}>
       {/* Auto-fill Current Location Trigger */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, gap: 8, flexWrap: 'wrap' }}>
+      <div className="location-toolbar">
         <button
           type="button"
           className="btn btn-secondary btn-sm"
           onClick={handleDetectLocation}
           disabled={locating}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
         >
           {locating ? <Loader2 size={14} className="spin" /> : <LocateFixed size={14} />}
           {locating ? 'Detecting location...' : 'Use my current location'}
         </button>
         {geoError && (
-          <span style={{ fontSize: 12, color: '#dc2626' }} role="alert">
+          <span className="location-error" role="alert">
             {geoError}
           </span>
         )}
@@ -275,11 +250,11 @@ export default function LocationFields({
             className="form-input"
           />
           {activeDropdown === 'province' && provinceSuggestions.length > 0 && (
-            <ul style={dropdownStyle} role="listbox">
+            <ul className="suggest-list" role="listbox">
               {provinceSuggestions.map((prov) => (
                 <li
                   key={prov.code}
-                  style={itemStyle}
+                  className="suggest-item" role="option"
                   onMouseDown={() => {
                     onChangeField('province', prov.name);
                     onChangeField('cityMunicipality', '');
@@ -314,11 +289,11 @@ export default function LocationFields({
             className="form-input"
           />
           {activeDropdown === 'cityMunicipality' && citySuggestions.length > 0 && (
-            <ul style={dropdownStyle} role="listbox">
+            <ul className="suggest-list" role="listbox">
               {citySuggestions.map((city) => (
                 <li
                   key={city.code}
-                  style={itemStyle}
+                  className="suggest-item" role="option"
                   onMouseDown={() => {
                     onChangeField('cityMunicipality', city.name);
                     onChangeField('barangay', '');
@@ -350,11 +325,11 @@ export default function LocationFields({
             className="form-input"
           />
           {activeDropdown === 'barangay' && barangaySuggestions.length > 0 && (
-            <ul style={dropdownStyle} role="listbox">
+            <ul className="suggest-list" role="listbox">
               {barangaySuggestions.map((brgy) => (
                 <li
                   key={brgy.code}
-                  style={itemStyle}
+                  className="suggest-item" role="option"
                   onMouseDown={() => {
                     onChangeField('barangay', brgy.name);
                     setActiveDropdown(null);

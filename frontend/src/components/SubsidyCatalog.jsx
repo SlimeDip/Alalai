@@ -211,7 +211,7 @@ export default function SubsidyCatalog({ onSelectSubsidyForApplication}) {
             ) : (
               <p className="field-help">{"No source link is provided for this catalog entry. Contact the listed agency to confirm details."}</p>
             )}
-            <div style={{ marginTop: 20, display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+            <div className="modal-actions">
               <button type="button" className="btn btn-secondary" onClick={() => setSelectedModalSubsidy(null)}>
                 {"Close"}
               </button>
