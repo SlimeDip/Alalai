@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
+import Footer from './components/Footer';
 import LandingPage from './components/LandingPage';
 import RecoveryDashboard from './components/RecoveryDashboard';
 import AuthModal from './components/AuthModal';
@@ -180,6 +181,8 @@ export default function App() {
     onOpenCases: (caseId) => handleNavigateToCaseWorkflow('cases', caseId),
     onPrepareApplication: handleDashboardPrepareApplication,
     onOpenApplication: handleDashboardOpenApplication,
+    onOpenAidOptions: () => setActiveTab('subsidies'),
+    onOpenSaved: () => setActiveTab('saved'),
     onOpenAidLedger: (caseId) => handleNavigateToCaseWorkflow('aid', caseId)
   };
 
@@ -281,10 +284,7 @@ export default function App() {
 
         </main>
 
-        <footer className="site-footer no-print">
-          <strong>{"Alalai"}</strong>
-          <span> — {"Alalai is an independent, non-governmental assistance tool. It does not disburse funds directly but assists citizens in preparing organized intake documents for local calamity relief."}</span>
-        </footer>
+        <Footer onNavigate={(tab) => { setWorkflowCaseId(''); setActiveTab(tab); window.scrollTo({ top: 0, behavior: 'smooth' }); }} />
       </div>
 
       <AuthModal

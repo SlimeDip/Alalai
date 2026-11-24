@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { ChevronDown, HelpCircle } from 'lucide-react';
+import { ChevronDown, HelpCircle, ClipboardList, HandCoins, Printer } from 'lucide-react';
 
-export default function LandingPage({ onStartAssessment, onOpenLogin}) {
+export default function LandingPage({ onStartAssessment, onOpenLogin }) {
   const [openFaqIndex, setOpenFaqIndex] = useState(null);
 
   const faqs = [
@@ -11,6 +11,12 @@ export default function LandingPage({ onStartAssessment, onOpenLogin}) {
     { q: "How does the damage assessment work?", a: "You can choose between the AI Smart Assistant (just type in your own words what got damaged) or the Manual Damage Checklist (simply check the boxes for what happened)." },
     { q: "Can I do this on my smartphone or tablet?", a: "Yes. The portal is designed with large text and big buttons so you can easily fill it out on any smartphone, tablet, or desktop computer." },
     { q: "Where do I bring the printed form?", a: "Bring it to your local Barangay disaster desk or community relief office, along with your valid ID. Programs and requirements vary by area." }
+  ];
+
+  const steps = [
+    { icon: ClipboardList, title: "Describe the damage", text: "Type what happened in your own words, or tick a simple checklist." },
+    { icon: HandCoins, title: "See possible aid", text: "Get a preliminary list of relief programs that may fit your situation." },
+    { icon: Printer, title: "Print your form", text: "Download a one-page A4 intake slip ready for your Barangay desk." }
   ];
 
   const toggleFaq = (index) => {
@@ -38,13 +44,24 @@ export default function LandingPage({ onStartAssessment, onOpenLogin}) {
         </div>
       </section>
 
+      <section className="landing-section" aria-labelledby="how-it-works">
+        <h2 id="how-it-works" className="landing-section-title">{"How it works"}</h2>
+        <div className="landing-steps">
+          {steps.map(({ icon: Icon, title, text }, i) => (
+            <article className="landing-step" key={title}>
+              <span className="landing-step-num">{i + 1}</span>
+              <Icon size={22} color="var(--primary)" aria-hidden />
+              <h3>{title}</h3>
+              <p>{text}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
       <section className="landing-faq">
         <div className="landing-faq-header">
           <HelpCircle size={22} color="var(--primary)" aria-hidden />
-          <div>
-            <h2>{"Frequently Asked Questions"}</h2>
-            <p>{"Simple answers to help older adults and affected families"}</p>
-          </div>
+          <h2>{"Frequently Asked Questions"}</h2>
         </div>
         
         <div className="landing-faq-list">

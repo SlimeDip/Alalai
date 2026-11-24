@@ -5,7 +5,11 @@ import {
   FolderOpen,
   HandCoins,
   LayoutDashboard,
-  RefreshCw
+  RefreshCw,
+  PlusCircle,
+  Search,
+  Printer,
+  ClipboardCheck
 } from 'lucide-react';
 import { fetchAccountApplications } from '../utils/applicationStorage';
 import { fetchAidLedger } from '../utils/aidApi';
@@ -62,6 +66,8 @@ export default function RecoveryDashboard({
   onOpenCases,
   onPrepareApplication,
   onOpenApplication,
+  onOpenAidOptions,
+  onOpenSaved,
   onOpenAidLedger}) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -122,9 +128,7 @@ export default function RecoveryDashboard({
       <div className="modern-card recovery-hero">
         <div className="recovery-hero-icon"><LayoutDashboard size={26} /></div>
         <div>
-          <p className="eyebrow">{"Recovery workspace"}</p>
-          <h1 className="card-heading-lg">{"Plan your recovery"}</h1>
-          <p className="card-subheading-lg">{"Review account-backed recovery cases, applications, and aid records. Guest assessments are not recoverable across devices."}</p>
+          <h1 className="card-heading-lg" style={{ marginBottom: 0 }}>{"Recovery Dashboard"}</h1>
         </div>
         {isAccountUser ? (
           <button
@@ -144,7 +148,7 @@ export default function RecoveryDashboard({
 
       {!isAccountUser && (
         <div className="modern-card guest-dashboard-notice">
-          <p className="card-subheading">{"Sign in to see recovery records saved to your account. Guest assessment results are not available in this account dashboard."}</p>
+          <p className="card-subheading">{"Sign in to see your saved cases. Guest assessments can't be viewed here."}</p>
           <button type="button" className="btn btn-secondary" onClick={onStartCase}>
             {"Start New Case"} <ArrowRight size={15} />
           </button>
@@ -204,7 +208,9 @@ export default function RecoveryDashboard({
 
             <DashboardMetric title={"Saved applications"} icon={FileText}>
               <p className="recovery-dashboard-total">{data.applicationCount}</p>
-              <p className="card-subheading">{"Saved application records remain available from your account."}</p>
+              <button type="button" className="btn btn-secondary btn-sm" onClick={() => onOpenSaved()}>
+                {"View saved applications"}
+              </button>
             </DashboardMetric>
 
             <DashboardMetric title={"Assistance recorded as received"} icon={HandCoins}>
@@ -252,6 +258,37 @@ export default function RecoveryDashboard({
           )}
         </>
       )}
+      <section aria-labelledby="dash-quick-heading">
+        <h2 id="dash-quick-heading" className="recovery-section-heading">{"Quick actions"}</h2>
+        <div className="dash-quick-grid">
+          <button type="button" className="dash-quick" onClick={onStartCase}>
+            <PlusCircle size={22} aria-hidden /><strong>{"Start new case"}</strong><span>{"Assess damage"}</span>
+          </button>
+          <button type="button" className="dash-quick" onClick={onOpenAidOptions}>
+            <Search size={22} aria-hidden /><strong>{"Find aid"}</strong><span>{"Browse programs"}</span>
+          </button>
+          <button type="button" className="dash-quick" onClick={isAccountUser ? onOpenSaved : onOpenLogin}>
+            <Printer size={22} aria-hidden /><strong>{"Applications"}</strong><span>{"Print or review"}</span>
+          </button>
+          <button type="button" className="dash-quick" onClick={isAccountUser ? () => onOpenAidLedger() : onOpenLogin}>
+            <HandCoins size={22} aria-hidden /><strong>{"Aid ledger"}</strong><span>{"Track what you received"}</span>
+          </button>
+        </div>
+      </section>
+
+      <section className="modern-card dash-checklist" aria-labelledby="dash-checklist-heading">
+        <div className="dash-checklist-head">
+          <ClipboardCheck size={20} color="var(--primary)" aria-hidden />
+          <h2 id="dash-checklist-heading">{"Recovery checklist"}</h2>
+        </div>
+        <ol>
+          <li>{"Photograph all damage before cleaning up."}</li>
+          <li>{"Complete a damage assessment for your household."}</li>
+          <li>{"Review matching aid programs and their requirements."}</li>
+          <li>{"Print your application and bring it with a valid ID."}</li>
+          <li>{"Record any assistance you receive in the aid ledger."}</li>
+        </ol>
+      </section>
     </section>
   );
 }

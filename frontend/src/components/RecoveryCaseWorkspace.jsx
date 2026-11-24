@@ -5,6 +5,9 @@ import {
   ChevronDown,
   ExternalLink,
   FileText,
+  FolderOpen,
+  MapPin,
+  CalendarDays,
   HandCoins,
   RefreshCw,
   ShieldAlert
@@ -239,15 +242,12 @@ function CaseDetail({
 
       <header className="modern-card-header">
         <div>
-          <p className="eyebrow">Case details</p>
           <h2 className="card-heading-lg">{recoveryCase.disaster_type || 'Disaster type not recorded'}</h2>
-          <p className="card-subheading">{location}</p>
-          <p className="card-subheading">
-            {[
-              recoveryCase.incident_date ? `Incident Date: ${dateLabel(recoveryCase.incident_date)}` : '',
-              recoveryCase.created_at ? `Created: ${dateLabel(recoveryCase.created_at)}` : ''
-            ].filter(Boolean).join(' · ')}
-          </p>
+          <p className="recovery-case-detail-meta"><MapPin size={14} aria-hidden /> {location}</p>
+          <p className="recovery-case-detail-meta"><CalendarDays size={14} aria-hidden /> {[
+            recoveryCase.incident_date ? `Incident: ${dateLabel(recoveryCase.incident_date)}` : '',
+            recoveryCase.created_at ? `Created: ${dateLabel(recoveryCase.created_at)}` : ''
+          ].filter(Boolean).join(' · ')}</p>
         </div>
         <span className={`badge ${SEVERITY_BADGE[severity]}`}>
           {recoveryCase.severity_level || 'Severity not recorded'}
@@ -255,7 +255,7 @@ function CaseDetail({
       </header>
 
       <p role="note" className="recovery-case-disclaimer">
-        Assessment outputs and amounts are estimates based on reported information. They are not verified losses, official eligibility decisions, or guarantees of assistance.
+        Amounts are unverified estimates from reported information, not official decisions.
       </p>
 
       <div className="recovery-case-action-layout">
@@ -357,7 +357,6 @@ function CaseDetail({
           id="programs"
           title="Possible program matches"
           count={eligibility.programs.length}
-          description="Not an official decision. Select a program to see why it appeared."
         >
           <Recommendations programs={eligibility.programs} />
         </Section>
@@ -464,12 +463,11 @@ export default function RecoveryCaseWorkspace({
       <div className="modern-card recovery-case-guest">
         <div className="modern-card-header">
           <div>
-            <p className="eyebrow">Recovery case workspace</p>
-            <h1 className="card-heading">Guest cases are not recoverable here</h1>
+            <h1 className="card-heading">Sign in to view your cases</h1>
           </div>
           <ShieldAlert size={25} color="var(--primary)" aria-hidden />
         </div>
-        <p className="card-subheading">Guest assessments are not linked to an account and cannot be retrieved from this workspace or another device.</p>
+        <p className="card-subheading">Guest assessments aren't saved to an account.</p>
         <div className="recovery-case-actions">
           <button type="button" className="btn btn-primary" onClick={onOpenLogin}>Sign In</button>
           <button type="button" className="btn btn-secondary" onClick={onStartAssessment}>Start New Case</button>
@@ -482,9 +480,7 @@ export default function RecoveryCaseWorkspace({
     <div className="recovery-case-workspace">
       <div className="modern-card-header recovery-case-workspace-header">
         <div>
-          <p className="eyebrow">Recovery case workspace</p>
-          <h1 className="card-heading-lg">Your Recovery Cases</h1>
-          <p className="card-subheading">Review saved case details and continue to the related assistance workflows.</p>
+          <h1 className="card-heading-lg" style={{ marginBottom: 0 }}>Recovery Cases</h1>
         </div>
         <div className="recovery-case-actions">
           <button type="button" className="btn btn-secondary btn-sm" onClick={refresh} disabled={loading}>
@@ -513,7 +509,6 @@ export default function RecoveryCaseWorkspace({
       {listView.state === 'empty' && (
         <div className="modern-card recovery-case-empty">
           <h2 className="card-heading">No saved recovery cases yet</h2>
-          <p className="card-subheading">Complete a damage assessment while signed in to save a case to your account.</p>
           <button type="button" className="btn btn-primary" onClick={onStartAssessment}>Start New Case</button>
         </div>
       )}
@@ -536,10 +531,16 @@ export default function RecoveryCaseWorkspace({
                     aria-pressed={selected}
                     onClick={() => selectCase(recoveryCase.case_id)}
                   >
-                    <strong>{recoveryCase.disaster_type || 'Disaster type not recorded'}</strong>
-                    <span>{getRecoveryCaseDetailModel(recoveryCase).location || 'Location not recorded'}</span>
-                    {recoveryCase.incident_date && <span>Incident Date: {dateLabel(recoveryCase.incident_date)}</span>}
-                    {recoveryCase.created_at && <span>Created: {dateLabel(recoveryCase.created_at)}</span>}
+                    <span className="recovery-case-list-top">
+                      <strong>{recoveryCase.disaster_type || 'Disaster type not recorded'}</strong>
+                      {recoveryCase.severity_level && (
+                        <span className={`badge ${SEVERITY_BADGE[normalizeRecoverySeverity(recoveryCase.severity_level)]}`}>{recoveryCase.severity_level}</span>
+                      )}
+                    </span>
+                    <span className="recovery-case-list-meta"><MapPin size={13} aria-hidden /> {getRecoveryCaseDetailModel(recoveryCase).location || 'Location not recorded'}</span>
+                    {(recoveryCase.incident_date || recoveryCase.created_at) && (
+                      <span className="recovery-case-list-meta"><CalendarDays size={13} aria-hidden /> {dateLabel(recoveryCase.incident_date || recoveryCase.created_at)}</span>
+                    )}
                   </button>
                 );
               })}
@@ -560,8 +561,9 @@ export default function RecoveryCaseWorkspace({
             />
           ) : (
             <div className="modern-card recovery-case-empty recovery-case-placeholder">
-              <h2 className="card-heading">Select a recovery case</h2>
-              <p className="card-subheading">Choose a case from the list to inspect its saved assessment and loss records.</p>
+              <FolderOpen size={32} color="var(--slate-500)" aria-hidden />
+              <h2 className="card-heading" style={{ marginBottom: 0 }}>Select a case to view details</h2>
+
             </div>
           )}
         </div>
