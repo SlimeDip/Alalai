@@ -173,6 +173,12 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleFooterNavigate = (tab) => {
+    setWorkflowCaseId('');
+    setActiveTab(tab);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const dashboardProps = {
     user,
     onStartCase: () => setActiveTab('assessment'),
@@ -181,6 +187,18 @@ export default function App() {
     onPrepareApplication: handleDashboardPrepareApplication,
     onOpenApplication: handleDashboardOpenApplication,
     onOpenAidLedger: (caseId) => handleNavigateToCaseWorkflow('aid', caseId)
+  };
+
+  const footerLinkStyle = {
+    background: 'none',
+    border: 'none',
+    padding: 0,
+    color: 'inherit',
+    opacity: 0.78,
+    fontSize: 14,
+    fontWeight: 500,
+    cursor: 'pointer',
+    textAlign: 'left'
   };
 
   return (
@@ -281,9 +299,115 @@ export default function App() {
 
         </main>
 
-        <footer className="site-footer no-print">
-          <strong>{"Alalai"}</strong>
-          <span> — {"Alalai is an independent, non-governmental assistance tool. It does not disburse funds directly but assists citizens in preparing organized intake documents for local calamity relief."}</span>
+        <footer
+          className="no-print"
+          style={{
+            display: 'block',
+            width: '100%',
+            boxSizing: 'border-box',
+            marginTop: 48,
+            padding: '36px 24px 24px',
+            borderTop: '1px solid rgba(148, 163, 184, 0.25)',
+            background: 'transparent',
+            textAlign: 'left',
+            color: 'inherit'
+          }}
+        >
+          <div
+            style={{
+              maxWidth: 1120,
+              margin: '0 auto',
+              display: 'flex',
+              flexWrap: 'wrap',
+              justifyContent: 'space-between',
+              alignItems: 'flex-start',
+              gap: 32,
+              paddingBottom: 24,
+              borderBottom: '1px solid rgba(148, 163, 184, 0.25)'
+            }}
+          >
+            <div style={{ flex: '1 1 260px', maxWidth: 340 }}>
+              <div
+                style={{
+                  fontSize: 13,
+                  fontWeight: 800,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.06em',
+                  lineHeight: '20px',
+                  marginBottom: 12
+                }}
+              >
+                {"Alalai"}
+              </div>
+              <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, opacity: 0.78 }}>
+                {"A free, independent public-service disaster relief navigator helping families assess damages, explore aid options, and prepare clean printable intake forms."}
+              </p>
+            </div>
+
+            <div style={{ flex: '0 1 auto', minWidth: 180 }}>
+              <div
+                style={{
+                  fontSize: 13,
+                  fontWeight: 800,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.06em',
+                  lineHeight: '20px',
+                  marginBottom: 12
+                }}
+              >
+                {"Quick Navigation"}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-start' }}>
+                <button type="button" style={footerLinkStyle} onClick={() => handleFooterNavigate('landing')}>
+                  {"Home"}
+                </button>
+                <button type="button" style={footerLinkStyle} onClick={() => handleFooterNavigate('assessment')}>
+                  {"Start Damage Assessment"}
+                </button>
+                <button type="button" style={footerLinkStyle} onClick={() => handleFooterNavigate('subsidies')}>
+                  {"Browse Aid Programs"}
+                </button>
+                <button type="button" style={footerLinkStyle} onClick={() => handleFooterNavigate('dashboard')}>
+                  {"Recovery Dashboard"}
+                </button>
+              </div>
+            </div>
+
+            <div style={{ flex: '1 1 260px', maxWidth: 340 }}>
+              <div
+                style={{
+                  fontSize: 13,
+                  fontWeight: 800,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.06em',
+                  lineHeight: '20px',
+                  marginBottom: 12
+                }}
+              >
+                {"Public-Service Notice"}
+              </div>
+              <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, opacity: 0.78 }}>
+                {"Alalai is not affiliated with any government agency and does not directly disburse funds or approve relief applications. Always submit printed forms to your official local Barangay or relief desk."}
+              </p>
+            </div>
+          </div>
+
+          <div
+            style={{
+              maxWidth: 1120,
+              margin: '16px auto 0',
+              display: 'flex',
+              flexWrap: 'wrap',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: 12,
+              fontSize: 13,
+              opacity: 0.65
+            }}
+          >
+            <span>{"© 2026 Alalai. Free & independent calamity relief navigation tool."}</span>
+            <span>{"Calibrated for 1-page A4 intake printing."}</span>
+          </div>
         </footer>
       </div>
 

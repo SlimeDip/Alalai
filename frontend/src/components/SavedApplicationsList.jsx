@@ -82,26 +82,13 @@ export default function SavedApplicationsList({
 
   const renderRecords = (records, accountBacked) => (
     records.length === 0 ? (
-      <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--slate-500)' }}>
+      <div className="empty-state">
         {"No saved applications yet. Save a prepared application to see it here."}
       </div>
     ) : (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div className="record-list">
         {records.map((item) => (
-          <div
-            key={item.id}
-            style={{
-              backgroundColor: 'var(--slate-50)',
-              border: '1px solid var(--slate-200)',
-              borderRadius: 8,
-              padding: 16,
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: 12
-            }}
-          >
+          <div key={item.id} className="record-row">
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                 <strong style={{ fontSize: 15, color: 'var(--primary)' }}>
@@ -120,7 +107,7 @@ export default function SavedApplicationsList({
                 {item.barangay}, {item.city_municipality}, {item.province} • ({item.disaster_type})
               </p>
             </div>
-            <div style={{ display: 'flex', gap: 8 }}>
+            <div className="record-actions">
               <button
                 type="button"
                 className="btn btn-primary btn-sm"
@@ -169,7 +156,7 @@ export default function SavedApplicationsList({
       </div>
 
       {error && (
-        <div role="alert" style={{ backgroundColor: '#fff1f2', border: '1px solid #fecdd3', color: '#9f1239', padding: '10px 14px', borderRadius: 10, marginBottom: 16 }}>
+        <div role="alert" className="alert alert-error">
           {error}
         </div>
       )}
