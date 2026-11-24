@@ -1,12 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   ArrowRight,
-  Compass,
   FileText,
   FolderOpen,
   HandCoins,
   LayoutDashboard,
-  PlusCircle,
   RefreshCw
 } from 'lucide-react';
 import { fetchAccountApplications } from '../utils/applicationStorage';
@@ -45,40 +43,14 @@ function peso(value) {
   })}`;
 }
 
-function DashboardMetric({ title, children, footer, icon: Icon }) {
+function DashboardMetric({ title, children, icon: Icon }) {
   return (
-    <article
-      className="modern-card recovery-dashboard-metric"
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%'
-      }}
-    >
+    <article className="modern-card recovery-dashboard-metric">
       <div className="recovery-dashboard-metric-heading">
         <h2>{title}</h2>
         <Icon size={20} color="var(--primary)" aria-hidden />
       </div>
-
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        {children}
-      </div>
-
-      {footer && (
-        <div
-          style={{
-            marginTop: 'auto',
-            paddingTop: 14,
-            borderTop: '1px solid var(--slate-200, #e2e8f0)',
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: 8,
-            alignItems: 'center'
-          }}
-        >
-          {footer}
-        </div>
-      )}
+      {children}
     </article>
   );
 }
@@ -90,8 +62,7 @@ export default function RecoveryDashboard({
   onOpenCases,
   onPrepareApplication,
   onOpenApplication,
-  onOpenAidLedger
-}) {
+  onOpenAidLedger}) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -203,18 +174,13 @@ export default function RecoveryDashboard({
               {"The latest updates could not be loaded. The information shown may be out of date."}
             </div>
           )}
-          <div className="recovery-dashboard-grid" style={{ alignItems: 'stretch' }}>
-            <DashboardMetric
-              title={"Recovery cases"}
-              icon={FolderOpen}
-              footer={
-                <button type="button" className="btn btn-secondary btn-sm" onClick={() => onOpenCases()}>
-                  {"Open recovery cases"}
-                </button>
-              }
-            >
+          <div className="recovery-dashboard-grid">
+            <DashboardMetric title={"Recovery cases"} icon={FolderOpen}>
               <p className="recovery-dashboard-total">{data.caseCount}</p>
-              <div className="recovery-dashboard-recent-list" style={{ marginBottom: 16 }}>
+              <button type="button" className="btn btn-secondary btn-sm" onClick={() => onOpenCases()}>
+                {"Open recovery cases"}
+              </button>
+              <div className="recovery-dashboard-recent-list">
                 {data.recentCases.map((recoveryCase) => (
                   <button
                     type="button"
@@ -236,50 +202,12 @@ export default function RecoveryDashboard({
               </div>
             </DashboardMetric>
 
-            <DashboardMetric
-              title={"Saved applications"}
-              icon={FileText}
-              footer={
-                <>
-                  <button type="button" className="btn btn-secondary btn-sm" onClick={() => onOpenCases()}>
-                    {"View linked cases"}
-                  </button>
-                  <button type="button" className="btn btn-primary btn-sm" onClick={onStartCase}>
-                    <PlusCircle size={14} /> {"Start new case"}
-                  </button>
-                </>
-              }
-            >
+            <DashboardMetric title={"Saved applications"} icon={FileText}>
               <p className="recovery-dashboard-total">{data.applicationCount}</p>
-              <p className="card-subheading" style={{ marginBottom: 16 }}>
-                {"Saved application records remain available from your account."}
-              </p>
-              {data.applicationCount === 0 && (
-                <div
-                  style={{
-                    padding: '12px 14px',
-                    borderRadius: 10,
-                    background: 'var(--slate-50, #f8fafc)',
-                    border: '1px dashed var(--slate-300, #cbd5e1)',
-                    fontSize: 13,
-                    color: 'var(--slate-600, #475569)',
-                    marginBottom: 16
-                  }}
-                >
-                  {"No saved applications yet. Prepare an application from any recovery case to generate a printable A4 intake form."}
-                </div>
-              )}
+              <p className="card-subheading">{"Saved application records remain available from your account."}</p>
             </DashboardMetric>
 
-            <DashboardMetric
-              title={"Assistance recorded as received"}
-              icon={HandCoins}
-              footer={
-                <button type="button" className="btn btn-secondary btn-sm" onClick={() => onOpenAidLedger()}>
-                  {"Open aid ledger"}
-                </button>
-              }
-            >
+            <DashboardMetric title={"Assistance recorded as received"} icon={HandCoins}>
               <p className="recovery-dashboard-assistance-label">{"Recorded cash assistance (self-reported)"}</p>
               <p className="recovery-dashboard-total">
                 {data.cashTotal == null ? "Unavailable" : peso(data.cashTotal)}
@@ -290,50 +218,38 @@ export default function RecoveryDashboard({
               {data.inKindEstimatedValue != null && (
                 <p>{"Estimated in-kind value (self-reported)"}: {peso(data.inKindEstimatedValue)}</p>
               )}
-              <p role="note" className="recovery-dashboard-disclaimer" style={{ marginBottom: 16 }}>
-                {"These are user-recorded entries, not independently verified government assistance, approvals, or official receipts."}
-              </p>
+              <p role="note" className="recovery-dashboard-disclaimer">{"These are user-recorded entries, not independently verified government assistance, approvals, or official receipts."}</p>
+              <button type="button" className="btn btn-secondary btn-sm" onClick={() => onOpenAidLedger()}>
+                {"Open aid ledger"}
+              </button>
             </DashboardMetric>
 
-            <DashboardMetric
-              title={"Next steps & quick actions"}
-              icon={Compass}
-              footer={
-                <>
-                  <button type="button" className="btn btn-primary btn-sm" onClick={onStartCase}>
-                    <PlusCircle size={14} /> {"Start new case"}
-                  </button>
-                  <button type="button" className="btn btn-secondary btn-sm" onClick={() => onOpenAidLedger()}>
-                    {"Review aid ledger"}
-                  </button>
-                </>
-              }
-            >
-              {nextActions.length > 0 ? (
-                <div className="recovery-dashboard-action-list" style={{ marginTop: 8, marginBottom: 16 }}>
-                  {nextActions.map((action, index) => (
-                    <div className="recovery-dashboard-action" key={`${action.type}-${action.caseId || action.application?.id || index}`}>
-                      <div>
-                        <strong>{ACTION_LABELS[action.type] || 'Continue recovery workflow'}</strong>
-                        {action.recoveryCase && (
-                          <p className="card-subheading">
-                            {[action.recoveryCase.disaster_type, getCaseLocation(action.recoveryCase)].filter(Boolean).join(' · ')}
-                          </p>
-                        )}
-                      </div>
-                      <button type="button" className="btn btn-secondary btn-sm" onClick={() => runNextAction(action)}>
-                        {"Continue"} <ArrowRight size={14} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="card-subheading" style={{ marginBottom: 16 }}>
-                  {"You are all caught up. Start a new assessment or review your existing aid records anytime."}
-                </p>
-              )}
-            </DashboardMetric>
           </div>
+
+          {nextActions.length > 0 && (
+            <section className="recovery-dashboard-next-actions" aria-labelledby="recovery-next-actions-heading">
+              <h2 id="recovery-next-actions-heading" className="recovery-section-heading">
+                {"Next actions from your records"}
+              </h2>
+              <div className="recovery-dashboard-action-list">
+                {nextActions.map((action, index) => (
+                  <div className="recovery-dashboard-action" key={`${action.type}-${action.caseId || action.application?.id || index}`}>
+                    <div>
+                      <strong>{ACTION_LABELS[action.type] || 'Continue recovery workflow'}</strong>
+                      {action.recoveryCase && (
+                        <p className="card-subheading">
+                          {[action.recoveryCase.disaster_type, getCaseLocation(action.recoveryCase)].filter(Boolean).join(' · ')}
+                        </p>
+                      )}
+                    </div>
+                    <button type="button" className="btn btn-secondary btn-sm" onClick={() => runNextAction(action)}>
+                      {"Continue"} <ArrowRight size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
         </>
       )}
     </section>

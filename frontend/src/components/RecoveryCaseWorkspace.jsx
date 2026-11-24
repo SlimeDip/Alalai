@@ -1,200 +1,49 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  ArrowLeft,
-  ArrowRight,
-  ChevronDown,
-  ExternalLink,
-  FileText,
-  HandCoins,
-  RefreshCw,
-  ShieldAlert
-} from 'lucide-react';
+import { ArrowRight, FileText, HandCoins, RefreshCw, ShieldAlert } from 'lucide-react';
 import { fetchAccountApplications } from '../utils/applicationStorage';
 import { fetchOwnedRecoveryCases } from '../utils/assessmentApi';
 import {
+  createCaseApplicationContext,
   getRecoveryCaseDetailModel,
   getRecoveryCaseListView,
   getRelatedCaseApplications,
-  isUnavailableCaseValue,
-  normalizeRecoverySeverity
+  isUnavailableCaseValue
 } from '../utils/recoveryCaseWorkspace';
-import {
-  getAssessmentEligibilityModel,
-  getCatalogProgramPresentation,
-  getVisiblePrograms,
-  toggleExpandedRecommendation
-} from '../utils/subsidyPresentation';
-
-const INITIAL_PROGRAM_LIMIT = 3;
+import { getAssessmentEligibilityModel } from '../utils/subsidyPresentation';
 
 const SCREENING_OUTCOME_LABELS = {
-  potentialMatch: 'Potential match',
-  needsMoreInformation: 'Needs more information',
-  outcomeUnavailable: 'Information unavailable'
+  eligible: 'Likely eligible',
+  maybe: 'Potentially eligible',
+  ineligible: 'Not likely eligible',
+  unavailable: 'Information unavailable'
 };
 
-const SEVERITY_BADGE = {
-  severe: 'badge-severe',
-  moderate: 'badge-moderate',
-  low: 'badge-low',
-  unknown: 'badge-agency'
-};
-
-const HOUSEHOLD_LABELS = {
-  applicant_name: 'Applicant Full Name',
-  contact_number: 'Contact Number',
-  household_size: 'Household members',
-  household_members_count: 'Household members'
+const SCREENING_SECTION_LABELS = {
+  screeningReasons: 'Reasons',
+  screeningMissingInformation: 'Missing information',
+  screeningRestrictions: 'Restrictions'
 };
 
 function dateLabel(value) {
   if (!value) return '';
-  const text = String(value);
-  const date = new Date(text.includes(' ') ? `${text.replace(' ', 'T')}Z` : `${text}T00:00:00`);
+  const date = new Date(value.includes(' ') ? `${value.replace(' ', 'T')}Z` : `${value}T00:00:00`);
   return Number.isNaN(date.getTime())
-    ? text
-    : date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    ? value
+    : date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
 }
 
 function peso(value) {
-  return `₱${Number(value).toLocaleString('en-PH', { maximumFractionDigits: 2 })}`;
+  return `₱${Number(value).toLocaleString('en-PH', {
+    maximumFractionDigits: 2
+  })}`;
 }
 
 function displayCaseValue(value, fallback) {
   return isUnavailableCaseValue(value) ? fallback : value;
-}
-
-function Section({ id, title, count, description, defaultOpen = true, children }) {
-  const [open, setOpen] = useState(defaultOpen);
-  const panelId = `case-section-${id}`;
-  return (
-    <section className="recovery-case-section">
-      <h3 className="recovery-case-section-title">
-        <button
-          type="button"
-          className="recovery-case-section-toggle"
-          aria-expanded={open}
-          aria-controls={panelId}
-          onClick={() => setOpen((current) => !current)}
-        >
-          <span className="recovery-case-section-title-text">{title}</span>
-          {count != null && <span className="recovery-case-section-count">{count}</span>}
-          <ChevronDown size={18} aria-hidden className={open ? 'is-expanded' : ''} />
-        </button>
-      </h3>
-      <div id={panelId} className="recovery-case-section-panel" hidden={!open}>
-        {description && <p className="recovery-case-section-description">{description}</p>}
-        {children}
-      </div>
-    </section>
-  );
-}
-
-function ProgramRow({ program, expanded, onToggle }) {
-  const catalog = getCatalogProgramPresentation(program);
-  const detailsId = `case-program-${program.id || program.program_id || program.title}`.replace(/\s+/g, '-');
-  const sections = [
-    ['Why it appeared in screening', program.reasons],
-    ['Information to review or provide', program.missingInformation],
-    ['Conditions and limitations', program.restrictions]
-  ];
-
-  return (
-    <div className={`recovery-case-recommendation${expanded ? ' is-expanded' : ''}`}>
-      <button
-        type="button"
-        className="recovery-case-program-toggle"
-        aria-expanded={expanded}
-        aria-controls={detailsId}
-        onClick={onToggle}
-      >
-        <span className="recovery-case-program-summary">
-          <span className="recovery-case-program-name-group">
-            <span className="recovery-case-program-name">{program.title || 'Program title unavailable'}</span>
-            {(program.agency || catalog.agency) && (
-              <span className="recovery-case-program-agency">{program.agency || catalog.agency}</span>
-            )}
-          </span>
-          <span className={`subsidy-outcome subsidy-outcome--${program.outcomeClass}`}>
-            {SCREENING_OUTCOME_LABELS[program.outcomeKey] || 'Status unavailable'}
-          </span>
-        </span>
-        <ChevronDown size={18} aria-hidden className={expanded ? 'is-expanded' : ''} />
-      </button>
-
-      <div id={detailsId} className="recovery-case-program-details" hidden={!expanded}>
-        <div className="recovery-case-screening-details">
-          {sections.map(([label, items]) => (
-            <div key={label}>
-              <h4>{label}</h4>
-              {items.length
-                ? <ul>{items.map((item, index) => <li key={`${item}-${index}`}>{item}</li>)}</ul>
-                : <p>No details were returned for this section.</p>}
-            </div>
-          ))}
-        </div>
-        {(catalog.requirements.length > 0 || catalog.applicationSteps.length > 0) && (
-          <div className="recovery-case-program-catalog">
-            {catalog.requirements.length > 0 && (
-              <div>
-                <h4>Requirements listed</h4>
-                <ul>{catalog.requirements.map((item, index) => <li key={`${item}-${index}`}>{item}</li>)}</ul>
-              </div>
-            )}
-            {catalog.applicationSteps.length > 0 && (
-              <div>
-                <h4>Application steps listed</h4>
-                <ol>{catalog.applicationSteps.map((item, index) => <li key={`${item}-${index}`}>{item}</li>)}</ol>
-              </div>
-            )}
-          </div>
-        )}
-        {catalog.sourceUrl && (
-          <a className="subsidy-source-link" style={{ marginTop: 0 }} href={catalog.sourceUrl} target="_blank" rel="noreferrer">
-            Open program source or agency website <ExternalLink size={14} />
-          </a>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function Recommendations({ programs }) {
-  const [expandedIds, setExpandedIds] = useState(() => new Set());
-  const [showAll, setShowAll] = useState(false);
-  const list = getVisiblePrograms(programs, showAll, INITIAL_PROGRAM_LIMIT);
-
-  return (
-    <>
-      <p role="note" className="subsidy-screening-disclaimer">
-        {'This is preliminary screening, not an official eligibility determination. A program listed here does not guarantee approval. The screening may not account for every agency requirement. Verify current program details and requirements with the responsible agency.'}
-      </p>
-      <div className="recovery-case-recommendations" id="case-program-list">
-        {list.visiblePrograms.map((program, index) => {
-          const key = program.id || program.program_id || `${program.title || 'program'}-${index}`;
-          return (
-            <ProgramRow
-              key={key}
-              program={program}
-              expanded={expandedIds.has(key)}
-              onToggle={() => setExpandedIds((current) => toggleExpandedRecommendation(current, key))}
-            />
-          );
-        })}
-      </div>
-      {list.hasToggle && (
-        <button
-          type="button"
-          className="btn btn-secondary btn-sm recovery-case-recommendation-list-toggle"
-          aria-expanded={showAll}
-          aria-controls="case-program-list"
-          onClick={() => setShowAll((current) => !current)}
-        >
-          {showAll ? 'Show fewer programs' : `Show all ${list.total} programs`}
-        </button>
-      )}
-    </>
-  );
 }
 
 function CaseDetail({
@@ -202,11 +51,9 @@ function CaseDetail({
   applications,
   applicationsLoading,
   applicationsError,
-  onBack,
   onPrepareApplication,
   onOpenApplication,
-  onNavigateToWorkflow
-}) {
+  onNavigateToWorkflow}) {
   const detail = getRecoveryCaseDetailModel(recoveryCase);
   const eligibility = getAssessmentEligibilityModel({
     eligibility_results: recoveryCase.eligibility_results,
@@ -215,7 +62,12 @@ function CaseDetail({
   const losses = detail.losses;
   const relatedApplications = getRelatedCaseApplications(applications, recoveryCase.case_id);
   const location = displayCaseValue(detail.location, 'Location unavailable');
-  const severity = normalizeRecoverySeverity(recoveryCase.severity_level);
+  const householdLabels = {
+    applicant_name: "Applicant Full Name",
+    contact_number: "Contact Number",
+    household_size: "Household members",
+    household_members_count: "Household members"
+  };
   const hasHouseholdDetails = Object.keys(detail.household).length > 0;
   const hasAssessmentDetails = Boolean(
     recoveryCase.damage_summary
@@ -224,90 +76,57 @@ function CaseDetail({
     || recoveryCase.estimated_cost_min != null
     || recoveryCase.estimated_cost_max != null
   );
-  const hasNotes = Boolean(
-    recoveryCase.urgency
-    || recoveryCase.safety_precautions?.length
-    || recoveryCase.suggested_actions?.length
-  );
-  const canPrepare = Boolean(recoveryCase.case_id);
-
   return (
     <article className="modern-card recovery-case-detail">
-      <button type="button" className="btn btn-secondary btn-sm recovery-case-back" onClick={onBack}>
-        <ArrowLeft size={14} /> Back to cases
-      </button>
-
       <header className="modern-card-header">
         <div>
-          <p className="eyebrow">Case details</p>
-          <h2 className="card-heading-lg">{recoveryCase.disaster_type || 'Disaster type not recorded'}</h2>
-          <p className="card-subheading">{location}</p>
+          <p className="eyebrow">{"Case details"}</p>
+          <h2 className="card-heading-lg">{recoveryCase.disaster_type || "Disaster type not recorded"}</h2>
+          <p className="card-subheading">{location || "Location not recorded"}</p>
           <p className="card-subheading">
-            {[
-              recoveryCase.incident_date ? `Incident Date: ${dateLabel(recoveryCase.incident_date)}` : '',
-              recoveryCase.created_at ? `Created: ${dateLabel(recoveryCase.created_at)}` : ''
-            ].filter(Boolean).join(' · ')}
+            {recoveryCase.incident_date ? `${"Incident Date"}: ${dateLabel(recoveryCase.incident_date)}` : ''}
+            {recoveryCase.created_at ? ` · ${"Created"}: ${dateLabel(recoveryCase.created_at)}` : ''}
           </p>
         </div>
-        <span className={`badge ${SEVERITY_BADGE[severity]}`}>
-          {recoveryCase.severity_level || 'Severity not recorded'}
-        </span>
+        <span className="badge badge-agency">{recoveryCase.severity_level || "Severity not recorded"}</span>
       </header>
 
-      <p role="note" className="recovery-case-disclaimer">
-        Assessment outputs and amounts are estimates based on reported information. They are not verified losses, official eligibility decisions, or guarantees of assistance.
-      </p>
+      <p role="note" className="recovery-case-disclaimer">{"Assessment outputs and amounts are estimates based on reported information. They are not verified losses, official eligibility decisions, or guarantees of assistance."}</p>
 
-      <div className="recovery-case-action-layout">
-        <button
-          type="button"
-          className="btn btn-primary recovery-case-action-primary"
-          disabled={!canPrepare}
-          onClick={() => onPrepareApplication(recoveryCase)}
-        >
-          Prepare an application for this case <ArrowRight size={15} />
-        </button>
-        <div className="recovery-case-secondary-actions">
-          <button
-            type="button"
-            className="btn btn-secondary"
-            disabled={!canPrepare}
-            onClick={() => onNavigateToWorkflow('aid', recoveryCase.case_id)}
-          >
-            <HandCoins size={15} /> Open aid ledger for this case
-          </button>
-        </div>
-      </div>
-
-      <Section id="household" title="Household information">
+      <section className="recovery-case-section">
+        <h3 className="application-section-heading">{"Household information saved with this case"}</h3>
         {hasHouseholdDetails ? (
           <dl className="recovery-case-facts">
             {Object.entries(detail.household).map(([field, value]) => (
-              <div key={field}><dt>{HOUSEHOLD_LABELS[field] || field}</dt><dd>{value}</dd></div>
+              <div key={field}><dt>{householdLabels[field]}</dt><dd>{value}</dd></div>
             ))}
           </dl>
-        ) : <p className="card-subheading">No household or contact details were saved with this case.</p>}
-      </Section>
+        ) : <p className="card-subheading">{"No household or contact details were saved with this case."}</p>}
+      </section>
 
-      <Section id="assessment" title="Assessment summary">
+      <section className="recovery-case-section">
+        <h3 className="application-section-heading">{"Assessment summary"}</h3>
         {hasAssessmentDetails ? (
           <>
             {recoveryCase.damage_summary && <p>{recoveryCase.damage_summary}</p>}
             {recoveryCase.raw_description && (
               <p className="card-subheading" style={{ whiteSpace: 'pre-wrap' }}>
-                <strong>Reported damage details: </strong>{recoveryCase.raw_description}
+                <strong>{"Reported damage details"}: </strong>{recoveryCase.raw_description}
               </p>
+            )}
+            {recoveryCase.severity_level && (
+              <p><strong>{"Severity Level"}: </strong>{recoveryCase.severity_level}</p>
             )}
             {(recoveryCase.estimated_cost_min != null || recoveryCase.estimated_cost_max != null) && (
               <p>
-                <strong>Estimated recovery cost (not verified): </strong>
+                <strong>{"Estimated recovery cost (not verified)"}: </strong>
                 {recoveryCase.estimated_cost_min != null ? peso(recoveryCase.estimated_cost_min) : '—'}
                 {' – '}
                 {recoveryCase.estimated_cost_max != null ? peso(recoveryCase.estimated_cost_max) : '—'}
               </p>
             )}
           </>
-        ) : <p className="card-subheading">No assessment summary or estimate is available for this case.</p>}
+        ) : <p className="card-subheading">{"No assessment summary or estimate is available for this case."}</p>}
         {detail.damageCategories.length > 0 && (
           <div className="chip-row">
             {detail.damageCategories.map((category, index) => (
@@ -315,76 +134,115 @@ function CaseDetail({
             ))}
           </div>
         )}
-      </Section>
+      </section>
 
-      <Section id="losses" title="Recorded loss categories" count={losses.length} defaultOpen={losses.length > 0}>
+      <section className="recovery-case-section">
+        <h3 className="application-section-heading">{"Recorded loss categories"}</h3>
         {losses.length ? (
           <div className="recovery-case-loss-list">
-            {losses.map((loss, index) => (
-              <div className="flow-card recovery-case-loss" key={loss.loss_record_id || index}>
-                <strong>{loss.item_category || loss.item_name || loss.loss_type || 'Loss category not recorded'}</strong>
-                {loss.condition && <span>Recorded condition: {loss.condition}</span>}
+            {losses.map((loss) => (
+              <div className="flow-card recovery-case-loss" key={loss.loss_record_id}>
+                <strong>{loss.item_category || loss.item_name || loss.loss_type || "Loss category not recorded"}</strong>
+                {loss.condition && <span>{"Recorded condition"}: {loss.condition}</span>}
                 {loss.estimated_loss_php != null && (
-                  <span>Estimated loss (not verified): {peso(loss.estimated_loss_php)}</span>
+                  <span>{"Estimated loss (not verified)"}: {peso(loss.estimated_loss_php)}</span>
                 )}
                 {loss.description && <p>{loss.description}</p>}
               </div>
             ))}
           </div>
-        ) : <p className="card-subheading">No separate loss records are available for this case.</p>}
-      </Section>
+        ) : <p className="card-subheading">{"No separate loss records are available for this case."}</p>}
+      </section>
 
-      {hasNotes && (
-        <Section id="notes" title="Assessment notes" defaultOpen={false}>
-          {recoveryCase.urgency && <p><strong>Assessment urgency: </strong>{recoveryCase.urgency}</p>}
+      {(recoveryCase.urgency
+        || recoveryCase.safety_precautions?.length
+        || recoveryCase.suggested_actions?.length
+        || eligibility.state === 'results') && (
+        <section className="recovery-case-section">
+          <h3 className="application-section-heading">{"Assessment notes"}</h3>
+          {recoveryCase.urgency && <p><strong>{"Assessment urgency"}: </strong>{recoveryCase.urgency}</p>}
           {recoveryCase.safety_precautions?.length > 0 && (
             <>
-              <strong>Safety precautions suggested by the assessment</strong>
+              <strong>{"Safety precautions suggested by the assessment"}</strong>
               <ul>{recoveryCase.safety_precautions.map((item, index) => <li key={index}>{item}</li>)}</ul>
             </>
           )}
           {recoveryCase.suggested_actions?.length > 0 && (
             <>
-              <strong>Suggested next steps</strong>
+              <strong>{"Suggested next steps"}</strong>
               <ul>{recoveryCase.suggested_actions.map((item, index) => <li key={index}>{item}</li>)}</ul>
             </>
           )}
-        </Section>
+          {eligibility.state === 'results' && (
+            <>
+              <strong>{"Possible program matches (not an official decision)"}</strong>
+              <p role="note" className="subsidy-screening-disclaimer">
+                {"This is preliminary screening, not an official eligibility determination. A program listed here does not guarantee approval. The screening may not account for every agency requirement. Verify current program details and requirements with the responsible agency."}
+              </p>
+              <div className="subsidy-grid">
+                {eligibility.programs.map((program, index) => (
+                  <article
+                    key={program.id || program.program_id || `${program.title || 'program'}-${index}`}
+                    className={`subsidy-card subsidy-screening-card subsidy-screening-card--${program.outcomeClass}`}
+                  >
+                    <div>
+                      <span className={`subsidy-outcome subsidy-outcome--${program.outcomeClass}`}>
+                        {SCREENING_OUTCOME_LABELS[program.outcomeKey] || 'Status unavailable'}
+                      </span>
+                      <h4>{program.title || "Program title unavailable"}</h4>
+                      <div className="subsidy-screening-details">
+                        {[
+                          ['screeningReasons', program.reasons],
+                          ['screeningMissingInformation', program.missingInformation],
+                          ['screeningRestrictions', program.restrictions]
+                        ].map(([label, items]) => (
+                          <div key={label}>
+                            <strong>{SCREENING_SECTION_LABELS[label] || label}</strong>
+                            {items.length
+                              ? <ul>{items.map((item, itemIndex) => <li key={`${item}-${itemIndex}`}>{item}</li>)}</ul>
+                              : <p>{"No details were returned for this section."}</p>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </>
+          )}
+        </section>
       )}
 
-      {eligibility.state === 'results' && (
-        <Section
-          id="programs"
-          title="Possible program matches"
-          count={eligibility.programs.length}
-          description="Not an official decision. Select a program to see why it appeared."
-        >
-          <Recommendations programs={eligibility.programs} />
-        </Section>
-      )}
-
-      <Section
-        id="applications"
-        title="Applications linked to this case"
-        count={applicationsLoading ? null : relatedApplications.length}
-      >
-        {applicationsLoading && <p role="status" className="card-subheading">Loading…</p>}
-        {applicationsError && <p role="alert" className="alert alert-error">{applicationsError}</p>}
+      <section className="recovery-case-section">
+        <div className="recovery-case-section-heading">
+          <h3 className="application-section-heading">{"Applications linked to this case"}</h3>
+          {applicationsLoading && <span role="status">{"Loading…"}</span>}
+        </div>
+        {applicationsError && <p role="alert" className="recovery-case-error">{applicationsError}</p>}
         {!applicationsLoading && !applicationsError && relatedApplications.length === 0 && (
-          <p className="card-subheading">No saved applications are linked to this case.</p>
+          <p className="card-subheading">{"No saved applications are linked to this case."}</p>
         )}
         {relatedApplications.map((application) => (
           <div className="recovery-case-related-application" key={application.id}>
             <div>
               <strong>{application.reference_number}</strong>
-              <p className="card-subheading">{[application.applicant_name, application.status].filter(Boolean).join(' · ')}</p>
+              <p className="card-subheading">{application.applicant_name} · {application.status}</p>
             </div>
             <button type="button" className="btn btn-secondary btn-sm" onClick={() => onOpenApplication(application)}>
-              <FileText size={14} /> Open application
+              <FileText size={14} /> {"Open application"}
             </button>
           </div>
         ))}
-      </Section>
+      </section>
+
+      <div className="recovery-case-actions">
+        <button type="button" className="btn btn-primary" onClick={() => onPrepareApplication(recoveryCase)}>
+          {"Prepare an application for this case"} <ArrowRight size={15} />
+        </button>
+        <button type="button" className="btn btn-secondary" onClick={() => onNavigateToWorkflow('aid', recoveryCase.case_id)}>
+          <HandCoins size={15} /> {"Open aid ledger for this case"}
+        </button>
+      </div>
     </article>
   );
 }
@@ -447,32 +305,27 @@ export default function RecoveryCaseWorkspace({
     refresh();
   }, [isAccountUser, refresh]);
 
-  // Only show the full-page loader on first load; keep the list on screen while refreshing.
   const listView = useMemo(
-    () => getRecoveryCaseListView({ cases, loading: loading && cases.length === 0, error }),
+    () => getRecoveryCaseListView({ cases, loading, error }),
     [cases, loading, error]
   );
   const selectedCase = cases.find((item) => item.case_id === selectedCaseId);
 
-  const selectCase = (caseId) => {
-    setSelectedCaseId(caseId);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
   if (!isAccountUser) {
     return (
-      <div className="modern-card recovery-case-guest">
+      <div className="modern-card">
         <div className="modern-card-header">
           <div>
-            <p className="eyebrow">Recovery case workspace</p>
-            <h1 className="card-heading">Guest cases are not recoverable here</h1>
+            <p className="eyebrow">{"Recovery case workspace"}</p>
+            <h1 className="card-heading">{"Guest cases are not recoverable here"}</h1>
           </div>
-          <ShieldAlert size={25} color="var(--primary)" aria-hidden />
+          <ShieldAlert size={25} color="var(--primary)" />
         </div>
-        <p className="card-subheading">Guest assessments are not linked to an account and cannot be retrieved from this workspace or another device.</p>
+        <p className="card-subheading">{"Guest assessments are not linked to an account and cannot be retrieved from this workspace or another device."}</p>
+        <p>{"Your current assessment may still be open in this browser. Sign in before creating a new assessment to save future cases to your account."}</p>
         <div className="recovery-case-actions">
-          <button type="button" className="btn btn-primary" onClick={onOpenLogin}>Sign In</button>
-          <button type="button" className="btn btn-secondary" onClick={onStartAssessment}>Start New Case</button>
+          <button type="button" className="btn btn-primary" onClick={onOpenLogin}>{"Sign In"}</button>
+          <button type="button" className="btn btn-secondary" onClick={onStartAssessment}>{"Start New Case"}</button>
         </div>
       </div>
     );
@@ -480,69 +333,67 @@ export default function RecoveryCaseWorkspace({
 
   return (
     <div className="recovery-case-workspace">
-      <div className="modern-card-header recovery-case-workspace-header">
+      <div className="modern-card-header">
         <div>
-          <p className="eyebrow">Recovery case workspace</p>
-          <h1 className="card-heading-lg">Your Recovery Cases</h1>
-          <p className="card-subheading">Review saved case details and continue to the related assistance workflows.</p>
+          <p className="eyebrow">{"Recovery case workspace"}</p>
+          <h1 className="card-heading-lg">{"Your Recovery Cases"}</h1>
+          <p className="card-subheading">{"Review saved case details and continue to the related assistance workflows."}</p>
         </div>
         <div className="recovery-case-actions">
           <button type="button" className="btn btn-secondary btn-sm" onClick={refresh} disabled={loading}>
-            <RefreshCw size={14} className={loading ? 'spin' : ''} /> {loading ? 'Loading…' : 'Refresh'}
+            <RefreshCw size={14} /> {loading ? "Loading…" : "Refresh"}
           </button>
           <button type="button" className="btn btn-primary btn-sm" onClick={onStartAssessment}>
-            Start New Case <ArrowRight size={14} />
+            {"Start New Case"} <ArrowRight size={14} />
           </button>
         </div>
       </div>
 
       {error && (
         <div role="alert" className="recovery-case-error">
-          <span>{error}</span>
-          <button type="button" className="btn btn-secondary btn-sm" onClick={refresh}>Try again</button>
+          {error}
+          <button type="button" className="btn btn-secondary btn-sm" onClick={refresh}>{"Try again"}</button>
         </div>
       )}
 
-      {listView.state === 'loading' && <p role="status" className="modern-card">Loading your recovery cases…</p>}
+      {listView.state === 'loading' && <p role="status" className="modern-card">{"Loading your recovery cases…"}</p>}
       {listView.state === 'error' && (
-        <div className="modern-card recovery-case-empty">
-          <p>Your recovery cases could not be loaded.</p>
-          <button type="button" className="btn btn-primary" onClick={refresh}>Try again</button>
+        <div className="modern-card">
+          <p>{"Your recovery cases could not be loaded."}</p>
+          <button type="button" className="btn btn-primary" onClick={refresh}>{"Try again"}</button>
         </div>
       )}
       {listView.state === 'empty' && (
         <div className="modern-card recovery-case-empty">
-          <h2 className="card-heading">No saved recovery cases yet</h2>
-          <p className="card-subheading">Complete a damage assessment while signed in to save a case to your account.</p>
-          <button type="button" className="btn btn-primary" onClick={onStartAssessment}>Start New Case</button>
+          <h2 className="card-heading">{"No saved recovery cases yet"}</h2>
+          <p className="card-subheading">{"Complete a damage assessment while signed in to save a case to your account."}</p>
+          <button type="button" className="btn btn-primary" onClick={onStartAssessment}>{"Start New Case"}</button>
         </div>
       )}
 
       {listView.state === 'list' && (
-        <div className={`recovery-case-workspace-grid${selectedCase ? ' has-selection' : ''}`}>
-          <section className="modern-card recovery-case-list-panel" aria-label="Your Recovery Cases">
-            <div className="recovery-case-list-heading">
-              <h2>Saved cases</h2>
-              <span>{cases.length}</span>
-            </div>
+        <div className="recovery-case-workspace-grid">
+          <section className="modern-card recovery-case-list-panel" aria-label={"Your Recovery Cases"}>
+            <h2 className="application-section-heading">{"Saved cases"} ({cases.length})</h2>
             <div className="recovery-case-list">
-              {listView.cases.map((recoveryCase) => {
-                const selected = selectedCaseId === recoveryCase.case_id;
-                return (
-                  <button
-                    type="button"
-                    key={recoveryCase.case_id}
-                    className={`recovery-case-list-item${selected ? ' is-selected' : ''}`}
-                    aria-pressed={selected}
-                    onClick={() => selectCase(recoveryCase.case_id)}
-                  >
-                    <strong>{recoveryCase.disaster_type || 'Disaster type not recorded'}</strong>
-                    <span>{getRecoveryCaseDetailModel(recoveryCase).location || 'Location not recorded'}</span>
-                    {recoveryCase.incident_date && <span>Incident Date: {dateLabel(recoveryCase.incident_date)}</span>}
-                    {recoveryCase.created_at && <span>Created: {dateLabel(recoveryCase.created_at)}</span>}
-                  </button>
-                );
-              })}
+              {listView.cases.map((recoveryCase) => (
+                <button
+                  type="button"
+                  key={recoveryCase.case_id}
+                  className={`recovery-case-list-item${selectedCaseId === recoveryCase.case_id ? ' is-selected' : ''}`}
+                  aria-pressed={selectedCaseId === recoveryCase.case_id}
+                  onClick={() => setSelectedCaseId(recoveryCase.case_id)}
+                >
+                  <strong>{recoveryCase.disaster_type || "Disaster type not recorded"}</strong>
+                  <span>{getRecoveryCaseDetailModel(recoveryCase).location || "Location not recorded"}</span>
+                  {recoveryCase.incident_date && (
+                    <span>{"Incident Date"}: {dateLabel(recoveryCase.incident_date)}</span>
+                  )}
+                  {recoveryCase.created_at && (
+                    <span>{"Created"}: {dateLabel(recoveryCase.created_at)}</span>
+                  )}
+                </button>
+              ))}
             </div>
           </section>
 
@@ -553,15 +404,14 @@ export default function RecoveryCaseWorkspace({
               applications={applications}
               applicationsLoading={applicationsLoading}
               applicationsError={applicationsError}
-              onBack={() => setSelectedCaseId('')}
               onPrepareApplication={onPrepareApplication}
               onOpenApplication={onOpenApplication}
               onNavigateToWorkflow={onNavigateToWorkflow}
             />
           ) : (
-            <div className="modern-card recovery-case-empty recovery-case-placeholder">
-              <h2 className="card-heading">Select a recovery case</h2>
-              <p className="card-subheading">Choose a case from the list to inspect its saved assessment and loss records.</p>
+            <div className="modern-card recovery-case-empty">
+              <h2 className="card-heading">{"Select a recovery case"}</h2>
+              <p className="card-subheading">{"Choose a case from the list to inspect its saved assessment and loss records."}</p>
             </div>
           )}
         </div>
