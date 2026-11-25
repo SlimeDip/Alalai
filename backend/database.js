@@ -242,6 +242,7 @@ export function initDatabase() {
       case_id TEXT REFERENCES recovery_cases(case_id) ON DELETE SET NULL,
       user_id TEXT REFERENCES users(user_id) ON DELETE SET NULL,
       reference_number TEXT UNIQUE NOT NULL,
+      application_name TEXT,
       applicant_name TEXT NOT NULL,
       applicant_age INTEGER,
       birth_date TEXT,
@@ -368,6 +369,7 @@ export function initDatabase() {
 
   const applicationColumns = tableColumns('applications');
   const applicationDetailColumns = [
+    ['application_name', 'TEXT'],
     ['birth_date', 'TEXT'],
     ['sex', 'TEXT'],
     ['occupation', 'TEXT'],

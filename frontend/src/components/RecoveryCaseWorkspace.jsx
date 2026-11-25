@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft,
   ArrowRight,
@@ -6,15 +6,28 @@ import {
   ExternalLink,
   FileText,
   FolderOpen,
+  Pencil,
+  Check,
+  X,
   MapPin,
   CalendarDays,
   HandCoins,
   RefreshCw,
-  ShieldAlert
+  ShieldAlert,
+  Trash2,
+  AlertTriangle,
+  Send
 } from 'lucide-react';
-import { fetchAccountApplications } from '../utils/applicationStorage';
-import { fetchOwnedRecoveryCases } from '../utils/assessmentApi';
+import { fetchAccountApplications, getApplicationProgram, getApplicationTitle } from '../utils/applicationStorage';
 import {
+  deleteRecoveryCase,
+  fetchCaseDeletionImpact,
+  fetchOwnedRecoveryCases
+} from '../utils/assessmentApi';
+import { getCaseNames, getCaseTitle, saveCaseName } from '../utils/caseNames';
+import {
+  describeCaseDeletion,
+  findApplicationForProgram,
   getRecoveryCaseDetailModel,
   getRecoveryCaseListView,
   getRelatedCaseApplications,
@@ -93,7 +106,14 @@ function Section({ id, title, count, description, defaultOpen = true, children }
   );
 }
 
-function ProgramRow({ program, expanded, onToggle }) {
+function ProgramRow({
+  program,
+  expanded,
+  onToggle,
+  existingApplication,
+  onApply,
+  onOpenApplication
+}) {
   const catalog = getCatalogProgramPresentation(program);
   const detailsId = `case-program-${program.id || program.program_id || program.title}`.replace(/\s+/g, '-');
   const sections = [
@@ -101,29 +121,66 @@ function ProgramRow({ program, expanded, onToggle }) {
     ['Information to review or provide', program.missingInformation],
     ['Conditions and limitations', program.restrictions]
   ];
+  const maxAmount = Number(program.max_amount_php);
+  const canApply = typeof program.title === 'string' && program.title.trim().length > 0;
 
   return (
-    <div className={`recovery-case-recommendation${expanded ? ' is-expanded' : ''}`}>
-      <button
-        type="button"
-        className="recovery-case-program-toggle"
-        aria-expanded={expanded}
-        aria-controls={detailsId}
-        onClick={onToggle}
-      >
-        <span className="recovery-case-program-summary">
-          <span className="recovery-case-program-name-group">
-            <span className="recovery-case-program-name">{program.title || 'Program title unavailable'}</span>
-            {(program.agency || catalog.agency) && (
-              <span className="recovery-case-program-agency">{program.agency || catalog.agency}</span>
-            )}
+    <div className={`recovery-case-recommendation case-program${expanded ? ' is-expanded' : ''}`}>
+      <div className="case-program-main">
+        <button
+          type="button"
+          className="recovery-case-program-toggle"
+          aria-expanded={expanded}
+          aria-controls={detailsId}
+          onClick={onToggle}
+        >
+          <span className="recovery-case-program-summary">
+            <span className="recovery-case-program-name-group">
+              <span className="recovery-case-program-name">{program.title || 'Program title unavailable'}</span>
+              {(program.agency || catalog.agency) && (
+                <span className="recovery-case-program-agency">{program.agency || catalog.agency}</span>
+              )}
+            </span>
+            <span className={`subsidy-outcome subsidy-outcome--${program.outcomeClass}`}>
+              {SCREENING_OUTCOME_LABELS[program.outcomeKey] || 'Status unavailable'}
+            </span>
           </span>
-          <span className={`subsidy-outcome subsidy-outcome--${program.outcomeClass}`}>
-            {SCREENING_OUTCOME_LABELS[program.outcomeKey] || 'Status unavailable'}
-          </span>
-        </span>
-        <ChevronDown size={18} aria-hidden className={expanded ? 'is-expanded' : ''} />
-      </button>
+          <ChevronDown size={18} aria-hidden className={expanded ? 'is-expanded' : ''} />
+        </button>
+
+        <div className="case-program-actions">
+          {maxAmount > 0 ? (
+            <span className="case-program-amount">
+              Up to <strong>{peso(maxAmount)}</strong>
+              <small>planning estimate</small>
+            </span>
+          ) : <span />}
+          {existingApplication ? (
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={() => onOpenApplication(existingApplication)}
+              title="You already saved an application for this program"
+            >
+              <FileText size={14} /> Open application
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="btn btn-primary btn-sm"
+              disabled={!canApply}
+              onClick={() => onApply(program)}
+            >
+              Apply for this program <Send size={14} aria-hidden />
+            </button>
+          )}
+        </div>
+        {existingApplication && (
+          <p className="case-program-existing">
+            Application saved: {getApplicationTitle(existingApplication)}
+          </p>
+        )}
+      </div>
 
       <div id={detailsId} className="recovery-case-program-details" hidden={!expanded}>
         <div className="recovery-case-screening-details">
@@ -162,7 +219,7 @@ function ProgramRow({ program, expanded, onToggle }) {
   );
 }
 
-function Recommendations({ programs }) {
+function Recommendations({ programs, applications, caseId, onApply, onOpenApplication }) {
   const [expandedIds, setExpandedIds] = useState(() => new Set());
   const [showAll, setShowAll] = useState(false);
   const list = getVisiblePrograms(programs, showAll, INITIAL_PROGRAM_LIMIT);
@@ -181,6 +238,9 @@ function Recommendations({ programs }) {
               program={program}
               expanded={expandedIds.has(key)}
               onToggle={() => setExpandedIds((current) => toggleExpandedRecommendation(current, key))}
+              existingApplication={findApplicationForProgram(applications, caseId, program)}
+              onApply={onApply}
+              onOpenApplication={onOpenApplication}
             />
           );
         })}
@@ -200,15 +260,114 @@ function Recommendations({ programs }) {
   );
 }
 
+function DeleteCaseDialog({ recoveryCase, caseTitle, csrfToken, onCancel, onDeleted }) {
+  const [impact, setImpact] = useState(null);
+  const [loadError, setLoadError] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+  const cancelRef = useRef(null);
+
+  useEffect(() => {
+    let active = true;
+    fetchCaseDeletionImpact(recoveryCase.case_id)
+      .then((result) => { if (active) setImpact(result); })
+      .catch((error) => { if (active) setLoadError(error.message); });
+    return () => { active = false; };
+  }, [recoveryCase.case_id]);
+
+  useEffect(() => {
+    cancelRef.current?.focus();
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape' && !deleting) onCancel();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [deleting, onCancel]);
+
+  const { removes, keeps } = describeCaseDeletion(impact);
+
+  const confirmDelete = async () => {
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      await deleteRecoveryCase(recoveryCase.case_id, csrfToken);
+      onDeleted(recoveryCase.case_id);
+    } catch (error) {
+      setDeleteError(error.message);
+      setDeleting(false);
+    }
+  };
+
+  return (
+    <div className="case-dialog-backdrop" onMouseDown={(event) => {
+      if (event.target === event.currentTarget && !deleting) onCancel();
+    }}>
+      <div
+        className="case-dialog"
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="delete-case-title"
+        aria-describedby="delete-case-description"
+      >
+        <div className="case-dialog-icon" aria-hidden><AlertTriangle size={22} /></div>
+        <h2 id="delete-case-title">Delete this recovery case?</h2>
+        <p id="delete-case-description" className="case-dialog-lead">
+          <strong>{caseTitle}</strong> will be permanently deleted. This cannot be undone.
+        </p>
+
+        {!impact && !loadError && <p role="status" className="card-subheading">Checking what will be deleted…</p>}
+        {loadError && <p role="alert" className="alert alert-error">{loadError}</p>}
+
+        {impact && (
+          <div className="case-dialog-impact">
+            <h3>What happens</h3>
+            <ul>
+              <li>The case, its assessment and screening results are deleted.</li>
+              {removes.map((item) => <li key={item}>{item} will be deleted.</li>)}
+              {keeps.map((item) => <li key={item} className="is-kept">{item}.</li>)}
+            </ul>
+          </div>
+        )}
+        {deleteError && <p role="alert" className="alert alert-error">{deleteError}</p>}
+
+        <div className="case-dialog-actions">
+          <button
+            type="button"
+            ref={cancelRef}
+            className="btn btn-secondary"
+            onClick={onCancel}
+            disabled={deleting}
+          >
+            Keep case
+          </button>
+          <button
+            type="button"
+            className="btn btn-danger"
+            onClick={confirmDelete}
+            disabled={!impact || deleting}
+          >
+            <Trash2 size={15} /> {deleting ? 'Deleting…' : 'Delete case permanently'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function CaseDetail({
   recoveryCase,
+  customName,
+  onRename,
   applications,
   applicationsLoading,
   applicationsError,
   onBack,
   onPrepareApplication,
+  onApplyToProgram,
   onOpenApplication,
-  onNavigateToWorkflow
+  onNavigateToWorkflow,
+  csrfToken,
+  onDeleted
 }) {
   const detail = getRecoveryCaseDetailModel(recoveryCase);
   const eligibility = getAssessmentEligibilityModel({
@@ -235,6 +394,16 @@ function CaseDetail({
   const canPrepare = Boolean(recoveryCase.case_id);
 
   const [tab, setTab] = useState('overview');
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+  const [draftName, setDraftName] = useState('');
+  const title = customName || recoveryCase.disaster_type || 'Disaster type not recorded';
+  const startRename = () => { setDraftName(customName || recoveryCase.disaster_type || ''); setRenaming(true); };
+  const commitRename = (event) => {
+    event?.preventDefault();
+    onRename(recoveryCase.case_id, draftName.trim() === recoveryCase.disaster_type ? '' : draftName);
+    setRenaming(false);
+  };
   const hasCost = recoveryCase.estimated_cost_min != null || recoveryCase.estimated_cost_max != null;
   const programCount = eligibility.state === 'results' ? eligibility.programs.length : 0;
   const tabs = [
@@ -252,7 +421,30 @@ function CaseDetail({
 
       <header className="recovery-case-head">
         <div>
-          <h2 className="card-heading-lg">{recoveryCase.disaster_type || 'Disaster type not recorded'}</h2>
+          {renaming ? (
+            <form className="recovery-case-rename" onSubmit={commitRename}>
+              <input
+                autoFocus
+                className="form-input"
+                aria-label="Case name"
+                maxLength={80}
+                value={draftName}
+                onChange={(e) => setDraftName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Escape') setRenaming(false); }}
+                placeholder="Name this case"
+              />
+              <button type="submit" className="btn btn-primary btn-sm" aria-label="Save name"><Check size={14} /></button>
+              <button type="button" className="btn btn-secondary btn-sm" aria-label="Cancel" onClick={() => setRenaming(false)}><X size={14} /></button>
+            </form>
+          ) : (
+            <h2 className="card-heading-lg recovery-case-title">
+              <span>{title}</span>
+              <button type="button" className="recovery-case-rename-btn" onClick={startRename} aria-label="Rename case" title="Rename case">
+                <Pencil size={15} />
+              </button>
+            </h2>
+          )}
+          {customName && <p className="recovery-case-detail-meta">{recoveryCase.disaster_type}</p>}
           <p className="recovery-case-detail-meta"><MapPin size={14} aria-hidden /> {location}</p>
           <p className="recovery-case-detail-meta"><CalendarDays size={14} aria-hidden /> {[
             recoveryCase.incident_date ? `Incident: ${dateLabel(recoveryCase.incident_date)}` : '',
@@ -297,7 +489,23 @@ function CaseDetail({
         >
           <HandCoins size={15} /> Aid ledger
         </button>
+        <button
+          type="button"
+          className="btn btn-secondary case-delete-btn"
+          onClick={() => setConfirmingDelete(true)}
+        >
+          <Trash2 size={15} /> Delete case
+        </button>
       </div>
+      {confirmingDelete && (
+        <DeleteCaseDialog
+          recoveryCase={recoveryCase}
+          caseTitle={title}
+          csrfToken={csrfToken}
+          onCancel={() => setConfirmingDelete(false)}
+          onDeleted={onDeleted}
+        />
+      )}
 
       <div className="recovery-case-tabs" role="tablist" aria-label="Case sections">
         {tabs.map((t) => (
@@ -386,7 +594,15 @@ function CaseDetail({
           ) : <p className="card-subheading">No loss records for this case.</p>
         )}
 
-        {tab === 'programs' && programCount > 0 && <Recommendations programs={eligibility.programs} />}
+        {tab === 'programs' && programCount > 0 && (
+          <Recommendations
+            programs={eligibility.programs}
+            applications={applications}
+            caseId={recoveryCase.case_id}
+            onApply={(program) => onApplyToProgram(recoveryCase, program)}
+            onOpenApplication={onOpenApplication}
+          />
+        )}
 
         {tab === 'applications' && (
           <>
@@ -398,8 +614,12 @@ function CaseDetail({
             {relatedApplications.map((application) => (
               <div className="recovery-case-related-application" key={application.id}>
                 <div>
-                  <strong>{application.reference_number}</strong>
-                  <p className="card-subheading">{[application.applicant_name, application.status].filter(Boolean).join(' · ')}</p>
+                  <strong>{getApplicationTitle(application)}</strong>
+                  <p className="card-subheading">{[
+                    getApplicationProgram(application) && `For ${getApplicationProgram(application)}`,
+                    application.applicant_name,
+                    application.status
+                  ].filter(Boolean).join(' · ')}</p>
                 </div>
                 <button type="button" className="btn btn-secondary btn-sm" onClick={() => onOpenApplication(application)}>
                   <FileText size={14} /> Open
@@ -415,10 +635,12 @@ function CaseDetail({
 
 export default function RecoveryCaseWorkspace({
   user,
+  csrfToken,
   initialCaseId = '',
   onOpenLogin,
   onStartAssessment,
   onPrepareApplication,
+  onApplyToProgram,
   onOpenApplication,
   onNavigateToWorkflow
 }) {
@@ -427,6 +649,7 @@ export default function RecoveryCaseWorkspace({
   const [selectedCaseId, setSelectedCaseId] = useState('');
   const [loading, setLoading] = useState(false);
   const [applicationsLoading, setApplicationsLoading] = useState(false);
+  const [caseNames, setCaseNames] = useState(() => getCaseNames());
   const [error, setError] = useState('');
   const [applicationsError, setApplicationsError] = useState('');
   const isAccountUser = Boolean(user && !user.isGuest);
@@ -477,6 +700,20 @@ export default function RecoveryCaseWorkspace({
     [cases, loading, error]
   );
   const selectedCase = cases.find((item) => item.case_id === selectedCaseId);
+
+  const renameCase = (caseId, name) => setCaseNames(saveCaseName(caseId, name));
+
+  const handleCaseDeleted = (caseId) => {
+    setCases((current) => current.filter((item) => item.case_id !== caseId));
+    setCaseNames(saveCaseName(caseId, ''));
+    setSelectedCaseId('');
+    // Saved applications stay, but are no longer linked to the deleted case.
+    setApplications((current) => current.map((application) => (
+      application.case_id === caseId
+        ? { ...application, case_id: null, assessment_id: null }
+        : application
+    )));
+  };
 
   const selectCase = (caseId) => {
     setSelectedCaseId(caseId);
@@ -557,7 +794,7 @@ export default function RecoveryCaseWorkspace({
                     onClick={() => selectCase(recoveryCase.case_id)}
                   >
                     <span className="recovery-case-list-top">
-                      <strong>{recoveryCase.disaster_type || 'Disaster type not recorded'}</strong>
+                      <strong>{getCaseTitle(recoveryCase, caseNames)}</strong>
                       {recoveryCase.severity_level && (
                         <span className={`badge ${SEVERITY_BADGE[normalizeRecoverySeverity(recoveryCase.severity_level)]}`}>{recoveryCase.severity_level}</span>
                       )}
@@ -576,13 +813,18 @@ export default function RecoveryCaseWorkspace({
             <CaseDetail
               key={selectedCase.case_id}
               recoveryCase={selectedCase}
+              customName={caseNames[selectedCase.case_id] || ''}
+              onRename={renameCase}
               applications={applications}
               applicationsLoading={applicationsLoading}
               applicationsError={applicationsError}
               onBack={() => setSelectedCaseId('')}
               onPrepareApplication={onPrepareApplication}
+              onApplyToProgram={onApplyToProgram}
               onOpenApplication={onOpenApplication}
               onNavigateToWorkflow={onNavigateToWorkflow}
+              csrfToken={csrfToken}
+              onDeleted={handleCaseDeleted}
             />
           ) : (
             <div className="modern-card recovery-case-empty recovery-case-placeholder">

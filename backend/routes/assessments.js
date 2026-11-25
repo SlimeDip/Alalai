@@ -347,4 +347,79 @@ router.get('/:id', requireAuthenticatedUser, (req, res) => {
   }
 });
 
+function recoveryDocumentCount(caseId) {
+  const table = db.prepare(
+    "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'recovery_documents'"
+  ).get();
+  if (!table) return 0;
+  return db.prepare('SELECT COUNT(*) AS total FROM recovery_documents WHERE case_id = ?')
+    .get(caseId).total;
+}
+
+function caseDeletionImpact(caseId, userId) {
+  const count = (sql) => db.prepare(sql).get(caseId, userId).total;
+  return {
+    loss_records: db.prepare('SELECT COUNT(*) AS total FROM loss_records WHERE case_id = ?')
+      .get(caseId).total,
+    recovery_plans: db.prepare('SELECT COUNT(*) AS total FROM recovery_plans WHERE case_id = ?')
+      .get(caseId).total,
+    aid_records: count('SELECT COUNT(*) AS total FROM aid_ledger WHERE case_id = ? AND user_id = ?'),
+    linked_applications: count(
+      'SELECT COUNT(*) AS total FROM applications WHERE case_id = ? AND user_id = ?'
+    ),
+    documents: recoveryDocumentCount(caseId)
+  };
+}
+
+// Preview what deleting a case would remove, so the app can warn before anything is lost.
+router.get('/:id/delete-impact', requireAuthenticatedUser, (req, res) => {
+  try {
+    const row = db.prepare('SELECT case_id FROM recovery_cases WHERE case_id = ? AND user_id = ?')
+      .get(req.params.id, req.user.user_id);
+    if (!row) {
+      return res.status(404).json({ success: false, error: 'Recovery case not found.' });
+    }
+    res.json({ success: true, data: caseDeletionImpact(row.case_id, req.user.user_id) });
+  } catch (error) {
+    console.error('Error checking case deletion impact:', error);
+    res.status(500).json({ success: false, error: 'Database error checking the recovery case.' });
+  }
+});
+
+// Permanently delete a recovery case. Loss records, recovery plans and aid ledger entries are
+// removed with it; saved applications are kept and simply become unlinked.
+router.delete('/:id', requireAuthenticatedUser, (req, res) => {
+  try {
+    const row = db.prepare('SELECT case_id FROM recovery_cases WHERE case_id = ? AND user_id = ?')
+      .get(req.params.id, req.user.user_id);
+    if (!row) {
+      return res.status(404).json({ success: false, error: 'Recovery case not found.' });
+    }
+
+    if (recoveryDocumentCount(row.case_id) > 0) {
+      return res.status(409).json({
+        success: false,
+        error: 'This case has uploaded documents. Remove them before deleting the case.'
+      });
+    }
+
+    const impact = db.transaction(() => {
+      const summary = caseDeletionImpact(row.case_id, req.user.user_id);
+      db.prepare('UPDATE applications SET case_id = NULL WHERE case_id = ? AND user_id = ?')
+        .run(row.case_id, req.user.user_id);
+      db.prepare('DELETE FROM aid_ledger WHERE case_id = ?').run(row.case_id);
+      db.prepare('DELETE FROM loss_records WHERE case_id = ?').run(row.case_id);
+      db.prepare('DELETE FROM recovery_plans WHERE case_id = ?').run(row.case_id);
+      db.prepare('DELETE FROM recovery_cases WHERE case_id = ? AND user_id = ?')
+        .run(row.case_id, req.user.user_id);
+      return summary;
+    })();
+
+    res.json({ success: true, message: 'Recovery case deleted.', data: impact });
+  } catch (error) {
+    console.error('Error deleting recovery case:', error);
+    res.status(500).json({ success: false, error: 'Database error deleting the recovery case.' });
+  }
+});
+
 export default router;

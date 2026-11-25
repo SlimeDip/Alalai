@@ -18,6 +18,7 @@ import {
   Tornado,
   Waves,
   Sun,
+  CloudFog,
   ImagePlus,
   X,
 } from 'lucide-react';
@@ -31,7 +32,7 @@ const DISASTERS = [
   { value: 'Earthquake', icon: Activity, title: 'Earthquake', description: 'Ground shaking, cracked walls, collapsed structures' },
   { value: 'Landslide', icon: Mountain, title: 'Landslide / Mudflow', description: 'Soil erosion, mud ingress, foundation damage' },
   { value: 'Fire', icon: Flame, title: 'Fire Incident', description: 'Residential fire or electrical fire damage' },
-  { value: 'Volcanic Eruption', icon: Mountain, title: 'Volcanic Ashfall', description: 'Heavy ash on roof, air quality emergency' },
+  { value: 'Volcanic Eruption', icon: CloudFog, title: 'Volcanic Ashfall', description: 'Heavy ash on roof, air quality emergency' },
   { value: 'Tornado', icon: Tornado, title: 'Tornado', description: 'Extreme rotating winds and structural damage' },
   { value: 'Storm Surge', icon: Waves, title: 'Storm Surge', description: 'Coastal flooding caused by a severe storm' },
   { value: 'Drought', icon: Sun, title: 'Drought', description: 'Extended lack of rain affecting water and livelihoods' },
@@ -54,10 +55,9 @@ const COST_TIERS = [
 ];
 
 const SCREENING_OUTCOME_LABELS = {
-  eligible: 'Likely eligible',
-  maybe: 'Potentially eligible',
-  ineligible: 'Not likely eligible',
-  unavailable: 'Information unavailable'
+  potentialMatch: 'Potential match',
+  needsMoreInformation: 'Needs more info',
+  outcomeUnavailable: 'Not screened'
 };
 
 export default function DamageAssessmentForm({ user, csrfToken, onSelectSubsidyForApplication, onViewReliefOptions }) {
@@ -278,20 +278,36 @@ export default function DamageAssessmentForm({ user, csrfToken, onSelectSubsidyF
           <h2 className="card-heading-lg">{"Select the Disaster You Experienced"}</h2>
           <p className="card-subheading-lg">{"Please choose which calamity affected your home or livelihood."}</p>
 
-          <div className="disaster-grid">
-            {DISASTERS.map(({ value, icon: Icon, title, description }) => (
-              <button
-                key={value}
-                type="button"
-                className={`disaster-card ${formData.disasterType === value ? 'selected' : ''}`}
-                onClick={() => selectDisaster(value)}
-              >
-                <Icon size={28} strokeWidth={1.75} aria-hidden />
-                <strong>{title}</strong>
-                <span>{description}</span>
-              </button>
-            ))}
+          <div className="disaster-grid" role="group" aria-label="Type of disaster">
+            {DISASTERS.map(({ value, icon: Icon, title, description }) => {
+              const selected = formData.disasterType === value;
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  className={`disaster-card ${selected ? 'selected' : ''}`}
+                  aria-pressed={selected}
+                  onClick={() => selectDisaster(value)}
+                >
+                  <span className="disaster-card-icon" aria-hidden>
+                    <Icon size={22} strokeWidth={1.9} />
+                  </span>
+                  <span className="disaster-card-text">
+                    <strong>{title}</strong>
+                    <span>{description}</span>
+                  </span>
+                  <span className="disaster-card-check" aria-hidden>
+                    {selected && <Check size={14} strokeWidth={3} />}
+                  </span>
+                </button>
+              );
+            })}
           </div>
+          <p className="disaster-selected-note" role="status" aria-live="polite">
+            {formData.disasterType
+              ? <>Selected: <strong>{DISASTERS.find((item) => item.value === formData.disasterType)?.title}</strong></>
+              : 'No disaster selected yet.'}
+          </p>
 
           <div className="form-group" style={{ maxWidth: 280, marginTop: 20 }}>
             <label className="form-label">
@@ -315,8 +331,45 @@ export default function DamageAssessmentForm({ user, csrfToken, onSelectSubsidyF
         </div>
       )}
 
+      {currentStep === 2 && loading && (
+        <div className="analyzing" role="status" aria-live="polite" aria-busy="true">
+          <span className="sr-only">{"Analyzing your damage report. Please wait."}</span>
+          <div className="modern-card results-card">
+            <div className="sk-row sk-between">
+              <div className="sk-col">
+                <div className="sk sk-line sk-w-20" />
+                <div className="sk sk-title sk-w-60" />
+              </div>
+              <div className="sk sk-pill" />
+            </div>
+            <div className="sk-grid-2">
+              <div className="sk sk-box" />
+              <div className="sk sk-box" />
+            </div>
+            <div className="sk sk-line sk-w-100" />
+            <div className="sk sk-line sk-w-80" />
+            <div className="sk sk-callout" />
+          </div>
+          <p className="analyzing-label">{"Analyzing your damage and matching aid programs…"}</p>
+          <div className="sk-cards">
+            {[0, 1, 2].map((i) => (
+              <div className="modern-card sk-card" key={i}>
+                <div className="sk-row sk-between">
+                  <div className="sk sk-chip" />
+                  <div className="sk sk-line sk-w-20" />
+                </div>
+                <div className="sk sk-title sk-w-80" />
+                <div className="sk sk-line sk-w-100" />
+                <div className="sk sk-line sk-w-60" />
+                <div className="sk sk-btn" />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {currentStep === 2 && (
-        <div className="modern-card">
+        <div className="modern-card" style={loading ? { display: 'none' } : undefined}>
           <h2 className="card-heading-lg">{"How Would You Like to Detail the Damages?"}</h2>
           
           {!inputMethod && (
@@ -463,62 +516,76 @@ export default function DamageAssessmentForm({ user, csrfToken, onSelectSubsidyF
 
       {currentStep === 3 && result && (
         <div>
-          <div className="modern-card results-card">
-            <div className="results-header">
+          <div className="modern-card results-card report">
+            <header className="report-head">
               <div>
-                <span className="results-ref">REF: {result.id}</span>
-                <h2 className="card-heading-lg">{"Damage Assessment Summary"}</h2>
+                <p className="report-kicker">{"Damage assessment"}</p>
+                <h2 title={`Ref: ${result.id}`}>{"Assessment Summary"}</h2>
               </div>
               <span className={`badge ${getSeverityBadgeClass(result.severity_level)}`}>
                 {"Severity Level"}: {result.severity_level}
               </span>
-            </div>
+            </header>
 
-            <div className="results-metrics">
-              <div className="metric-box">
-                <span>{"Estimated Repair Cost"}</span>
-                <strong>
-                  ₱{result.estimated_cost_min?.toLocaleString()} – ₱{result.estimated_cost_max?.toLocaleString()}
-                </strong>
+            <dl className="report-figures">
+              <div className="report-figure report-figure--main">
+                <dt>{"Estimated repair cost"}</dt>
+                <dd>
+                  ₱{result.estimated_cost_min?.toLocaleString()}
+                  <span> – </span>
+                  ₱{result.estimated_cost_max?.toLocaleString()}
+                </dd>
               </div>
-              <div className="metric-box">
-                <span>{"Identified Damage Categories"}</span>
-                <div className="chip-row">
-                  {result.damage_categories?.map((cat, idx) => (
-                    <span key={idx} className="badge badge-agency">{cat}</span>
-                  ))}
-                </div>
+              <div className="report-figure">
+                <dt>{"Damage categories"}</dt>
+                <dd className="report-tags">
+                  {result.damage_categories?.length
+                    ? result.damage_categories.map((cat, idx) => <span key={idx}>{cat}</span>)
+                    : <em>{"None identified"}</em>}
+                </dd>
               </div>
-            </div>
+            </dl>
 
-            <p className="results-summary">{result.damage_summary}</p>
+            <section className="report-section">
+              <h3>{"Summary"}</h3>
+              <p>{result.damage_summary}</p>
+            </section>
 
             {result.safety_precautions?.length > 0 && (
-              <ul className="safety-list">
-                {result.safety_precautions.map((item, idx) => (
-                  <li key={idx}>{item}</li>
-                ))}
-              </ul>
+              <section className="report-section">
+                <details className="report-safety">
+                  <summary>
+                    <h3>{"Safety precautions"}</h3>
+                    <span>{result.safety_precautions.length}</span>
+                  </summary>
+                  <ul>
+                    {result.safety_precautions.map((item, idx) => (
+                      <li key={idx}>{item}</li>
+                    ))}
+                  </ul>
+                </details>
+              </section>
             )}
 
-            <button type="button" className="btn btn-secondary btn-sm" onClick={() => goStep(2)}>
-              <ArrowLeft size={14} /> {"Back"}
-            </button>
-            <div className="form-actions-row" style={{ marginTop: 20 }}>
-              <button type="button" className="btn btn-secondary" onClick={onViewReliefOptions}>
-                {"Browse all aid options"}
+            <footer className="report-foot">
+              <button type="button" className="btn btn-secondary" onClick={() => goStep(2)}>
+                <ArrowLeft size={14} /> {"Back"}
               </button>
-              <button type="button" className="btn btn-primary" onClick={startAnotherAssessment}>
-                {"Do another assessment"}
-              </button>
-            </div>
+              <div className="report-foot-right">
+                <button type="button" className="btn btn-secondary" onClick={onViewReliefOptions}>
+                  {"Browse all aid options"}
+                </button>
+                <button type="button" className="btn btn-primary" onClick={startAnotherAssessment}>
+                  {"New assessment"}
+                </button>
+              </div>
+            </footer>
           </div>
 
           <div style={{ marginTop: 28 }}>
-            <h3 className="card-heading-lg">{"Preliminary assistance screening"}</h3>
-            <p className="card-subheading-lg">{"These program comparisons use the information in this assessment."}</p>
+            <h3 className="card-heading-lg" style={{ marginBottom: 8 }}>{"Aid programs you may qualify for"}</h3>
             <p role="note" className="subsidy-screening-disclaimer">
-              {"This is preliminary screening, not an official eligibility determination. A program listed here does not guarantee approval. The screening may not account for every agency requirement. Verify current program details and requirements with the responsible agency."}
+              {"Preliminary screening only. Not an official decision. Confirm requirements with the agency."}
             </p>
 
             {eligibility.state === 'empty' ? (
@@ -530,49 +597,43 @@ export default function DamageAssessmentForm({ user, csrfToken, onSelectSubsidyF
                     key={sub.id || `${sub.title || 'program'}-${index}`}
                     className={`subsidy-card subsidy-screening-card subsidy-screening-card--${sub.outcomeClass}`}
                   >
-                    <div>
-                      <span className={`subsidy-outcome subsidy-outcome--${sub.outcomeClass}`}>
-                        {SCREENING_OUTCOME_LABELS[sub.outcomeKey] || 'Status unavailable'}
-                      </span>
-                      <h4 style={{ fontSize: 17, fontWeight: 700, margin: '8px 0 6px' }}>
+                    <div className="program-card-body">
+                      <div className="program-card-top">
+                        <span className={`subsidy-outcome subsidy-outcome--${sub.outcomeClass}`}>
+                          {SCREENING_OUTCOME_LABELS[sub.outcomeKey] || 'Status unavailable'}
+                        </span>
+                        <span className="program-card-amount">
+                          {Number(sub.amount_display) > 0
+                            ? `₱${Number(sub.amount_display).toLocaleString()}`
+                            : "Amount varies"}
+                        </span>
+                      </div>
+                      <h4 className="program-card-title">
                         {sub.title || "Program title unavailable"}
                       </h4>
                       {sub.short_description && (
-                        <p style={{ fontSize: 14, color: 'var(--slate-600)', marginBottom: 10 }}>
-                          {sub.short_description}
-                        </p>
+                        <p className="program-card-desc">{sub.short_description}</p>
                       )}
-                      <div className="subsidy-amount">
-                        {Number(sub.amount_display) > 0
-                          ? `₱${Number(sub.amount_display).toLocaleString()}`
-                          : "Amount varies"}
-                      </div>
-                      <div className="subsidy-screening-details">
-                        <div>
-                          <strong>{"Why it appeared in screening"}</strong>
-                          {sub.reasons.length
-                            ? <ul>{sub.reasons.map((reason, reasonIndex) => <li key={reasonIndex}>{reason}</li>)}</ul>
-                            : <p>{"No details were returned for this section."}</p>}
+                      <details className="program-card-more">
+                        <summary>{"See why it matched and what to prepare"}</summary>
+                        <div className="subsidy-screening-details">
+                          {[
+                            ["Why it appeared in screening", sub.reasons],
+                            ["Information to review or provide", sub.missingInformation],
+                            ["Conditions and limitations", sub.restrictions]
+                          ].map(([label, items]) => items.length > 0 && (
+                            <div key={label}>
+                              <strong>{label}</strong>
+                              <ul>{items.map((item, itemIndex) => <li key={itemIndex}>{item}</li>)}</ul>
+                            </div>
+                          ))}
                         </div>
-                        <div>
-                          <strong>{"Information to review or provide"}</strong>
-                          {sub.missingInformation.length
-                            ? <ul>{sub.missingInformation.map((item, itemIndex) => <li key={itemIndex}>{item}</li>)}</ul>
-                            : <p>{"No details were returned for this section."}</p>}
-                        </div>
-                        <div>
-                          <strong>{"Conditions and limitations"}</strong>
-                          {sub.restrictions.length
-                            ? <ul>{sub.restrictions.map((item, itemIndex) => <li key={itemIndex}>{item}</li>)}</ul>
-                            : <p>{"No details were returned for this section."}</p>}
-                        </div>
-                      </div>
+                      </details>
                     </div>
                     {sub.outcomeKey !== 'noCurrentMatch' && (
                       <button
                         type="button"
-                        className="btn btn-primary"
-                        style={{ width: '100%', marginTop: 16 }}
+                        className="btn btn-primary program-card-cta"
                         onClick={() =>
                           onSelectSubsidyForApplication({
                             subsidy: sub,

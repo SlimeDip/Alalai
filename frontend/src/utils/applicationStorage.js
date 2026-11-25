@@ -26,6 +26,38 @@ export const saveBrowserApplication = (application) => {
   return savedApplication;
 };
 
+export const APPLICATION_NAME_MAX_LENGTH = 80;
+
+export function normalizeApplicationName(name) {
+  return String(name ?? '').trim().slice(0, APPLICATION_NAME_MAX_LENGTH);
+}
+
+// A saved application is shown by its custom name when it has one, otherwise by its reference number.
+export function getApplicationTitle(application) {
+  return normalizeApplicationName(application?.application_name)
+    || application?.reference_number
+    || 'Untitled application';
+}
+
+// The aid program an application is for (applications are filed for one program).
+export function getApplicationProgram(application) {
+  const programs = Array.isArray(application?.applied_subsidies)
+    ? application.applied_subsidies
+    : [];
+  return programs.find((program) => typeof program === 'string' && program.trim()) || '';
+}
+
+export function renameBrowserApplication(id, name) {
+  const applicationName = normalizeApplicationName(name);
+  const next = readSavedApplications().map((application) => {
+    if (application.id !== id) return application;
+    const { application_name: _previous, ...rest } = application;
+    return applicationName ? { ...rest, application_name: applicationName } : rest;
+  });
+  writeSavedApplications(next);
+  return next;
+}
+
 async function request(path, { csrfToken, ...options } = {}) {
   const response = await fetch(path, {
     credentials: 'include',
@@ -79,4 +111,13 @@ export async function deleteAccountApplication(id, csrfToken) {
     method: 'DELETE',
     csrfToken
   });
+}
+
+export async function renameAccountApplication(id, name, csrfToken) {
+  const result = await request(`/api/applications/${encodeURIComponent(id)}/name`, {
+    method: 'PATCH',
+    csrfToken,
+    body: JSON.stringify({ name: normalizeApplicationName(name) })
+  });
+  return result.data;
 }

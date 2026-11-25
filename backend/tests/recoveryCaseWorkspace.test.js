@@ -100,3 +100,40 @@ test('application context and related applications use the exact recovery case I
   ], 'CASE-RECOVERY-1');
   assert.deepEqual(related.map((application) => application.id), ['APP-1']);
 });
+
+test('applying to a listed program carries the case and the program into the application', async () => {
+  const { createCaseProgramApplicationContext, findApplicationForProgram } =
+    await import('../../frontend/src/utils/recoveryCaseWorkspace.js');
+  const program = { id: 'dswd-ect', title: 'Emergency Cash Transfer (ECT)', max_amount_php: 10000 };
+
+  const context = createCaseProgramApplicationContext(recoveryCase, program);
+  assert.equal(context.caseId, recoveryCase.case_id);
+  assert.equal(context.subsidy, program);
+  assert.equal(context.returnTab, 'cases');
+  assert.throws(() => createCaseProgramApplicationContext(recoveryCase, { id: 'x' }), TypeError);
+
+  const applications = [
+    { id: 'APP-1', case_id: recoveryCase.case_id, applied_subsidies: ['Other program'] },
+    { id: 'APP-2', case_id: 'CASE-OTHER', applied_subsidies: ['Emergency Cash Transfer (ECT)'] },
+    { id: 'APP-3', case_id: recoveryCase.case_id, applied_subsidies: ['Emergency Cash Transfer (ECT)'] }
+  ];
+  assert.equal(findApplicationForProgram(applications, recoveryCase.case_id, program).id, 'APP-3');
+  assert.equal(findApplicationForProgram(applications, recoveryCase.case_id, { title: 'Nope' }), null);
+});
+
+test('case deletion warning lists what is removed and what is kept', async () => {
+  const { describeCaseDeletion } = await import('../../frontend/src/utils/recoveryCaseWorkspace.js');
+  const { removes, keeps } = describeCaseDeletion({
+    loss_records: 1,
+    recovery_plans: 2,
+    aid_records: 3,
+    linked_applications: 1
+  });
+  assert.deepEqual(removes, [
+    '1 loss record',
+    '2 recovery plan items',
+    '3 aid ledger entries you recorded for this case'
+  ]);
+  assert.deepEqual(keeps, ['1 saved application will be kept but no longer linked to this case']);
+  assert.deepEqual(describeCaseDeletion({}), { removes: [], keeps: [] });
+});

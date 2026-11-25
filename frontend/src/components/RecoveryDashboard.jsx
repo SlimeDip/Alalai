@@ -19,6 +19,7 @@ import {
   getRecoveryDashboardView,
   summarizeRecoveryDashboard
 } from '../utils/recoveryDashboard';
+import { getCaseTitle } from '../utils/caseNames';
 import { getCaseLocation } from '../utils/recoveryCaseWorkspace';
 
 const ACTION_LABELS = {
@@ -192,7 +193,7 @@ export default function RecoveryDashboard({
                     key={recoveryCase.case_id}
                     onClick={() => onOpenCases(recoveryCase.case_id)}
                   >
-                    <strong>{recoveryCase.disaster_type || "Disaster type not recorded"}</strong>
+                    <strong>{getCaseTitle(recoveryCase)}</strong>
                     <span>{getCaseLocation(recoveryCase) || "Location not recorded"}</span>
                     {recoveryCase.incident_date && (
                       <span>{"Incident Date"}: {dateLabel(recoveryCase.incident_date)}</span>
@@ -244,7 +245,7 @@ export default function RecoveryDashboard({
                       <strong>{ACTION_LABELS[action.type] || 'Continue recovery workflow'}</strong>
                       {action.recoveryCase && (
                         <p className="card-subheading">
-                          {[action.recoveryCase.disaster_type, getCaseLocation(action.recoveryCase)].filter(Boolean).join(' · ')}
+                          {[getCaseTitle(action.recoveryCase), getCaseLocation(action.recoveryCase)].filter(Boolean).join(' · ')}
                         </p>
                       )}
                     </div>

@@ -4,6 +4,11 @@ import { getCatalogProgramPresentation, getVisiblePrograms } from '../utils/subs
 
 const INITIAL_PROGRAM_LIMIT = 6;
 
+function agencyShort(agency = '') {
+  const match = agency.match(/\(([^)]+)\)/);
+  return match ? match[1] : agency;
+}
+
 export default function SubsidyCatalog({ onSelectSubsidyForApplication}) {
   const [subsidies, setSubsidies] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -66,33 +71,32 @@ export default function SubsidyCatalog({ onSelectSubsidyForApplication}) {
   return (
     <div>
       <div className="modern-card">
-        <h2 className="card-heading-lg">
+        <h2 className="card-heading-lg" style={{ marginBottom: 16 }}>
           <Layers size={22} color="var(--primary)" style={{ verticalAlign: 'middle', marginRight: 8 }} />
           {"Choose an Available Aid Program"}
         </h2>
-        <p className="card-subheading-lg">{"Choose a program below to pre-fill your printable application form."}</p>
-        <div className="form-group" style={{ marginTop: 20, maxWidth: 480 }}>
-          <label className="form-label"><Search size={15} /> {"Search aid programs"}</label>
-          <input
-            type="search"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder={"Program, agency, or disaster"}
-            className="form-input form-input-lg"
-          />
-        </div>
-        <div className="form-group" style={{ marginTop: 20, maxWidth: 480 }}>
-          <label className="form-label">
-            <SlidersHorizontal size={15} /> {"Filter by aid type"}
+        <div className="catalog-toolbar">
+          <label className="catalog-search">
+            <Search size={16} aria-hidden />
+            <input
+              type="search"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder={"Search program, agency, or disaster"}
+              aria-label={"Search aid programs"}
+            />
           </label>
-          <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="form-select form-input-lg">
-            <option value="all">{"All aid types"}</option>
-            <option value="general">{"General aid"}</option>
-            <option value="food">{"Food and essentials"}</option>
-            <option value="structural">{"Shelter and structural"}</option>
-            <option value="agricultural">{"Agriculture"}</option>
-            <option value="livelihood">{"Livelihood"}</option>
-          </select>
+          <label className="catalog-filter">
+            <SlidersHorizontal size={16} aria-hidden />
+            <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} aria-label={"Filter by aid type"}>
+              <option value="all">{"All aid types"}</option>
+              <option value="general">{"General aid"}</option>
+              <option value="food">{"Food and essentials"}</option>
+              <option value="structural">{"Shelter and structural"}</option>
+              <option value="agricultural">{"Agriculture"}</option>
+              <option value="livelihood">{"Livelihood"}</option>
+            </select>
+          </label>
         </div>
 
         {isLoading && (
@@ -110,29 +114,28 @@ export default function SubsidyCatalog({ onSelectSubsidyForApplication}) {
             {programList.visiblePrograms.map((sub) => {
               const program = getCatalogProgramPresentation(sub);
               return (
-              <div key={sub.id} className="subsidy-card">
-                <div>
-                  <span className="subsidy-agency">{sub.agency}</span>
-                  <h3 style={{ fontSize: 17, fontWeight: 700, margin: '5px 0 6px' }}>{sub.title}</h3>
-                  <p style={{ fontSize: 14, color: 'var(--slate-600)', marginBottom: 10 }}>{program.purpose}</p>
-                  <div className="subsidy-amount">
+              <div key={sub.id} className="subsidy-card catalog-card">
+                <div className="catalog-card-top">
+                  <span className="catalog-agency" title={sub.agency}>{agencyShort(sub.agency)}</span>
+                  <span className="catalog-amount">
                     {Number(sub.amount_display) > 0 ? `₱${Number(sub.amount_display).toLocaleString()}` : "Amount varies"}
-                  </div>
-                  {program.lastReviewedOn && (
-                    <p className="subsidy-meta">{"Last catalog review"}: {program.lastReviewedOn}</p>
-                  )}
+                  </span>
                 </div>
-                <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-                  <button type="button" className="btn btn-secondary btn-sm" style={{ flex: 1 }} onClick={() => setSelectedModalSubsidy(sub)}>
+                <h3 className="catalog-title">{sub.title}</h3>
+                <p className="catalog-purpose">{program.purpose}</p>
+                {program.lastReviewedOn && (
+                  <p className="catalog-meta">{"Reviewed"} {program.lastReviewedOn}</p>
+                )}
+                <div className="catalog-actions">
+                  <button type="button" className="btn btn-secondary btn-sm" onClick={() => setSelectedModalSubsidy(sub)}>
                     {"Details"}
                   </button>
                   <button
                     type="button"
                     className="btn btn-primary btn-sm"
-                    style={{ flex: 1 }}
                     onClick={() => onSelectSubsidyForApplication({ subsidy: sub, returnTab: 'subsidies' })}
                   >
-                    {"Choose This Program"}
+                    {"Choose"}
                     <ArrowRight size={14} />
                   </button>
                 </div>
@@ -158,60 +161,70 @@ export default function SubsidyCatalog({ onSelectSubsidyForApplication}) {
 
       {selectedModalSubsidy && (
         <div className="modal-overlay" onClick={() => setSelectedModalSubsidy(null)}>
-          <div className="modal-card" style={{ maxWidth: 560 }} onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header-row">
-              <h3>{selectedModalSubsidy.title}</h3>
-              <button type="button" className="icon-btn" onClick={() => setSelectedModalSubsidy(null)}>
+          <div className="modal-card catalog-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label={selectedModalSubsidy.title}>
+            <div className="catalog-modal-head">
+              <div>
+                {selectedModalSubsidy.agency && <span className="catalog-agency">{selectedModalSubsidy.agency}</span>}
+                <h3>{selectedModalSubsidy.title}</h3>
+              </div>
+              <button type="button" className="icon-btn" onClick={() => setSelectedModalSubsidy(null)} aria-label="Close">
                 <X size={20} />
               </button>
             </div>
-            {selectedModalSubsidy.agency && (
-              <p className="subsidy-agency">{selectedModalSubsidy.agency}</p>
-            )}
-            <div className="subsidy-amount">
-              {Number(selectedModalSubsidy.amount_display) > 0
-                ? `₱${Number(selectedModalSubsidy.amount_display).toLocaleString()}`
-                : "Amount varies"}
-            </div>
-            <h4>{"Program purpose"}</h4>
-            <p style={{ fontSize: 15, marginTop: 10 }}>
-              {selectedProgram.purpose || "No details provided in the catalog."}
-            </p>
-            {selectedModalSubsidy.details && selectedModalSubsidy.details !== selectedProgram.purpose && (
-              <>
-                <h4>{"Program details"}</h4>
-                <p style={{ fontSize: 15, marginTop: 10 }}>{selectedModalSubsidy.details}</p>
-              </>
-            )}
-            {selectedModalSubsidy.application_channel && (
-              <p className="subsidy-channel">{selectedModalSubsidy.application_channel}</p>
-            )}
-            <div className="subsidy-detail-columns">
-              <div>
-                <h4><CheckCircle2 size={15} /> {"Requirements listed"}</h4>
-                <ul>
-                  {selectedProgram.requirements.length
-                    ? selectedProgram.requirements.map((item, index) => <li key={`${item}-${index}`}>{item}</li>)
-                    : <li>{"No details provided in the catalog."}</li>}
-                </ul>
+
+            <div className="catalog-modal-body">
+              <div className="catalog-modal-amount">
+                <span>{"Planning amount"}</span>
+                <strong>
+                  {Number(selectedModalSubsidy.amount_display) > 0
+                    ? `₱${Number(selectedModalSubsidy.amount_display).toLocaleString()}`
+                    : "Amount varies"}
+                </strong>
               </div>
-              <div>
-                <h4><ListChecks size={15} /> {"Application steps listed"}</h4>
-                <ol>
-                  {selectedProgram.applicationSteps.length
-                    ? selectedProgram.applicationSteps.map((item, index) => <li key={`${item}-${index}`}>{item}</li>)
-                    : <li>{"No details provided in the catalog."}</li>}
-                </ol>
+
+              <section>
+                <h4>{"Program purpose"}</h4>
+                <p>{selectedProgram.purpose || "No details provided in the catalog."}</p>
+              </section>
+              {selectedModalSubsidy.details && selectedModalSubsidy.details !== selectedProgram.purpose && (
+                <section>
+                  <h4>{"Program details"}</h4>
+                  <p>{selectedModalSubsidy.details}</p>
+                </section>
+              )}
+              {selectedModalSubsidy.application_channel && (
+                <p className="subsidy-channel">{selectedModalSubsidy.application_channel}</p>
+              )}
+
+              <div className="catalog-modal-lists">
+                <section>
+                  <h4><CheckCircle2 size={15} /> {"Requirements"}</h4>
+                  <ul>
+                    {selectedProgram.requirements.length
+                      ? selectedProgram.requirements.map((item, index) => <li key={`${item}-${index}`}>{item}</li>)
+                      : <li>{"No details provided in the catalog."}</li>}
+                  </ul>
+                </section>
+                <section>
+                  <h4><ListChecks size={15} /> {"How to apply"}</h4>
+                  <ol>
+                    {selectedProgram.applicationSteps.length
+                      ? selectedProgram.applicationSteps.map((item, index) => <li key={`${item}-${index}`}>{item}</li>)
+                      : <li>{"No details provided in the catalog."}</li>}
+                  </ol>
+                </section>
               </div>
+
+              {selectedProgram.sourceUrl ? (
+                <a className="subsidy-source-link" href={selectedProgram.sourceUrl} target="_blank" rel="noreferrer">
+                  {"Open program source or agency website"} <ExternalLink size={14} />
+                </a>
+              ) : (
+                <p className="field-help">{"No source link is provided for this catalog entry. Contact the listed agency to confirm details."}</p>
+              )}
             </div>
-            {selectedProgram.sourceUrl ? (
-              <a className="subsidy-source-link" href={selectedProgram.sourceUrl} target="_blank" rel="noreferrer">
-                {"Open program source or agency website"} <ExternalLink size={14} />
-              </a>
-            ) : (
-              <p className="field-help">{"No source link is provided for this catalog entry. Contact the listed agency to confirm details."}</p>
-            )}
-            <div className="modal-actions">
+
+            <div className="catalog-modal-foot">
               <button type="button" className="btn btn-secondary" onClick={() => setSelectedModalSubsidy(null)}>
                 {"Close"}
               </button>

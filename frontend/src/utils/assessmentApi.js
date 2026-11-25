@@ -54,3 +54,32 @@ export async function fetchOwnedRecoveryCases() {
   }
   return cases;
 }
+
+async function caseRequest(path, { csrfToken, ...options } = {}) {
+  const response = await fetch(path, {
+    credentials: 'include',
+    ...options,
+    headers: {
+      ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
+      ...options.headers
+    }
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok || !result.success) {
+    throw new Error(result.error || 'Unable to complete the request for this recovery case.');
+  }
+  return result;
+}
+
+// What deleting a case would permanently remove, so the user can be warned first.
+export async function fetchCaseDeletionImpact(caseId) {
+  const result = await caseRequest(`/api/assessments/${encodeURIComponent(caseId)}/delete-impact`);
+  return result.data;
+}
+
+export async function deleteRecoveryCase(caseId, csrfToken) {
+  await caseRequest(`/api/assessments/${encodeURIComponent(caseId)}`, {
+    method: 'DELETE',
+    csrfToken
+  });
+}

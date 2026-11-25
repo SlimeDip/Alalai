@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { getAssessmentEligibilityModel, getCatalogProgramPresentation } from '../../frontend/src/utils/subsidyPresentation.js';
+import {
+  getAssessmentEligibilityModel,
+  getCatalogProgramPresentation,
+  getVisiblePrograms,
+  toggleExpandedRecommendation
+} from '../../frontend/src/utils/subsidyPresentation.js';
 
 test('assessment presentation shows recommendable outcomes with their returned explanations', () => {
   const model = getAssessmentEligibilityModel({

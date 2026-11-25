@@ -431,7 +431,7 @@ test('application saves require an explicit attestation and use only canonical r
     province: 'Leyte',
     city_municipality: 'Tacloban',
     barangay: 'Barangay 3',
-    applied_subsidies: [],
+    applied_subsidies: ['Emergency Cash Transfer (ECT)'],
     status: 'DRAFT'
   };
   const missingAttestation = await api('/api/applications', {
@@ -1039,7 +1039,7 @@ test('packet generation uses saved data, includes selected documents, and safely
       province: 'Leyte',
       city_municipality: 'Tacloban',
       barangay: 'Barangay 2',
-      applied_subsidies: [],
+      applied_subsidies: ['Emergency Cash Transfer (ECT)'],
       sworn_attestation: true,
       status: 'DRAFT'
     }
@@ -1233,4 +1233,200 @@ test('application deletion removes only the owned record', async () => {
   assert.equal(thirdDeleted.response.status, 200);
   const afterAllDeletes = await api('/api/applications');
   assert.equal(afterAllDeletes.result.data.length, 0);
+});
+
+test('every application must be for an aid program', async () => {
+  const base = {
+    applicant_name: 'Program Test Resident',
+    province: 'Leyte',
+    city_municipality: 'Tacloban',
+    barangay: 'Barangay 1',
+    sworn_attestation: true,
+    status: 'DRAFT'
+  };
+
+  const noProgram = await api('/api/applications', {
+    method: 'POST',
+    body: { ...base, applied_subsidies: [] }
+  });
+  assert.equal(noProgram.response.status, 400);
+  assert.match(noProgram.result.error, /aid program/);
+
+  const omitted = await api('/api/applications', { method: 'POST', body: base });
+  assert.equal(omitted.response.status, 400);
+
+  const created = await api('/api/applications', {
+    method: 'POST',
+    body: { ...base, applied_subsidies: ['Emergency Cash Transfer (ECT)'] }
+  });
+  assert.equal(created.response.status, 201);
+
+  const clearedProgram = await api(`/api/applications/${created.result.data.id}`, {
+    method: 'PUT',
+    body: { ...base, applied_subsidies: [] }
+  });
+  assert.equal(clearedProgram.response.status, 400);
+
+  const deleted = await api(`/api/applications/${created.result.data.id}`, { method: 'DELETE' });
+  assert.equal(deleted.response.status, 200);
+});
+
+test('saved applications can be renamed, cleared, and only by their owner', async () => {
+  const created = await api('/api/applications', {
+    method: 'POST',
+    body: {
+      applicant_name: 'Rename Test Resident',
+      province: 'Leyte',
+      city_municipality: 'Tacloban',
+      barangay: 'Barangay 1',
+      applied_subsidies: ['Emergency Cash Transfer (ECT)'],
+      sworn_attestation: true,
+      status: 'DRAFT'
+    }
+  });
+  assert.equal(created.response.status, 201);
+  const id = created.result.data.id;
+  const referenceNumber = created.result.data.reference_number;
+  assert.equal(created.result.data.application_name, null);
+
+  const renamed = await api(`/api/applications/${id}/name`, {
+    method: 'PATCH',
+    body: { name: '  Roof repair - ECT  ' }
+  });
+  assert.equal(renamed.response.status, 200);
+  assert.equal(renamed.result.data.application_name, 'Roof repair - ECT');
+  assert.equal(renamed.result.data.reference_number, referenceNumber);
+
+  // Editing the application content keeps the name.
+  const edited = await api(`/api/applications/${id}`, {
+    method: 'PUT',
+    body: { damage_summary: 'Updated summary', sworn_attestation: true }
+  });
+  assert.equal(edited.response.status, 200);
+  assert.equal(edited.result.data.application_name, 'Roof repair - ECT');
+
+  const tooLong = await api(`/api/applications/${id}/name`, {
+    method: 'PATCH',
+    body: { name: 'x'.repeat(81) }
+  });
+  assert.equal(tooLong.response.status, 400);
+
+  const notText = await api(`/api/applications/${id}/name`, {
+    method: 'PATCH',
+    body: { name: 42 }
+  });
+  assert.equal(notText.response.status, 400);
+
+  const otherUser = await register('rename-other@example.test');
+  const foreign = await fetch(`${baseUrl}/api/applications/${id}/name`, {
+    method: 'PATCH',
+    headers: {
+      Cookie: otherUser.cookie,
+      'X-CSRF-Token': otherUser.csrfToken,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ name: 'Not mine' })
+  });
+  assert.equal(foreign.status, 404);
+
+  const cleared = await api(`/api/applications/${id}/name`, {
+    method: 'PATCH',
+    body: { name: '   ' }
+  });
+  assert.equal(cleared.response.status, 200);
+  assert.equal(cleared.result.data.application_name, null);
+
+  await api(`/api/applications/${id}`, { method: 'DELETE' });
+});
+
+test('recovery cases report their impact and are deleted only by their owner', async () => {
+  const deletableCaseId = 'CASE-DELETE-TEST';
+  database.prepare(`
+    INSERT INTO recovery_cases (
+      case_id, user_id, disaster_type, province, city_municipality, barangay, severity_level
+    ) VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).run(deletableCaseId, userId, 'Flood', 'Leyte', 'Tacloban', 'Barangay 9', 'Low');
+  database.prepare(`
+    INSERT INTO loss_records (
+      loss_record_id, case_id, item_name, item_category, condition, loss_type
+    ) VALUES ('LOSS-DELETE-TEST', ?, 'Roof', 'structural', 'Low', 'structural')
+  `).run(deletableCaseId);
+  database.prepare(`
+    INSERT INTO recovery_plans (plan_id, case_id, category, priority_level)
+    VALUES ('PLAN-DELETE-TEST', ?, 'structural', 'Low')
+  `).run(deletableCaseId);
+  const aid = await api('/api/aid', {
+    method: 'POST',
+    body: {
+      case_id: deletableCaseId,
+      aid_type: 'CASH',
+      amount_php: 500,
+      source: 'Barangay',
+      received_on: '2026-10-05'
+    }
+  });
+  assert.equal(aid.response.status, 201);
+  const linked = await api('/api/applications', {
+    method: 'POST',
+    body: {
+      case_id: deletableCaseId,
+      applicant_name: 'Delete Test Resident',
+      province: 'Leyte',
+      city_municipality: 'Tacloban',
+      barangay: 'Barangay 9',
+      applied_subsidies: ['Emergency Cash Transfer (ECT)'],
+      sworn_attestation: true,
+      status: 'DRAFT'
+    }
+  });
+  assert.equal(linked.response.status, 201);
+
+  const impact = await api(`/api/assessments/${deletableCaseId}/delete-impact`);
+  assert.equal(impact.response.status, 200);
+  assert.equal(impact.result.data.loss_records, 1);
+  assert.equal(impact.result.data.recovery_plans, 1);
+  assert.equal(impact.result.data.aid_records, 1);
+  assert.equal(impact.result.data.linked_applications, 1);
+
+  const stranger = await register('case-delete-other@example.test');
+  const foreignDelete = await fetch(`${baseUrl}/api/assessments/${deletableCaseId}`, {
+    method: 'DELETE',
+    headers: { Cookie: stranger.cookie, 'X-CSRF-Token': stranger.csrfToken }
+  });
+  assert.equal(foreignDelete.status, 404);
+
+  const missingCsrf = await fetch(`${baseUrl}/api/assessments/${deletableCaseId}`, {
+    method: 'DELETE',
+    headers: { Cookie: cookie }
+  });
+  assert.equal(missingCsrf.status, 403);
+
+  const deleted = await api(`/api/assessments/${deletableCaseId}`, { method: 'DELETE' });
+  assert.equal(deleted.response.status, 200);
+
+  assert.equal(
+    database.prepare('SELECT COUNT(*) AS total FROM recovery_cases WHERE case_id = ?')
+      .get(deletableCaseId).total,
+    0
+  );
+  assert.equal(
+    database.prepare('SELECT COUNT(*) AS total FROM loss_records WHERE case_id = ?')
+      .get(deletableCaseId).total,
+    0
+  );
+  assert.equal(
+    database.prepare('SELECT COUNT(*) AS total FROM aid_ledger WHERE case_id = ?')
+      .get(deletableCaseId).total,
+    0
+  );
+
+  // The application is kept, just no longer linked to the deleted case.
+  const kept = await api(`/api/applications/${linked.result.data.id}`);
+  assert.equal(kept.response.status, 200);
+  assert.equal(kept.result.data.case_id, null);
+
+  const again = await api(`/api/assessments/${deletableCaseId}`, { method: 'DELETE' });
+  assert.equal(again.response.status, 404);
+
+  await api(`/api/applications/${linked.result.data.id}`, { method: 'DELETE' });
 });

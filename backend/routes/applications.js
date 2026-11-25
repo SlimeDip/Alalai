@@ -151,6 +151,10 @@ function validateApplicationPayload(body, { existing = null, userId } = {}) {
   )) {
     return { error: 'applied_subsidies must be an array of non-empty subsidy IDs or titles.' };
   }
+  // Every application must be for a specific aid program.
+  if (subsidies.length === 0) {
+    return { error: 'Choose the aid program this application is for.' };
+  }
   const existingSubsidies = existing
     ? JSON.parse(existing.applied_subsidies || '[]')
     : [];
@@ -490,6 +494,49 @@ router.get('/:id', (req, res) => {
   } catch (error) {
     console.error('Error fetching application:', error);
     res.status(500).json({ success: false, error: 'Database error fetching application.' });
+  }
+});
+
+const APPLICATION_NAME_MAX_LENGTH = 80;
+
+// Rename a saved application. The name is only a personal label shown instead of the
+// reference number, so it is allowed in any status and never touches the application's content.
+router.patch('/:id/name', (req, res) => {
+  try {
+    if (!isRecord(req.body) || (req.body.name != null && typeof req.body.name !== 'string')) {
+      return res.status(400).json({ success: false, error: 'name must be a string.' });
+    }
+    const name = (req.body.name ?? '').trim();
+    if (name.length > APPLICATION_NAME_MAX_LENGTH) {
+      return res.status(400).json({
+        success: false,
+        error: `name must be at most ${APPLICATION_NAME_MAX_LENGTH} characters.`
+      });
+    }
+
+    const result = db.prepare(`
+      UPDATE applications SET application_name = ?
+      WHERE application_id = ? AND user_id = ?
+    `).run(name || null, req.params.id, req.user.user_id);
+    if (result.changes === 0) {
+      return res.status(404).json({ success: false, error: 'Application not found.' });
+    }
+
+    const row = db.prepare('SELECT * FROM applications WHERE application_id = ?').get(req.params.id);
+    res.json({
+      success: true,
+      message: name ? 'Application renamed.' : 'Application name cleared.',
+      data: {
+        ...row,
+        id: row.application_id,
+        assessment_id: row.case_id,
+        household_members_detail: JSON.parse(row.household_members_detail || '[]'),
+        applied_subsidies: JSON.parse(row.applied_subsidies || '[]')
+      }
+    });
+  } catch (error) {
+    console.error('Error renaming application:', error);
+    res.status(500).json({ success: false, error: 'Database error renaming application.' });
   }
 });
 

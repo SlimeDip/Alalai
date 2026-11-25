@@ -16,9 +16,12 @@ import {
 } from 'lucide-react';
 import {
   saveBrowserApplication,
-  saveAccountApplication
+  saveAccountApplication,
+  getApplicationProgram
 } from '../utils/applicationStorage';
 import { fetchOwnedRecoveryCases } from '../utils/assessmentApi';
+import { fetchSubsidyCatalog } from '../utils/subsidyApi';
+import { getAssessmentEligibilityModel } from '../utils/subsidyPresentation';
 import { createApplicationFormData } from '../utils/applicationForm';
 import LocationFields from './LocationFields';
 
@@ -39,7 +42,17 @@ export default function OfficialApplicationView({
   const [recoveryCases, setRecoveryCases] = useState([]);
   const [casesLoading, setCasesLoading] = useState(false);
   const [casesError, setCasesError] = useState('');
+  const [catalog, setCatalog] = useState([]);
+  const [catalogError, setCatalogError] = useState('');
   const isAccountUser = Boolean(user && !user.isGuest);
+
+  useEffect(() => {
+    let active = true;
+    fetchSubsidyCatalog()
+      .then((subsidies) => { if (active) setCatalog(subsidies); })
+      .catch((error) => { if (active) setCatalogError(error.message); });
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -66,6 +79,28 @@ export default function OfficialApplicationView({
     return () => { active = false; };
   }, [isAccountUser, user]);
 
+  const selectedProgram = getApplicationProgram(formData);
+  const PROGRAM_REQUIRED_MESSAGE = 'Choose the aid program this application is for.';
+
+  const handleProgramChange = (event) => {
+    const title = event.target.value;
+    const previousProgram = catalog.find((subsidy) => subsidy.title === selectedProgram);
+    const nextProgram = catalog.find((subsidy) => subsidy.title === title);
+    setSaveError('');
+    setFormData((prev) => {
+      const previousAmount = Number(prev.requested_amount_php) || 0;
+      const amountUntouched = previousAmount === 0
+        || previousAmount === Number(previousProgram?.max_amount_php);
+      return {
+        ...prev,
+        applied_subsidies: title ? [title] : [],
+        ...(nextProgram && amountUntouched
+          ? { requested_amount_php: nextProgram.max_amount_php || 0 }
+          : {})
+      };
+    });
+  };
+
   const hasAgriculturalProgram = formData.applied_subsidies.some((program) =>
     /sure|crop insurance|pcic|agricultural|farm|fish/i.test(program)
   );
@@ -87,6 +122,11 @@ export default function OfficialApplicationView({
   };
 
   const handleDownloadPdfOrPrint = () => {
+    if (!selectedProgram) {
+      setSaveError(PROGRAM_REQUIRED_MESSAGE);
+      setActiveView('editor');
+      return;
+    }
     if (!formData.sworn_attestation) {
       setSaveError("Confirm the sworn attestation before saving or printing this application.");
       return;
@@ -95,11 +135,21 @@ export default function OfficialApplicationView({
   };
 
   const openPdfView = () => {
+    if (!selectedProgram) {
+      setSaveError(PROGRAM_REQUIRED_MESSAGE);
+      setActiveView('editor');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
     setActiveView('preview');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleSaveToDatabase = async () => {
+    if (!selectedProgram) {
+      setSaveError(PROGRAM_REQUIRED_MESSAGE);
+      return;
+    }
     if (!formData.sworn_attestation) {
       setSaveError("Confirm the sworn attestation before saving or printing this application.");
       return;
@@ -135,6 +185,16 @@ export default function OfficialApplicationView({
     }
   };
 
+  const linkedCase = recoveryCases.find((recoveryCase) => recoveryCase.case_id === formData.case_id);
+  const screenedProgramTitles = linkedCase
+    ? getAssessmentEligibilityModel({
+      eligibility_results: linkedCase.eligibility_results,
+      matched_subsidies: linkedCase.recommended_subsidies
+    }).programs
+      .map((program) => program.title)
+      .filter((title) => typeof title === 'string' && title.trim())
+    : [];
+
   const selectedCaseExists = recoveryCases.some(
     (recoveryCase) => recoveryCase.case_id === formData.case_id
   );
@@ -149,7 +209,12 @@ export default function OfficialApplicationView({
               <FileText size={20} color="var(--primary)" />
               {"Disaster Assistance Application"}
             </h2>
-            <p className="flow-subheading">{"Aid program"}: <strong>{formData.applied_subsidies[0] || "General aid"}</strong></p>
+            <p className="flow-subheading">
+              {"Application for"}:{' '}
+              {selectedProgram
+                ? <strong>{selectedProgram}</strong>
+                : <strong className="program-missing-text">No program chosen yet</strong>}
+            </p>
           </div>
 
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
@@ -203,7 +268,46 @@ export default function OfficialApplicationView({
       {activeView === 'editor' && (
         <div className="application-editor no-print">
           <section className="app-section">
-            <h3 className="app-section-title"><span>1</span>{"Link to a case (optional)"}</h3>
+            <h3 className="app-section-title"><span>1</span>{"Aid program"}</h3>
+            <div className="form-group">
+              <label className="form-label" htmlFor="application-program">
+                {"This application is for"} *
+              </label>
+              <select
+                id="application-program"
+                name="program"
+                value={selectedProgram}
+                onChange={handleProgramChange}
+                className={`form-select${saveError === PROGRAM_REQUIRED_MESSAGE ? ' is-invalid' : ''}`}
+                aria-required="true"
+                aria-invalid={saveError === PROGRAM_REQUIRED_MESSAGE}
+              >
+                <option value="">{"Select an aid program"}</option>
+                {selectedProgram && !catalog.some((subsidy) => subsidy.title === selectedProgram) && (
+                  <option value={selectedProgram}>{selectedProgram}</option>
+                )}
+                {screenedProgramTitles.length > 0 && (
+                  <optgroup label="Screened for the linked case">
+                    {screenedProgramTitles.map((title) => (
+                      <option key={`screened-${title}`} value={title}>{title}</option>
+                    ))}
+                  </optgroup>
+                )}
+                <optgroup label={screenedProgramTitles.length ? 'Other aid programs' : 'Aid programs'}>
+                  {catalog
+                    .filter((subsidy) => !screenedProgramTitles.includes(subsidy.title))
+                    .map((subsidy) => (
+                      <option key={subsidy.id || subsidy.title} value={subsidy.title}>{subsidy.title}</option>
+                    ))}
+                </optgroup>
+              </select>
+              <p className="field-help">{"Each application is filed for one program. The requested amount starts at that program's planning estimate and can be changed below."}</p>
+              {catalogError && <p role="alert" className="field-help">{catalogError}</p>}
+            </div>
+          </section>
+
+          <section className="app-section">
+            <h3 className="app-section-title"><span>2</span>{"Link to a case (optional)"}</h3>
             <div className="form-group">
             <label className="form-label" htmlFor="application-recovery-case">
               {"Recovery case"}
@@ -243,7 +347,7 @@ export default function OfficialApplicationView({
           </section>
 
           <section className="app-section">
-            <h3 className="app-section-title"><span>2</span>{"Applicant"}</h3>
+            <h3 className="app-section-title"><span>3</span>{"Applicant"}</h3>
             <div className="app-grid">
 <div className="form-group">
               <label className="form-label">{"Applicant Full Name"} *</label>
@@ -309,7 +413,7 @@ export default function OfficialApplicationView({
           </section>
 
           <section className="app-section">
-            <h3 className="app-section-title"><span>3</span>{"Identification"}</h3>
+            <h3 className="app-section-title"><span>4</span>{"Identification"}</h3>
             <div className="app-grid">
 <div className="form-group">
               <label className="form-label">{"Valid ID Type"}</label>
@@ -342,7 +446,7 @@ export default function OfficialApplicationView({
           </section>
 
           <section className="app-section">
-            <h3 className="app-section-title"><span>4</span>{"Home address"}</h3>
+            <h3 className="app-section-title"><span>5</span>{"Home address"}</h3>
             <LocationFields
               values={{
                 province: formData.province,
@@ -365,7 +469,7 @@ export default function OfficialApplicationView({
           </section>
 
           <section className="app-section">
-            <h3 className="app-section-title"><span>5</span>{"Household"}</h3>
+            <h3 className="app-section-title"><span>6</span>{"Household"}</h3>
             <div className="app-grid">
 <div className="form-group">
               <label className="form-label">Household members *</label>
@@ -411,7 +515,7 @@ export default function OfficialApplicationView({
           </section>
 
           <section className="app-section">
-            <h3 className="app-section-title"><span>6</span>{"Disaster and damage"}</h3>
+            <h3 className="app-section-title"><span>7</span>{"Disaster and damage"}</h3>
             <div className="app-grid">
 <div className="form-group">
               <label className="form-label">{"Disaster Event"}</label>
@@ -480,7 +584,7 @@ export default function OfficialApplicationView({
 
           {hasAgriculturalProgram && (
             <section className="app-section">
-              <h3 className="app-section-title"><span>7</span>{"Farm / fishery details"}</h3>
+              <h3 className="app-section-title"><span>8</span>{"Farm / fishery details"}</h3>
               <p className="field-help">{"Only for farmers or fisherfolk applying to an agricultural or crop-insurance program."}</p>
               <div className="form-grid">
                 <div className="form-group">
@@ -697,12 +801,10 @@ export default function OfficialApplicationView({
                     </td>
                   </tr>
                   <tr>
-                    <th>Hinihiling na Ayuda</th>
+                    <th>Programa / Hinihiling na Ayuda</th>
                     <td colSpan={3}>
                       <strong>
-                        {formData.applied_subsidies && formData.applied_subsidies.length > 0
-                          ? formData.applied_subsidies.join(', ')
-                          : 'Emergency shelter / family relief (local programs)'}
+                        {selectedProgram || '________________________ (program not chosen)'}
                       </strong>
                       <span style={{ marginLeft: 12 }}>
                         (Halaga: ₱{Number(formData.requested_amount_php || 0).toLocaleString()})

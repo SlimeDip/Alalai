@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { HandCoins, RefreshCw, Trash2, Pencil, X } from 'lucide-react';
+import { HandCoins, Package, Wallet, RefreshCw, Trash2, Pencil, X, Plus } from 'lucide-react';
 import { fetchOwnedRecoveryCases } from '../utils/assessmentApi';
+import { getCaseTitle } from '../utils/caseNames';
 import {
   createAidRecord,
   deleteAidRecord,
@@ -21,7 +22,7 @@ const emptyForm = {
 };
 
 function caseLabel(item) {
-  return `${item.disaster_type} — ${item.barangay}, ${item.city_municipality}`;
+  return `${getCaseTitle(item)} — ${item.barangay}, ${item.city_municipality}`;
 }
 
 function php(value) {
@@ -154,21 +155,21 @@ export default function AidLedger({ user, csrfToken, initialCaseId = '', onOpenL
 
   if (!isAccountUser) {
     return (
-      <div className="modern-card aid-ledger">
+      <div className="modern-card aid-ledger-guest">
+        <HandCoins size={32} color="var(--primary)" aria-hidden />
         <h1 className="card-heading">{"Aid Received Ledger"}</h1>
-        <p className="card-subheading">{"Sign in to privately save and access aid records across your devices."}</p>
+        <p className="card-subheading">{"Sign in to save and track the aid you receive."}</p>
         <button type="button" className="btn btn-primary" style={{ alignSelf: 'flex-start' }} onClick={onOpenLogin}>{"Sign In"}</button>
       </div>
     );
   }
 
   return (
-    <div className="modern-card">
-      <div className="modern-card-header">
+    <div className="aid-ledger">
+      <div className="aid-ledger-head">
         <div>
-          <h1 className="card-heading"><HandCoins size={21} color="var(--primary)" /> {"Aid Received Ledger"}</h1>
-          <p className="card-subheading">{"Record assistance your household has actually received. Applications or approvals do not create ledger entries."}</p>
-          <p role="note" style={{ color: 'var(--slate-600)', marginTop: 8 }}>{"These records are self-reported and are not official receipts or proof of agency distribution."}</p>
+          <h1 className="card-heading-lg" style={{ marginBottom: 4 }}>{"Aid Received Ledger"}</h1>
+          <p role="note" className="aid-ledger-note">{"Self-reported records. Not official receipts or proof of agency distribution."}</p>
         </div>
         <button type="button" className="btn btn-secondary btn-sm" onClick={refresh} disabled={loading}>
           <RefreshCw size={14} /> {loading ? "Loading…" : "Refresh"}
@@ -183,27 +184,30 @@ export default function AidLedger({ user, csrfToken, initialCaseId = '', onOpenL
 
       <section className="aid-ledger-summary" aria-label={"Aid summary"}>
         <div className="aid-ledger-stat">
-          <strong>{"Cash assistance received"}</strong>
+          <span className="aid-ledger-stat-icon"><Wallet size={18} aria-hidden /></span>
           <p>{php(summary.cash_total_php)}</p>
+          <strong>{"Cash received"}</strong>
         </div>
         <div className="aid-ledger-stat">
-          <strong>{"In-kind assistance entries"}</strong>
+          <span className="aid-ledger-stat-icon"><Package size={18} aria-hidden /></span>
           <p>{summary.in_kind_entries || 0}</p>
+          <strong>{"In-kind entries"}</strong>
         </div>
         {summary.valued_in_kind_entries > 0 && (
           <div className="aid-ledger-stat">
-            <strong>{"Estimated in-kind value (recorded values only)"}</strong>
+            <span className="aid-ledger-stat-icon"><HandCoins size={18} aria-hidden /></span>
             <p>{php(summary.in_kind_estimated_value_php)}</p>
+            <strong>{"In-kind value (recorded)"}</strong>
           </div>
         )}
       </section>
 
       <form className="aid-ledger-form" onSubmit={handleSubmit}>
-        <div className="modern-card-header" style={{ borderBottom: 0, paddingBottom: 0, marginBottom: 8 }}>
-          <h2 className="application-section-heading" style={{ margin: 0, borderBottom: 0 }}>{editingId ? "Edit aid record" : "Record aid received"}</h2>
+        <div className="aid-ledger-section-head">
+          <h2><Plus size={16} aria-hidden /> {editingId ? "Edit aid record" : "Record aid received"}</h2>
           {editingId && <button type="button" className="btn btn-secondary btn-sm" onClick={resetForm}><X size={14} /> Cancel</button>}
         </div>
-        <div className="form-grid">
+        <div className="app-grid">
           <label className="form-group">
             <span className="form-label">{"Recovery case"} *</span>
             <select className="form-select" required value={form.case_id} onChange={(event) => setField('case_id', event.target.value)}>
@@ -264,15 +268,17 @@ export default function AidLedger({ user, csrfToken, initialCaseId = '', onOpenL
             <input className="form-input" maxLength={2000} value={form.notes} onChange={(event) => setField('notes', event.target.value)} />
           </label>
         </div>
-        <button type="submit" className="btn btn-primary" disabled={saving || !cases.length}>
-          {saving ? "Saving…" : editingId ? "Save changes" : "Save aid record"}
-        </button>
+        <div className="aid-ledger-form-actions">
+          <button type="submit" className="btn btn-primary" disabled={saving || !cases.length}>
+            {saving ? "Saving…" : editingId ? "Save changes" : "Save aid record"}
+          </button>
+        </div>
         {cases.length === 0 && !loading && <p className="card-subheading">{"Save an account-backed recovery case before tracking a program."}</p>}
       </form>
 
       <section className="aid-ledger-history">
-        <h2 className="application-section-heading">{"Aid records"}</h2>
-        <div className="form-grid" style={{ marginBottom: 16 }}>
+        <div className="aid-ledger-section-head"><h2>{"Aid records"}</h2><span className="aid-ledger-count">{visibleRecords.length}</span></div>
+        <div className="aid-ledger-filters">
           <label className="form-group">
             <span className="form-label">{"Recovery case"}</span>
             <select className="form-select" value={caseFilter} onChange={(event) => setCaseFilter(event.target.value)}>
@@ -299,29 +305,27 @@ export default function AidLedger({ user, csrfToken, initialCaseId = '', onOpenL
         {visibleRecords.length === 0 ? (
           <div className="empty-state">{"No aid received has been recorded yet."}</div>
         ) : (
-          <div className="record-list">
+          <div className="aid-ledger-records">
             {visibleRecords.map((record) => (
               <article key={record.aid_id} className="aid-ledger-record">
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-                  <div>
-                    <span className="badge badge-agency">{record.aid_type === 'CASH' ? "Cash" : "In-kind"}</span>
-                    <h3 style={{ marginTop: 8 }}>{record.assistance_description || "Cash"}</h3>
-                    <p className="card-subheading">
-                      {"Source / organization"}: {record.source} · {"Date received"}: {record.received_on}
-                    </p>
+                <span className={`aid-ledger-record-icon ${record.aid_type === 'CASH' ? 'is-cash' : 'is-kind'}`}>
+                  {record.aid_type === 'CASH' ? <Wallet size={18} aria-hidden /> : <Package size={18} aria-hidden />}
+                </span>
+                <div className="aid-ledger-record-main">
+                  <h3>{record.assistance_description || "Cash"}</h3>
+                  <p>{record.source} · {record.received_on}{record.aid_type !== 'CASH' && record.quantity ? ` · ${"Quantity"}: ${record.quantity}` : ''}</p>
+                  {record.notes && <p className="aid-ledger-record-notes">{record.notes}</p>}
+                </div>
+                <div className="aid-ledger-record-side">
+                  <strong>
                     {record.aid_type === 'CASH'
-                      ? <p><strong>{php(record.amount_php)}</strong></p>
-                      : (
-                        <>
-                          {record.quantity && <p>{"Quantity"}: {record.quantity}</p>}
-                          {record.estimated_value_php != null && <p>{"Estimated value"}: {php(record.estimated_value_php)}</p>}
-                        </>
-                      )}
-                    {record.notes && <p>{record.notes}</p>}
-                  </div>
+                      ? php(record.amount_php)
+                      : record.estimated_value_php != null ? php(record.estimated_value_php) : '—'}
+                  </strong>
+                  {record.aid_type !== 'CASH' && record.estimated_value_php != null && <span>{"Estimated value"}</span>}
                   <div className="record-actions">
-                    <button type="button" className="btn btn-secondary btn-sm" onClick={() => beginEdit(record)}><Pencil size={14} /> {"Edit"}</button>
-                    <button type="button" className="btn btn-secondary btn-sm" onClick={() => handleDelete(record)}><Trash2 size={14} /> {"Delete"}</button>
+                    <button type="button" className="btn btn-secondary btn-sm" onClick={() => beginEdit(record)} aria-label={"Edit"}><Pencil size={14} /></button>
+                    <button type="button" className="btn btn-secondary btn-sm" onClick={() => handleDelete(record)} aria-label={"Delete"}><Trash2 size={14} /></button>
                   </div>
                 </div>
               </article>

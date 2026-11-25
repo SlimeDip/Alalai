@@ -4,13 +4,22 @@ import {
   Trash2,
   Eye,
   MapPin,
-  RefreshCw
+  RefreshCw,
+  Pencil,
+  Check,
+  X,
+  HandCoins
 } from 'lucide-react';
 import {
   readSavedApplications,
   writeSavedApplications,
   fetchAccountApplications,
-  deleteAccountApplication
+  deleteAccountApplication,
+  renameAccountApplication,
+  renameBrowserApplication,
+  getApplicationTitle,
+  getApplicationProgram,
+  APPLICATION_NAME_MAX_LENGTH
 } from '../utils/applicationStorage';
 
 export default function SavedApplicationsList({
@@ -23,6 +32,9 @@ export default function SavedApplicationsList({
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [renamingKey, setRenamingKey] = useState('');
+  const [draftName, setDraftName] = useState('');
+  const [renameSaving, setRenameSaving] = useState(false);
   const isAccountUser = Boolean(user && !user.isGuest);
 
   const refresh = useCallback(async () => {
@@ -49,7 +61,7 @@ export default function SavedApplicationsList({
   }, [refresh]);
 
   const handleDelete = async (item, accountBacked) => {
-    if (!window.confirm(`${"Delete record"} ${item.reference_number}?`)) return;
+    if (!window.confirm(`Delete "${getApplicationTitle(item)}"? This cannot be undone.`)) return;
     setError('');
     try {
       if (accountBacked) {
@@ -65,10 +77,48 @@ export default function SavedApplicationsList({
     }
   };
 
+  const rowKey = (item, accountBacked) => `${accountBacked ? 'account' : 'browser'}:${item.id}`;
+
+  const startRename = (item, accountBacked) => {
+    setError('');
+    setDraftName(item.application_name || '');
+    setRenamingKey(rowKey(item, accountBacked));
+  };
+
+  const cancelRename = () => {
+    setRenamingKey('');
+    setDraftName('');
+  };
+
+  const commitRename = async (event, item, accountBacked) => {
+    event.preventDefault();
+    setRenameSaving(true);
+    setError('');
+    try {
+      if (accountBacked) {
+        const updated = await renameAccountApplication(item.id, draftName, csrfToken);
+        setAccountApplications((previous) => previous.map((application) => (
+          application.id === item.id
+            ? { ...application, application_name: updated.application_name }
+            : application
+        )));
+      } else {
+        setBrowserApplications(renameBrowserApplication(item.id, draftName));
+      }
+      cancelRename();
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setRenameSaving(false);
+    }
+  };
+
   const filtered = useMemo(() => {
     const query = searchTerm.toLowerCase();
     const matches = (application) => (
-      (application.applicant_name || '').toLowerCase().includes(query)
+      (application.application_name || '').toLowerCase().includes(query)
+      || getApplicationProgram(application).toLowerCase().includes(query)
+      || (application.applicant_name || '').toLowerCase().includes(query)
       || (application.reference_number || '').toLowerCase().includes(query)
       || (application.city_municipality || '').toLowerCase().includes(query)
       || (application.province || '').toLowerCase().includes(query)
@@ -87,45 +137,106 @@ export default function SavedApplicationsList({
       </div>
     ) : (
       <div className="record-list">
-        {records.map((item) => (
-          <div key={item.id} className="record-row">
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                <strong style={{ fontSize: 15, color: 'var(--primary)' }}>
-                  {item.reference_number}
-                </strong>
-                <span className="badge badge-agency">{item.damage_level || "Draft"}</span>
-                <span style={{ fontSize: 12, color: 'var(--slate-500)' }}>
-                  {item.incident_date}
-                </span>
+        {records.map((item) => {
+          const key = rowKey(item, accountBacked);
+          const renaming = renamingKey === key;
+          const program = getApplicationProgram(item);
+          const hasCustomName = Boolean(item.application_name);
+          return (
+            <div key={item.id} className="record-row">
+              <div>
+                {renaming ? (
+                  <form
+                    className="record-rename"
+                    onSubmit={(event) => commitRename(event, item, accountBacked)}
+                  >
+                    <input
+                      autoFocus
+                      className="form-input"
+                      aria-label="Application name"
+                      maxLength={APPLICATION_NAME_MAX_LENGTH}
+                      value={draftName}
+                      placeholder={item.reference_number}
+                      onChange={(event) => setDraftName(event.target.value)}
+                      onKeyDown={(event) => { if (event.key === 'Escape') cancelRename(); }}
+                    />
+                    <button
+                      type="submit"
+                      className="btn btn-primary btn-sm"
+                      aria-label="Save name"
+                      disabled={renameSaving}
+                    >
+                      <Check size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      aria-label="Cancel renaming"
+                      onClick={cancelRename}
+                    >
+                      <X size={14} />
+                    </button>
+                  </form>
+                ) : (
+                  <div className="record-title-row">
+                    <strong className="record-title">{getApplicationTitle(item)}</strong>
+                    <button
+                      type="button"
+                      className="record-rename-btn"
+                      onClick={() => startRename(item, accountBacked)}
+                      aria-label={`Rename ${getApplicationTitle(item)}`}
+                      title="Rename"
+                    >
+                      <Pencil size={14} />
+                    </button>
+                  </div>
+                )}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
+                  {hasCustomName && (
+                    <span style={{ fontSize: 12, color: 'var(--slate-500)' }}>
+                      {item.reference_number}
+                    </span>
+                  )}
+                  <span className="badge badge-agency">{item.damage_level || "Draft"}</span>
+                  <span style={{ fontSize: 12, color: 'var(--slate-500)' }}>
+                    {item.incident_date}
+                  </span>
+                </div>
+                <p className="record-program">
+                  <HandCoins size={13} aria-hidden />
+                  {program
+                    ? <>For program: <strong>{program}</strong></>
+                    : <span className="record-program-missing">No aid program chosen — open to choose one</span>}
+                </p>
+                <h4 style={{ fontSize: 15, fontWeight: 600, marginTop: 4 }}>
+                  {item.applicant_name}
+                </h4>
+                <p style={{ fontSize: 13, color: 'var(--slate-600)', marginTop: 2 }}>
+                  <MapPin size={13} style={{ display: 'inline', marginRight: 4 }} />
+                  {item.barangay}, {item.city_municipality}, {item.province} • ({item.disaster_type})
+                </p>
               </div>
-              <h4 style={{ fontSize: 16, fontWeight: 700, marginTop: 4 }}>
-                {item.applicant_name}
-              </h4>
-              <p style={{ fontSize: 13, color: 'var(--slate-600)', marginTop: 2 }}>
-                <MapPin size={13} style={{ display: 'inline', marginRight: 4 }} />
-                {item.barangay}, {item.city_municipality}, {item.province} • ({item.disaster_type})
-              </p>
+              <div className="record-actions">
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm"
+                  onClick={() => onSelectApplication(item)}
+                >
+                  <Eye size={14} /> {"Open / Print"}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => handleDelete(item, accountBacked)}
+                  title={"Delete"}
+                  aria-label={`Delete ${getApplicationTitle(item)}`}
+                >
+                  <Trash2 size={14} color="var(--rose-700)" />
+                </button>
+              </div>
             </div>
-            <div className="record-actions">
-              <button
-                type="button"
-                className="btn btn-primary btn-sm"
-                onClick={() => onSelectApplication(item)}
-              >
-                <Eye size={14} /> {"Open / Print"}
-              </button>
-              <button
-                type="button"
-                className="btn btn-secondary btn-sm"
-                onClick={() => handleDelete(item, accountBacked)}
-                title={"Delete"}
-              >
-                <Trash2 size={14} color="var(--rose-700)" />
-              </button>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     )
   );
@@ -148,7 +259,7 @@ export default function SavedApplicationsList({
       <div style={{ marginBottom: 18 }}>
         <input
           type="text"
-          placeholder={"Search by name, reference number, or municipality..."}
+          placeholder={"Search by name, program, reference number, or municipality..."}
           value={searchTerm}
           onChange={(event) => setSearchTerm(event.target.value)}
           className="form-input"

@@ -10,7 +10,10 @@ import OfficialApplicationView from './components/OfficialApplicationView';
 import SavedApplicationsList from './components/SavedApplicationsList';
 import AidLedger from './components/AidLedger';
 import RecoveryCaseWorkspace from './components/RecoveryCaseWorkspace';
-import { createCaseApplicationContext } from './utils/recoveryCaseWorkspace';
+import {
+  createCaseApplicationContext,
+  createCaseProgramApplicationContext
+} from './utils/recoveryCaseWorkspace';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('landing');
@@ -154,6 +157,13 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleApplyToProgramFromCase = (recoveryCase, program) => {
+    setSelectedApplicationData(createCaseProgramApplicationContext(recoveryCase, program));
+    setApplicationFormVersion((version) => version + 1);
+    setActiveTab('application');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handleDashboardPrepareApplication = (recoveryCase) => {
     setSelectedApplicationData({
       ...createCaseApplicationContext(recoveryCase),
@@ -270,10 +280,12 @@ export default function App() {
             <RecoveryCaseWorkspace
               key={user?.id || user?.user_id || 'guest'}
               user={user}
+              csrfToken={csrfToken}
               initialCaseId={workflowCaseId}
               onOpenLogin={() => { setAuthModalMode('signin'); setAuthModalOpen(true); }}
               onStartAssessment={() => setActiveTab('assessment')}
               onPrepareApplication={handlePrepareApplicationFromCase}
+              onApplyToProgram={handleApplyToProgramFromCase}
               onOpenApplication={handleSelectCaseRelatedApplication}
               onNavigateToWorkflow={handleNavigateToCaseWorkflow}
             />
