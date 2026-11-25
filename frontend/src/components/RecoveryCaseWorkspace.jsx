@@ -12,7 +12,6 @@ import {
   MapPin,
   CalendarDays,
   HandCoins,
-  RefreshCw,
   ShieldAlert,
   Trash2,
   AlertTriangle,
@@ -141,20 +140,22 @@ function ProgramRow({
                 <span className="recovery-case-program-agency">{program.agency || catalog.agency}</span>
               )}
             </span>
-            <span className={`subsidy-outcome subsidy-outcome--${program.outcomeClass}`}>
-              {SCREENING_OUTCOME_LABELS[program.outcomeKey] || 'Status unavailable'}
-            </span>
           </span>
           <ChevronDown size={18} aria-hidden className={expanded ? 'is-expanded' : ''} />
         </button>
 
         <div className="case-program-actions">
-          {maxAmount > 0 ? (
-            <span className="case-program-amount">
-              Up to <strong>{peso(maxAmount)}</strong>
-              <small>planning estimate</small>
+          <div className="case-program-meta">
+            <span className={`subsidy-outcome subsidy-outcome--${program.outcomeClass}`}>
+              {SCREENING_OUTCOME_LABELS[program.outcomeKey] || 'Status unavailable'}
             </span>
-          ) : <span />}
+            {maxAmount > 0 && (
+              <span className="case-program-amount">
+                Up to <strong>{peso(maxAmount)}</strong>
+                <small>planning estimate</small>
+              </span>
+            )}
+          </div>
           {existingApplication ? (
             <button
               type="button"
@@ -745,9 +746,6 @@ export default function RecoveryCaseWorkspace({
           <h1 className="card-heading-lg" style={{ marginBottom: 0 }}>Recovery Cases</h1>
         </div>
         <div className="recovery-case-actions">
-          <button type="button" className="btn btn-secondary btn-sm" onClick={refresh} disabled={loading}>
-            <RefreshCw size={14} className={loading ? 'spin' : ''} /> {loading ? 'Loading…' : 'Refresh'}
-          </button>
           <button type="button" className="btn btn-primary btn-sm" onClick={onStartAssessment}>
             Start New Case <ArrowRight size={14} />
           </button>

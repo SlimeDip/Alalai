@@ -26,7 +26,6 @@ const DISASTER_ALIASES = Object.freeze({
   tsunami: 'tsunami',
   drought: 'drought',
   tagtuyot: 'drought',
-  hailstorm: 'hailstorm',
 });
 
 const RECOGNIZED_DISASTER_TYPES = new Set([
@@ -42,7 +41,6 @@ const RECOGNIZED_DISASTER_TYPES = new Set([
   'tsunami',
   'monsoon',
   'heavy_rainfall',
-  'hailstorm',
 ]);
 
 const TYPE_ALIASES = Object.freeze({

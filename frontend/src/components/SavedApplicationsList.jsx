@@ -4,7 +4,6 @@ import {
   Trash2,
   Eye,
   MapPin,
-  RefreshCw,
   Pencil,
   Check,
   X,
@@ -17,6 +16,7 @@ import {
   deleteAccountApplication,
   renameAccountApplication,
   renameBrowserApplication,
+  migrateBrowserApplications,
   getApplicationTitle,
   getApplicationProgram,
   APPLICATION_NAME_MAX_LENGTH
@@ -32,6 +32,7 @@ export default function SavedApplicationsList({
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
   const [renamingKey, setRenamingKey] = useState('');
   const [draftName, setDraftName] = useState('');
   const [renameSaving, setRenameSaving] = useState(false);
@@ -48,13 +49,19 @@ export default function SavedApplicationsList({
     setLoading(true);
     setError('');
     try {
+      // Browser-only records move into the account automatically.
+      const moved = await migrateBrowserApplications(csrfToken);
+      setBrowserApplications(readSavedApplications());
+      if (moved.migrated > 0) {
+        setNotice(`${moved.migrated} browser-only ${moved.migrated === 1 ? 'record was' : 'records were'} moved to your account.`);
+      }
       setAccountApplications(await fetchAccountApplications());
     } catch (requestError) {
       setError(requestError.message);
     } finally {
       setLoading(false);
     }
-  }, [isAccountUser]);
+  }, [isAccountUser, csrfToken]);
 
   useEffect(() => {
     refresh();
@@ -251,9 +258,6 @@ export default function SavedApplicationsList({
           </h2>
           <p className="card-subheading">{"Account records sync through your signed-in account. Older browser-only records remain separate on this device."}</p>
         </div>
-        <button type="button" className="btn btn-secondary btn-sm" onClick={refresh} disabled={loading}>
-          <RefreshCw size={14} /> {loading ? "Loading…" : "Refresh"}
-        </button>
       </div>
 
       <div style={{ marginBottom: 18 }}>
@@ -271,6 +275,11 @@ export default function SavedApplicationsList({
           {error}
         </div>
       )}
+      {notice && (
+        <div role="status" className="alert alert-success">
+          {notice}
+        </div>
+      )}
       {loading && accountApplications.length === 0 && (
         <p role="status">{"Loading…"}</p>
       )}
@@ -282,15 +291,18 @@ export default function SavedApplicationsList({
         </section>
       )}
 
-      <section style={{ marginTop: isAccountUser ? 24 : 0 }}>
-        <h3 className="application-section-heading">
-          {isAccountUser ? "Browser-only records on this device" : "Guest applications"}
-        </h3>
-        <p className="card-subheading" style={{ marginBottom: 12 }}>
-          {isAccountUser ? "These legacy records are not assigned to an account. Opening and saving one while signed in creates an account-backed copy." : "Guest records are stored only in this browser and are not available on other devices."}
-        </p>
-        {renderRecords(filtered.browser, false)}
-      </section>
+      {/* Signed-in users only see this section if some record could not be moved automatically. */}
+      {(!isAccountUser || browserApplications.length > 0) && (
+        <section style={{ marginTop: isAccountUser ? 24 : 0 }}>
+          <h3 className="application-section-heading">
+            {isAccountUser ? "Records that could not be moved to your account" : "Guest applications"}
+          </h3>
+          <p className="card-subheading" style={{ marginBottom: 12 }}>
+            {isAccountUser ? "These browser-only records have no aid program or are missing details, so they could not be moved automatically. Open one, complete it and save it to move it to your account." : "Guest records are stored only in this browser and are not available on other devices. They move to your account automatically when you sign in."}
+          </p>
+          {renderRecords(filtered.browser, false)}
+        </section>
+      )}
     </div>
   );
 }

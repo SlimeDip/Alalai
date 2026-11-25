@@ -121,3 +121,38 @@ export async function renameAccountApplication(id, name, csrfToken) {
   });
   return result.data;
 }
+
+export function removeBrowserApplication(id) {
+  const next = readSavedApplications().filter((application) => application.id !== id);
+  writeSavedApplications(next);
+  return next;
+}
+
+let migrationInFlight = null;
+
+// Moves browser-only records into the signed-in account. A record is removed from the browser
+// only after the server has saved it; records the server rejects (for example, ones with no
+// aid program) stay in the browser so nothing is lost.
+export function migrateBrowserApplications(csrfToken) {
+  if (migrationInFlight) return migrationInFlight;
+
+  migrationInFlight = (async () => {
+    const outcome = { migrated: 0, failed: 0 };
+    for (const record of readSavedApplications()) {
+      const { id, reference_number: _reference, saved_at: _savedAt, application_name: name, ...payload } = record;
+      try {
+        const saved = await saveAccountApplication(payload, csrfToken);
+        if (name) {
+          await renameAccountApplication(saved.id, name, csrfToken).catch(() => {});
+        }
+        removeBrowserApplication(id);
+        outcome.migrated += 1;
+      } catch {
+        outcome.failed += 1;
+      }
+    }
+    return outcome;
+  })().finally(() => { migrationInFlight = null; });
+
+  return migrationInFlight;
+}

@@ -17,6 +17,7 @@ import {
 import {
   saveBrowserApplication,
   saveAccountApplication,
+  removeBrowserApplication,
   getApplicationProgram
 } from '../utils/applicationStorage';
 import { fetchOwnedRecoveryCases } from '../utils/assessmentApi';
@@ -166,6 +167,10 @@ export default function OfficialApplicationView({
       let savedApplication;
       if (user && !user.isGuest) {
         savedApplication = await saveAccountApplication(application, csrfToken);
+        // A browser-only record becomes an account record, so drop the browser copy.
+        if (typeof application.id === 'string' && application.id.startsWith('LOCAL-')) {
+          removeBrowserApplication(application.id);
+        }
       } else {
         savedApplication = saveBrowserApplication(application);
       }

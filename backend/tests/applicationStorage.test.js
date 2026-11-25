@@ -89,3 +89,38 @@ test('renaming an account application sends a PATCH with the CSRF token', async 
   assert.deepEqual(JSON.parse(call.options.body), { name: 'Roof repair' });
   assert.equal(updated.application_name, 'Roof repair');
 });
+
+test('browser-only applications move into the account and failures stay in the browser', async () => {
+  const { migrateBrowserApplications, writeSavedApplications: write, readSavedApplications: read } =
+    await import('../../frontend/src/utils/applicationStorage.js');
+  write([
+    { id: 'LOCAL-A', reference_number: 'AL-1', saved_at: 'x', application_name: 'Roof repair', applicant_name: 'A', applied_subsidies: ['ECT'] },
+    { id: 'LOCAL-B', reference_number: 'AL-2', saved_at: 'x', applicant_name: 'B', applied_subsidies: [] }
+  ]);
+  const calls = [];
+  globalThis.fetch = async (url, options = {}) => {
+    calls.push({ url, method: options.method, body: options.body && JSON.parse(options.body) });
+    if (options.method === 'POST') {
+      const body = JSON.parse(options.body);
+      if (!body.applied_subsidies.length) {
+        return { ok: false, json: async () => ({ success: false, error: 'Choose the aid program this application is for.' }) };
+      }
+      return { ok: true, json: async () => ({ success: true, data: { id: 'APP-1' } }) };
+    }
+    return { ok: true, json: async () => ({ success: true, data: { id: 'APP-1' } }) };
+  };
+
+  const [first, second] = await Promise.all([
+    migrateBrowserApplications('csrf-1'),
+    migrateBrowserApplications('csrf-1')
+  ]);
+  assert.deepEqual(first, { migrated: 1, failed: 1 });
+  assert.equal(second, first, 'concurrent runs share one migration');
+
+  const posts = calls.filter((call) => call.method === 'POST');
+  assert.equal(posts.length, 2);
+  assert.equal('id' in posts[0].body, false);
+  assert.equal('reference_number' in posts[0].body, false);
+  assert.ok(calls.some((call) => call.method === 'PATCH' && call.url === '/api/applications/APP-1/name'));
+  assert.deepEqual(read().map((record) => record.id), ['LOCAL-B']);
+});

@@ -5,7 +5,6 @@ import {
   FolderOpen,
   HandCoins,
   LayoutDashboard,
-  RefreshCw,
   PlusCircle,
   Search,
   Printer,
@@ -131,16 +130,7 @@ export default function RecoveryDashboard({
         <div>
           <h1 className="card-heading-lg" style={{ marginBottom: 0 }}>{"Recovery Dashboard"}</h1>
         </div>
-        {isAccountUser ? (
-          <button
-            type="button"
-            className="btn btn-secondary btn-sm"
-            onClick={() => setRefreshVersion((version) => version + 1)}
-            disabled={loading}
-          >
-            <RefreshCw size={14} /> {loading ? "Loading…" : "Refresh"}
-          </button>
-        ) : (
+        {!isAccountUser && (
           <button type="button" className="btn btn-primary btn-lg" onClick={onOpenLogin}>
             {"Sign In"} <ArrowRight size={17} />
           </button>

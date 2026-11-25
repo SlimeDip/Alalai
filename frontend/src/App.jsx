@@ -9,6 +9,7 @@ import SubsidyCatalog from './components/SubsidyCatalog';
 import OfficialApplicationView from './components/OfficialApplicationView';
 import SavedApplicationsList from './components/SavedApplicationsList';
 import AidLedger from './components/AidLedger';
+import { migrateBrowserApplications } from './utils/applicationStorage';
 import RecoveryCaseWorkspace from './components/RecoveryCaseWorkspace';
 import {
   createCaseApplicationContext,
@@ -55,6 +56,13 @@ export default function App() {
       })
       .catch(() => {});
   }, []);
+
+  // Move guest/browser-only applications into the account as soon as someone is signed in.
+  useEffect(() => {
+    if (user && !user.isGuest && csrfToken) {
+      migrateBrowserApplications(csrfToken).catch(() => {});
+    }
+  }, [user, csrfToken]);
 
   const handleAuth = async (mode, credentials) => {
     const response = await fetch(`/api/auth/${mode === 'signup' ? 'register' : 'login'}`, {

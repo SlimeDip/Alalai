@@ -80,12 +80,15 @@ html.dark {
   --info-bg: #1e293b;
   --info-border: #334155;
   --info-text: #bfdbfe;
-  --error-bg: #3b1d24;
-  --error-border: #7f1d3a;
-  --error-text: #fecdd3;
-  --success-bg: #12332a;
-  --success-border: #1f5f4a;
-  --success-text: #a7f3d0;
+  --error-bg: #4a1c28;
+  --error-border: #d4486a;
+  --error-text: #ffb8c6;
+  --success-bg: #0f3f2f;
+  --success-border: #34b27f;
+  --success-text: #8ef0c4;
+  --emerald-700: #34d399;
+  --rose-700: #fb7185;
+  --amber-700: #fbbf24;
   --btn-bg: #343434;
   --btn-hover: #404040;
   --btn-fg: #f8fafc;
@@ -4112,3 +4115,104 @@ html.dark .disaster-card.selected .disaster-card-check { border-color: #7692ff; 
 .auth-field select:focus { border-color: #9aa8b5; box-shadow: 0 0 0 3px rgb(148 163 184 / 16%); }
 html.dark .auth-field select { background-color: #242424; border-color: #525252; color: #f8fafc; }
 html.dark .auth-field select:focus { border-color: #7692ff; box-shadow: 0 0 0 3px rgb(118 146 255 / 25%); }
+
+/* ---------- Damage assessment results: aligned program cards ---------- */
+#root .subsidy-grid { align-items: stretch; }
+.subsidy-screening-card .program-card-body { flex: 1 1 auto; }
+.subsidy-screening-card .program-card-desc { margin-bottom: 4px; }
+.subsidy-screening-card .program-card-more { margin-top: auto; }
+.subsidy-screening-card .program-card-cta { margin-top: 0; flex: none; }
+.subsidy-screening-card .program-card-top { min-height: 28px; }
+
+/* ---------- Recovery case programs: badge + amount + action on one row ---------- */
+.case-program .recovery-case-program-toggle { align-items: flex-start; }
+.case-program .recovery-case-program-toggle > svg { margin-top: 2px; }
+.case-program .recovery-case-program-summary { display: flex; }
+.case-program-meta { display: flex; align-items: center; gap: 10px 14px; flex-wrap: wrap; min-width: 0; }
+.case-program-meta .subsidy-outcome { margin: 0; white-space: nowrap; flex: none; }
+
+/* ---------- Source picker (aid ledger) ---------- */
+.source-picker { position: relative; }
+.source-picker-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.source-picker-trigger > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.source-picker-placeholder { color: var(--slate-500); }
+.source-picker-trigger svg { flex: none; color: var(--slate-500); transition: transform .15s; }
+.source-picker-trigger svg.is-open { transform: rotate(180deg); }
+.source-picker-list {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  max-height: 280px;
+  margin: 0;
+  padding: 6px;
+  overflow-y: auto;
+  list-style: none;
+  background: var(--white);
+  border: 1px solid var(--slate-200);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16);
+  outline: 0;
+}
+.source-picker-heading {
+  padding: 8px 10px 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--slate-500);
+}
+.source-picker-divider { height: 1px; margin: 6px 4px; background: var(--slate-200); }
+.source-picker-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.35;
+  color: var(--slate-900);
+  cursor: pointer;
+}
+.source-picker-option.is-active { background: var(--slate-100); }
+.source-picker-option[aria-selected="true"] { font-weight: 700; color: var(--primary); }
+.source-picker-option svg { flex: none; color: var(--primary); }
+.source-picker-option.is-other { color: var(--slate-700); }
+html.dark .source-picker-list { background: #242424; border-color: #525252; }
+html.dark .source-picker-option.is-active { background: #303030; }
+html.dark .source-picker-option[aria-selected="true"], html.dark .source-picker-option svg { color: #7692ff; }
+html.dark .source-picker-divider { background: #525252; }
+
+/* ---------- Dark mode: brighter reds and greens ---------- */
+html.dark .badge-severe { background: var(--error-bg); border-color: var(--error-border); color: var(--error-text); }
+html.dark .badge-moderate { background: #4a3a10; border-color: #c9a227; color: #fde68a; }
+html.dark .subsidy-outcome--potential-match { background: var(--success-bg); border-color: var(--success-border); color: var(--success-text); }
+html.dark .subsidy-outcome--needs-more-information,
+html.dark .subsidy-outcome--outcome-unavailable { background: #4a3a10; border-color: #c9a227; color: #fde68a; }
+html.dark .error-banner,
+html.dark .recovery-case-error { background: var(--error-bg); border: 1px solid var(--error-border); color: var(--error-text); }
+html.dark .recovery-dashboard-error { border-color: var(--error-border); color: var(--error-text); }
+html.dark .step-node.completed .step-number,
+html.dark .top-match-tag,
+html.dark .btn-success { background-color: #34d399; color: #052e1f; }
+html.dark .subsidy-card.top-match { border-color: #34d399; }
+html.dark .btn-danger { color: #3f0a18; background: #fb7185; border-color: #fb7185; }
+html.dark .btn-danger:hover:not(:disabled) { filter: brightness(1.08); }
+html.dark .recovery-case-detail .recovery-case-action-layout .case-delete-btn { color: #fb7185; border-color: #fb7185; background: transparent; }
+html.dark .case-dialog-icon { color: #fb7185; background: var(--error-bg); }
+html.dark .case-dialog-impact { border-color: var(--error-border); }
+html.dark .aid-ledger-record-icon.is-cash { color: #34d399; background: var(--success-bg); }
+html.dark .alert-error { background: var(--error-bg); border-color: var(--error-border); color: var(--error-text); }
+html.dark .alert-success { background: var(--success-bg); border-color: var(--success-border); color: var(--success-text); }

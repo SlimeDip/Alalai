@@ -1,13 +1,17 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { HandCoins, Package, Wallet, RefreshCw, Trash2, Pencil, X, Plus } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { HandCoins, Package, Wallet, Trash2, Pencil, X, Plus, ChevronDown, Check } from 'lucide-react';
 import { fetchOwnedRecoveryCases } from '../utils/assessmentApi';
 import { getCaseTitle } from '../utils/caseNames';
+import { fetchAccountApplications } from '../utils/applicationStorage';
+import { getAppliedProgramSources } from '../utils/aidSources';
 import {
   createAidRecord,
   deleteAidRecord,
   fetchAidLedger,
   updateAidRecord
 } from '../utils/aidApi';
+
+const OTHER_SOURCE = '__other__';
 
 const emptyForm = {
   case_id: '',
@@ -20,6 +24,123 @@ const emptyForm = {
   received_on: new Date().toISOString().slice(0, 10),
   notes: ''
 };
+
+function SourcePicker({ id, programs, value, isOther, invalid, onSelect }) {
+  const [open, setOpen] = useState(false);
+  const [active, setActive] = useState(0);
+  const rootRef = useRef(null);
+  const listRef = useRef(null);
+  const buttonRef = useRef(null);
+  const choices = [...programs, OTHER_SOURCE];
+  const selectedIndex = isOther ? programs.length : programs.indexOf(value);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    listRef.current?.focus();
+    const onPointerDown = (event) => {
+      if (!rootRef.current?.contains(event.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', onPointerDown);
+    return () => document.removeEventListener('mousedown', onPointerDown);
+  }, [open]);
+
+  const openList = () => {
+    setActive(selectedIndex >= 0 ? selectedIndex : 0);
+    setOpen(true);
+  };
+
+  const choose = (choice) => {
+    onSelect(choice);
+    setOpen(false);
+    buttonRef.current?.focus();
+  };
+
+  const onButtonKeyDown = (event) => {
+    if (['ArrowDown', 'ArrowUp', 'Enter', ' '].includes(event.key)) {
+      event.preventDefault();
+      openList();
+    }
+  };
+
+  const onListKeyDown = (event) => {
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      setActive((index) => Math.min(index + 1, choices.length - 1));
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      setActive((index) => Math.max(index - 1, 0));
+    } else if (event.key === 'Home') {
+      event.preventDefault();
+      setActive(0);
+    } else if (event.key === 'End') {
+      event.preventDefault();
+      setActive(choices.length - 1);
+    } else if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      choose(choices[active]);
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      setOpen(false);
+      buttonRef.current?.focus();
+    } else if (event.key === 'Tab') {
+      setOpen(false);
+    }
+  };
+
+  const label = isOther ? 'Other source…' : value;
+
+  return (
+    <div className="source-picker" ref={rootRef}>
+      <button
+        type="button"
+        id={id}
+        ref={buttonRef}
+        className={`form-select source-picker-trigger${invalid ? ' is-invalid' : ''}`}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-controls={`${id}-list`}
+        onClick={() => (open ? setOpen(false) : openList())}
+        onKeyDown={onButtonKeyDown}
+      >
+        <span className={label ? '' : 'source-picker-placeholder'}>{label || 'Select a program you applied to'}</span>
+        <ChevronDown size={18} aria-hidden className={open ? 'is-open' : ''} />
+      </button>
+      {open && (
+        <ul
+          id={`${id}-list`}
+          ref={listRef}
+          className="source-picker-list"
+          role="listbox"
+          tabIndex={-1}
+          aria-labelledby={id}
+          aria-activedescendant={`${id}-option-${active}`}
+          onKeyDown={onListKeyDown}
+        >
+          <li role="presentation" className="source-picker-heading">Applied for this incident</li>
+          {choices.map((choice, index) => {
+            const other = choice === OTHER_SOURCE;
+            return (
+              <React.Fragment key={choice}>
+                {other && <li role="presentation" className="source-picker-divider" />}
+                <li
+                  id={`${id}-option-${index}`}
+                  role="option"
+                  aria-selected={index === selectedIndex}
+                  className={`source-picker-option${index === active ? ' is-active' : ''}${other ? ' is-other' : ''}`}
+                  onMouseEnter={() => setActive(index)}
+                  onClick={() => choose(choice)}
+                >
+                  <span>{other ? 'Other source…' : choice}</span>
+                  {index === selectedIndex && <Check size={16} aria-hidden />}
+                </li>
+              </React.Fragment>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 function caseLabel(item) {
   return `${getCaseTitle(item)} — ${item.barangay}, ${item.city_municipality}`;
@@ -34,6 +155,9 @@ function php(value) {
 
 export default function AidLedger({ user, csrfToken, initialCaseId = '', onOpenLogin}) {
   const [cases, setCases] = useState([]);
+  const [applications, setApplications] = useState([]);
+  const [sourceOther, setSourceOther] = useState(false);
+  const [sourceMissing, setSourceMissing] = useState(false);
   const [records, setRecords] = useState([]);
   const [summary, setSummary] = useState({
     cash_total_php: 0,
@@ -54,17 +178,21 @@ export default function AidLedger({ user, csrfToken, initialCaseId = '', onOpenL
   const refresh = useCallback(async () => {
     if (!isAccountUser) {
       setCases([]);
+      setApplications([]);
       setRecords([]);
       return;
     }
     setLoading(true);
     setError('');
     try {
-      const [recoveryCases, ledgerResult] = await Promise.all([
+      const [recoveryCases, ledgerResult, savedApplications] = await Promise.all([
         fetchOwnedRecoveryCases(),
-        fetchAidLedger(caseFilter)
+        fetchAidLedger(caseFilter),
+        // The program choices are a convenience; the ledger still works if they can't load.
+        fetchAccountApplications().catch(() => [])
       ]);
       setCases(recoveryCases);
+      setApplications(savedApplications);
       setRecords(ledgerResult.data);
       setSummary(ledgerResult.summary);
     } catch (requestError) {
@@ -100,10 +228,44 @@ export default function AidLedger({ user, csrfToken, initialCaseId = '', onOpenL
   const resetForm = () => {
     setForm({ ...emptyForm, case_id: caseFilter });
     setEditingId('');
+    setSourceOther(false);
+  };
+
+  const programSources = useMemo(
+    () => getAppliedProgramSources(applications, form.case_id),
+    [applications, form.case_id]
+  );
+  const sourceIsOther = sourceOther || (Boolean(form.source) && !programSources.includes(form.source));
+
+  const handleCaseChange = (caseId) => {
+    setSourceOther(false);
+    setForm((previous) => ({
+      ...previous,
+      case_id: caseId,
+      // A program picked for the previous incident doesn't carry over to the new one.
+      source: programSources.includes(previous.source) ? '' : previous.source
+    }));
+  };
+
+  const handleSourceSelect = (value) => {
+    setSourceMissing(false);
+    setError('');
+    if (value === OTHER_SOURCE) {
+      setSourceOther(true);
+      setField('source', '');
+    } else {
+      setSourceOther(false);
+      setField('source', value);
+    }
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (!form.source.trim()) {
+      setSourceMissing(true);
+      setError('Choose or enter the source of this aid.');
+      return;
+    }
     setSaving(true);
     setError('');
     const payload = {
@@ -127,6 +289,7 @@ export default function AidLedger({ user, csrfToken, initialCaseId = '', onOpenL
   };
 
   const beginEdit = (record) => {
+    setSourceOther(false);
     setEditingId(record.aid_id);
     setForm({
       case_id: record.case_id,
@@ -171,9 +334,6 @@ export default function AidLedger({ user, csrfToken, initialCaseId = '', onOpenL
           <h1 className="card-heading-lg" style={{ marginBottom: 4 }}>{"Aid Received Ledger"}</h1>
           <p role="note" className="aid-ledger-note">{"Self-reported records. Not official receipts or proof of agency distribution."}</p>
         </div>
-        <button type="button" className="btn btn-secondary btn-sm" onClick={refresh} disabled={loading}>
-          <RefreshCw size={14} /> {loading ? "Loading…" : "Refresh"}
-        </button>
       </div>
 
       {error && (
@@ -210,7 +370,7 @@ export default function AidLedger({ user, csrfToken, initialCaseId = '', onOpenL
         <div className="app-grid">
           <label className="form-group">
             <span className="form-label">{"Recovery case"} *</span>
-            <select className="form-select" required value={form.case_id} onChange={(event) => setField('case_id', event.target.value)}>
+            <select className="form-select" required value={form.case_id} onChange={(event) => handleCaseChange(event.target.value)}>
               <option value="">{"Select a saved recovery case"}</option>
               {cases.map((item) => <option key={item.id} value={item.id}>{caseLabel(item)}</option>)}
             </select>
@@ -228,10 +388,50 @@ export default function AidLedger({ user, csrfToken, initialCaseId = '', onOpenL
               <option value="IN_KIND">{"In-kind"}</option>
             </select>
           </label>
-          <label className="form-group">
-            <span className="form-label">{"Source / organization"} *</span>
-            <input className="form-input" required maxLength={200} value={form.source} onChange={(event) => setField('source', event.target.value)} />
-          </label>
+          <div className="form-group">
+            <label className="form-label" htmlFor="aid-source">{"Source / organization"} *</label>
+            {programSources.length > 0 ? (
+              <>
+                <SourcePicker
+                  id="aid-source"
+                  programs={programSources}
+                  value={form.source}
+                  isOther={sourceIsOther}
+                  invalid={sourceMissing}
+                  onSelect={handleSourceSelect}
+                />
+                {sourceIsOther && (
+                  <input
+                    className="form-input"
+                    style={{ marginTop: 8 }}
+                    required
+                    maxLength={200}
+                    autoFocus={sourceOther}
+                    aria-label="Other source or organization"
+                    placeholder="Type the source or organization"
+                    value={form.source}
+                    onChange={(event) => setField('source', event.target.value)}
+                  />
+                )}
+              </>
+            ) : (
+              <>
+                <input
+                  id="aid-source"
+                  className="form-input"
+                  required
+                  maxLength={200}
+                  value={form.source}
+                  onChange={(event) => setField('source', event.target.value)}
+                />
+                {form.case_id && (
+                  <p className="field-help">
+                    No applications are saved for this incident yet, so type the source.
+                  </p>
+                )}
+              </>
+            )}
+          </div>
           <label className="form-group">
             <span className="form-label">{"Date received"} *</span>
             <input type="date" className="form-input" required value={form.received_on} onChange={(event) => setField('received_on', event.target.value)} />
