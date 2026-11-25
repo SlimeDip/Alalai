@@ -318,8 +318,7 @@ export default function DamageAssessmentForm({ user, csrfToken, onSelectSubsidyF
       {currentStep === 2 && (
         <div className="modern-card">
           <h2 className="card-heading-lg">{"How Would You Like to Detail the Damages?"}</h2>
-          <p className="card-subheading-lg">{"Choose the method that is most comfortable for you."}</p>
-
+          
           {!inputMethod && (
             <div className="method-grid">
               <button type="button" className="method-card" onClick={() => setInputMethod('ai')}>
@@ -339,15 +338,6 @@ export default function DamageAssessmentForm({ user, csrfToken, onSelectSubsidyF
 
           {inputMethod && (
             <form onSubmit={handleAnalyze}>
-              <button
-                type="button"
-                className="btn btn-secondary btn-sm"
-                style={{ marginBottom: 16 }}
-                onClick={() => setInputMethod(null)}
-              >
-                <ArrowLeft size={14} /> {"Back"}
-              </button>
-
               {inputMethod === 'ai' && (
                 <>
                   <div className="form-group">
@@ -362,15 +352,19 @@ export default function DamageAssessmentForm({ user, csrfToken, onSelectSubsidyF
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label"><ImagePlus size={15} /> {"Add a damage photo (optional)"}</label>
-                    <p className="field-help">{"Upload a clear photo of the affected property or livelihood. JPG, PNG, or WebP up to 8 MB. The photo must match the selected disaster; unrelated images are rejected."}</p>
+                    <label className="form-label">{"Add a damage photo (optional)"}</label>
+                    <p className="field-help">{"JPG, PNG or WebP, up to 8 MB. The photo must match the selected disaster."}</p>
                     {!damageImage ? (
-                      <input
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp"
-                        onChange={handleImageChange}
-                        className="form-input"
-                      />
+                      <label className="upload-drop">
+                        <ImagePlus size={24} aria-hidden />
+                        <span><strong>{"Choose a photo"}</strong> {"from your device"}</span>
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          onChange={handleImageChange}
+                          className="upload-drop-input"
+                        />
+                      </label>
                     ) : (
                       <div className="image-upload-preview">
                         <img src={imagePreview} alt={"Selected damage photo preview"} />
@@ -446,8 +440,8 @@ export default function DamageAssessmentForm({ user, csrfToken, onSelectSubsidyF
               </details>
 
               <div className="form-actions-row">
-                <button type="button" className="btn btn-secondary btn-lg" onClick={() => goStep(1)}>
-                  <ArrowLeft size={16} /> {"Back"}
+                <button type="button" className="btn btn-secondary btn-lg" onClick={() => setInputMethod(null)}>
+                  <ArrowLeft size={16} /> {"Change method"}
                 </button>
                 <button type="submit" disabled={loading} className="btn btn-primary btn-lg">
                   {loading ? '…' : "Assess Damage & Find Aid"}

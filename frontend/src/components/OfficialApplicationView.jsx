@@ -201,13 +201,10 @@ export default function OfficialApplicationView({
 
       {/* VIEW 1: CLEAN RESPONSIVE FORM EDITOR */}
       {activeView === 'editor' && (
-        <div className="flow-card application-editor no-print">
-          <div className="application-form-heading">
-            <span>ALALAI COMMUNITY DISASTER ASSISTANCE</span>
-            <strong>{"I. Applicant and Household Details"}</strong>
-          </div>
-
-          <div className="form-group">
+        <div className="application-editor no-print">
+          <section className="app-section">
+            <h3 className="app-section-title"><span>1</span>{"Link to a case (optional)"}</h3>
+            <div className="form-group">
             <label className="form-label" htmlFor="application-recovery-case">
               {"Recovery case"}
             </label>
@@ -243,13 +240,12 @@ export default function OfficialApplicationView({
             {casesError && <p role="alert" className="field-help">{casesError}</p>}
             {!isAccountUser && <p className="field-help">{"Sign in to choose from your saved recovery cases. You may continue without linking a case."}</p>}
           </div>
+          </section>
 
-          <h3 className="application-section-heading">
-            {"I. Applicant and Household Details"}
-          </h3>
-
-          <div className="form-grid">
-            <div className="form-group">
+          <section className="app-section">
+            <h3 className="app-section-title"><span>2</span>{"Applicant"}</h3>
+            <div className="app-grid">
+<div className="form-group">
               <label className="form-label">{"Applicant Full Name"} *</label>
               <input
                 type="text"
@@ -260,8 +256,7 @@ export default function OfficialApplicationView({
                 placeholder="Hal. Juan Dela Cruz"
               />
             </div>
-
-            <div className="form-group">
+<div className="form-group">
               <label className="form-label">{"Age"}</label>
               <input
                 type="number"
@@ -271,13 +266,11 @@ export default function OfficialApplicationView({
                 className="form-input"
               />
             </div>
-
-            <div className="form-group">
+<div className="form-group">
               <label className="form-label">Date of birth</label>
               <input type="date" name="birth_date" value={formData.birth_date} onChange={handleChange} className="form-input" />
             </div>
-
-            <div className="form-group">
+<div className="form-group">
               <label className="form-label">Sex</label>
               <select name="sex" value={formData.sex} onChange={handleChange} className="form-select">
                 <option value="">Select</option>
@@ -287,8 +280,7 @@ export default function OfficialApplicationView({
                 <option value="Prefer not to say">Prefer not to say</option>
               </select>
             </div>
-
-            <div className="form-group">
+<div className="form-group">
               <label className="form-label">{"Civil Status"}</label>
               <select
                 name="civil_status"
@@ -302,8 +294,24 @@ export default function OfficialApplicationView({
                 <option value="Solo Parent">Solo Parent</option>
               </select>
             </div>
+<div className="form-group">
+              <label className="form-label">{"Contact Number"}</label>
+              <input
+                type="text"
+                name="contact_number"
+                value={formData.contact_number}
+                onChange={handleChange}
+                className="form-input"
+                placeholder="0917-000-0000"
+              />
+            </div>
+            </div>
+          </section>
 
-            <div className="form-group">
+          <section className="app-section">
+            <h3 className="app-section-title"><span>3</span>{"Identification"}</h3>
+            <div className="app-grid">
+<div className="form-group">
               <label className="form-label">{"Valid ID Type"}</label>
               <select
                 name="valid_id_type"
@@ -319,8 +327,7 @@ export default function OfficialApplicationView({
                 <option value="SSS / UMID / GSIS Card">SSS / UMID / GSIS Card</option>
               </select>
             </div>
-
-            <div className="form-group">
+<div className="form-group">
               <label className="form-label">{"ID Number"}</label>
               <input
                 type="text"
@@ -331,21 +338,11 @@ export default function OfficialApplicationView({
                 placeholder="Hal. 1234-5678-9012"
               />
             </div>
-
-            <div className="form-group">
-              <label className="form-label">{"Contact Number"}</label>
-              <input
-                type="text"
-                name="contact_number"
-                value={formData.contact_number}
-                onChange={handleChange}
-                className="form-input"
-                placeholder="0917-000-0000"
-              />
             </div>
-          </div>
+          </section>
 
-          <div style={{ marginTop: 12 }}>
+          <section className="app-section">
+            <h3 className="app-section-title"><span>4</span>{"Home address"}</h3>
             <LocationFields
               values={{
                 province: formData.province,
@@ -365,18 +362,42 @@ export default function OfficialApplicationView({
               includeStreet={true}
               required={true}
             />
-          </div>
+          </section>
 
-          <div className="form-grid" style={{ marginTop: 8 }}>
-            <div className="form-group">
+          <section className="app-section">
+            <h3 className="app-section-title"><span>5</span>{"Household"}</h3>
+            <div className="app-grid">
+<div className="form-group">
               <label className="form-label">Household members *</label>
               <input type="number" min="1" name="household_members_count" value={formData.household_members_count} onChange={handleChange} className="form-input" />
             </div>
-            <div className="form-group">
+<div className="form-group">
+                <label className="form-label">{"Spouse name"}</label>
+                <input
+                  type="text"
+                  name="spouse_name"
+                  value={formData.spouse_name}
+                  onChange={handleChange}
+                  className="form-input"
+                  placeholder={formData.civil_status.includes('Single') ? 'N/A' : "Spouse name"}
+                />
+              </div>
+<div className="form-group">
+                <label className="form-label">{"Number of children"}</label>
+                <input
+                  type="text"
+                  name="children_count"
+                  value={formData.children_count}
+                  onChange={handleChange}
+                  className="form-input"
+                  placeholder={formData.civil_status.includes('Single') ? 'N/A' : '0'}
+                />
+              </div>
+<div className="form-group">
               <label className="form-label">Occupation / livelihood</label>
               <input type="text" name="occupation" value={formData.occupation} onChange={handleChange} className="form-input" placeholder="Farmer, fisherfolk, vendor, employee" />
             </div>
-            <div className="form-group">
+<div className="form-group">
               <label className="form-label">Beneficiary category</label>
               <select name="beneficiary_category" value={formData.beneficiary_category} onChange={handleChange} className="form-select">
                 <option value="">Select if applicable</option>
@@ -386,33 +407,13 @@ export default function OfficialApplicationView({
                 <option value="Livelihood worker / microenterprise">Livelihood worker / microenterprise</option>
               </select>
             </div>
-          </div>
+            </div>
+          </section>
 
-          <div className="form-grid" style={{ marginTop: 8 }}>
-            <div className="form-group">
-              <label className="form-label">Barangay certificate / incident reference</label>
-              <input type="text" name="barangay_certificate_reference" value={formData.barangay_certificate_reference} onChange={handleChange} className="form-input" placeholder="Reference number, if issued" />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Authorized representative</label>
-              <input type="text" name="representative_name" value={formData.representative_name} onChange={handleChange} className="form-input" placeholder="Only if filing through a representative" />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Representative relationship</label>
-              <input type="text" name="representative_relationship" value={formData.representative_relationship} onChange={handleChange} className="form-input" />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Representative contact</label>
-              <input type="text" name="representative_contact" value={formData.representative_contact} onChange={handleChange} className="form-input" />
-            </div>
-          </div>
-
-          <h3 className="application-section-heading">
-            {"II. Disaster and Damage Details"}
-          </h3>
-
-          <div className="form-grid">
-            <div className="form-group">
+          <section className="app-section">
+            <h3 className="app-section-title"><span>6</span>{"Disaster and damage"}</h3>
+            <div className="app-grid">
+<div className="form-group">
               <label className="form-label">{"Disaster Event"}</label>
               <input
                 type="text"
@@ -422,8 +423,7 @@ export default function OfficialApplicationView({
                 className="form-input"
               />
             </div>
-
-            <div className="form-group">
+<div className="form-group">
               <label className="form-label">{"Incident Date"}</label>
               <input
                 type="date"
@@ -433,8 +433,7 @@ export default function OfficialApplicationView({
                 className="form-input"
               />
             </div>
-
-            <div className="form-group">
+<div className="form-group">
               <label className="form-label">{"Estimated Damage (₱)"}</label>
               <input
                 type="number"
@@ -444,8 +443,7 @@ export default function OfficialApplicationView({
                 className="form-input"
               />
             </div>
-
-            <div className="form-group">
+<div className="form-group">
               <label className="form-label">{"Requested Amount of Aid (₱)"}</label>
               <input
                 type="number"
@@ -455,12 +453,35 @@ export default function OfficialApplicationView({
                 className="form-input"
               />
             </div>
+            </div>
+            <div className="app-stack">
+<div className="form-group">
+            <label className="form-label">{"Damage Summary"}</label>
+            <textarea
+              name="damage_summary"
+              rows={3}
+              value={formData.damage_summary}
+              onChange={handleChange}
+              className="form-textarea"
+            />
           </div>
+<div className="form-group">
+            <label className="form-label">{"Family Needs"}</label>
+            <input
+              type="text"
+              name="declared_needs"
+              value={formData.declared_needs}
+              onChange={handleChange}
+              className="form-input"
+            />
+          </div>
+            </div>
+          </section>
 
           {hasAgriculturalProgram && (
-            <>
-              <h3 className="application-section-heading">Agriculture / crop insurance details</h3>
-              <p className="field-help">Complete these only when applying as a farmer or fisherfolk for an agricultural or crop-insurance program.</p>
+            <section className="app-section">
+              <h3 className="app-section-title"><span>7</span>{"Farm / fishery details"}</h3>
+              <p className="field-help">{"Only for farmers or fisherfolk applying to an agricultural or crop-insurance program."}</p>
               <div className="form-grid">
                 <div className="form-group">
                   <label className="form-label">RSBSA registration number</label>
@@ -489,32 +510,33 @@ export default function OfficialApplicationView({
                   <input type="text" name="pcic_policy_number" value={formData.pcic_policy_number} onChange={handleChange} className="form-input" placeholder="If crop insurance claim" />
                 </div>
               </div>
-            </>
+            </section>
           )}
 
-          <div className="form-group" style={{ marginTop: 8 }}>
-            <label className="form-label">{"Damage Summary"}</label>
-            <textarea
-              name="damage_summary"
-              rows={3}
-              value={formData.damage_summary}
-              onChange={handleChange}
-              className="form-textarea"
-            />
-          </div>
+          <details className="app-section app-optional">
+            <summary>{"Optional: representative and barangay reference"}</summary>
+            <div className="app-grid">
+<div className="form-group">
+              <label className="form-label">Barangay certificate / incident reference</label>
+              <input type="text" name="barangay_certificate_reference" value={formData.barangay_certificate_reference} onChange={handleChange} className="form-input" placeholder="Reference number, if issued" />
+            </div>
+<div className="form-group">
+              <label className="form-label">Authorized representative</label>
+              <input type="text" name="representative_name" value={formData.representative_name} onChange={handleChange} className="form-input" placeholder="Only if filing through a representative" />
+            </div>
+<div className="form-group">
+              <label className="form-label">Representative relationship</label>
+              <input type="text" name="representative_relationship" value={formData.representative_relationship} onChange={handleChange} className="form-input" />
+            </div>
+<div className="form-group">
+              <label className="form-label">Representative contact</label>
+              <input type="text" name="representative_contact" value={formData.representative_contact} onChange={handleChange} className="form-input" />
+            </div>
+            </div>
+          </details>
 
-          <div className="form-group">
-            <label className="form-label">{"Family Needs"}</label>
-            <input
-              type="text"
-              name="declared_needs"
-              value={formData.declared_needs}
-              onChange={handleChange}
-              className="form-input"
-            />
-          </div>
-
-          <div className="form-group" style={{ marginTop: 16 }}>
+          <section className="app-section app-final">
+            <div className="app-confirm">
             <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
               <input
                 type="checkbox"
@@ -531,53 +553,22 @@ export default function OfficialApplicationView({
               </span>
             </label>
           </div>
-
-          {/* Household summary */}
-          <div style={{ marginTop: 20 }}>
-            <strong style={{ display: 'block', fontSize: 15, marginBottom: 10 }}>{"Household Members (Living in the dwelling)"}</strong>
-            <div className="form-grid">
-              <div className="form-group">
-                <label className="form-label">{"Spouse name"}</label>
-                <input
-                  type="text"
-                  name="spouse_name"
-                  value={formData.spouse_name}
-                  onChange={handleChange}
-                  className="form-input"
-                  placeholder={formData.civil_status.includes('Single') ? 'N/A' : "Spouse name"}
-                />
-              </div>
-              <div className="form-group">
-                <label className="form-label">{"Number of children"}</label>
-                <input
-                  type="text"
-                  name="children_count"
-                  value={formData.children_count}
-                  onChange={handleChange}
-                  className="form-input"
-                  placeholder={formData.civil_status.includes('Single') ? 'N/A' : '0'}
-                />
-              </div>
+            <div className="app-actions">
+              <button
+                type="button"
+                className="btn btn-secondary btn-lg"
+                onClick={() => {
+                  setActiveView('preview');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+              >
+                <Eye size={16} /> {"Preview A4 form"}
+              </button>
+              <button type="button" className="btn btn-primary btn-lg" disabled={saving} onClick={handleSaveToDatabase}>
+                <Save size={16} /> {saving ? '…' : "Save Application"}
+              </button>
             </div>
-          </div>
-
-          <div style={{ marginTop: 24, display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-            <button
-              type="button"
-              className="btn-pill-primary"
-              onClick={() => {
-                setActiveView('preview');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-            >
-              <Eye size={16} /> I-preview ang A4 Form
-            </button>
-          </div>
-          <div className="form-actions-row application-bottom-actions" style={{ flexDirection: 'column', alignItems: 'flex-end' }}>
-            <button type="button" className="btn btn-primary btn-lg" disabled={saving} onClick={handleSaveToDatabase}>
-              <Save size={16} /> {saving ? '…' : "Save Application"}
-            </button>
-          </div>
+          </section>
         </div>
       )}
 

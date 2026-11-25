@@ -42,6 +42,12 @@ export default function App() {
           setUser(result.data);
           setCsrfToken(result.csrfToken || '');
           localStorage.setItem('alalai_user', JSON.stringify(result.data));
+        } else {
+          // Session expired or missing: drop the cached account so we never
+          // act as signed-in without a valid session + CSRF token.
+          setCsrfToken('');
+          setUser({ isGuest: true, name: 'Guest' });
+          try { localStorage.removeItem('alalai_user'); } catch {}
         }
       })
       .catch(() => {});

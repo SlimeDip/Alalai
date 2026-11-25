@@ -1012,91 +1012,6 @@ body {
   resize: vertical;
 }
 
-.application-editor {
-  border: 2px solid #111827;
-  border-radius: 4px;
-  padding: 24px;
-  background-color: #fff;
-}
-
-.application-form-heading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  border-bottom: 2px solid #111827;
-  padding-bottom: 14px;
-  margin-bottom: 18px;
-  text-align: center;
-  color: #111827;
-  text-transform: uppercase;
-  letter-spacing: .04em;
-}
-
-.application-form-heading span {
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.application-form-heading strong {
-  font-size: 20px;
-  font-weight: 900;
-}
-
-.application-section-heading {
-  margin: 20px 0 14px;
-  padding: 0 0 8px;
-  border: 0;
-  border-bottom: 1px solid var(--slate-200);
-  background: transparent;
-  color: var(--slate-900);
-  font-size: 13px;
-  font-weight: 900;
-  letter-spacing: .04em;
-  text-transform: uppercase;
-}
-
-.application-editor .form-grid {
-  gap: 0;
-  border-left: 1px solid #64748b;
-  border-top: 1px solid #64748b;
-}
-
-.application-editor .form-group {
-  gap: 4px;
-  margin: 0;
-  padding: 9px 10px;
-  border-right: 1px solid #64748b;
-  border-bottom: 1px solid #64748b;
-  background-color: #fff;
-}
-
-.application-editor .form-label {
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: .02em;
-  text-transform: uppercase;
-}
-
-.application-editor .form-input,
-.application-editor .form-select,
-.application-editor .form-textarea {
-  min-height: 34px;
-  padding: 6px 8px;
-  border: 0;
-  border-radius: 0;
-  font-size: 14px;
-}
-
-.application-editor .form-textarea {
-  min-height: 86px;
-}
-
-.application-editor > .form-group {
-  border: 1px solid #64748b;
-  padding: 9px 10px;
-}
-
 .image-upload-preview {
   display: flex;
   align-items: flex-start;
@@ -3238,16 +3153,6 @@ html.dark .subsidy-outcome--no-current-match { background: #303030; border-color
 html.dark .recovery-case-error,
 html.dark .recovery-dashboard-error { background: var(--error-bg); border-color: var(--error-border); color: var(--error-text); }
 
-html.dark .application-editor,
-html.dark .application-editor .form-group,
-html.dark .application-editor .form-input,
-html.dark .application-editor .form-select,
-html.dark .application-editor .form-textarea { background-color: #242424; }
-html.dark .application-editor,
-html.dark .application-form-heading { border-color: #737373; color: #f8fafc; }
-html.dark .application-editor .form-grid,
-html.dark .application-editor .form-group,
-html.dark .application-editor > .form-group { border-color: #525252; }
 html.dark .application-form-heading { border-bottom-color: #737373; }
 html.dark .application-section-heading { color: #f8fafc; border-bottom-color: #525252; }
 
@@ -3586,4 +3491,145 @@ html.dark .recovery-case-disclaimer { background: #292929; }
 }
 @media (max-width: 640px) {
   .recovery-dashboard-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Damage assessment step 2 polish */
+.upload-drop {
+  position: relative; display: flex; align-items: center; justify-content: center; gap: 12px;
+  padding: 22px 16px; color: var(--slate-700); text-align: center; cursor: pointer;
+  background: var(--slate-50); border: 2px dashed var(--slate-200); border-radius: var(--radius-md);
+  transition: border-color .15s, background .15s;
+}
+.upload-drop svg { color: var(--primary); flex: none; }
+.upload-drop:hover, .upload-drop:focus-within { border-color: var(--primary); background: var(--info-bg); }
+.upload-drop-input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.form-group .field-help { margin: 0 0 10px; }
+.form-group > .form-label { margin-bottom: 8px; }
+.optional-details { margin-top: 20px; padding: 14px 16px; border: 1px solid var(--slate-200); border-style: solid; border-radius: var(--radius-md); background: var(--white); }
+.optional-details summary { cursor: pointer; font-weight: 700; font-size: 15px; color: var(--slate-900); }
+.optional-details[open] summary { margin-bottom: 4px; }
+.form-actions-row { margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--slate-100); }
+
+/* ======================================================= */
+/* MOBILE POLISH (phones)                                   */
+/* ======================================================= */
+@media (max-width: 800px) {
+  .recovery-case-workspace-grid .recovery-case-placeholder { display: none; }
+}
+
+@media (max-width: 640px) {
+  /* Sticky header so navigation is always reachable */
+  .app-main-canvas > header {
+    position: sticky; top: 0; z-index: 50;
+    margin: -14px -14px 0; padding: 10px 14px 0;
+    background: var(--card-bg);
+  }
+  .modern-navbar { margin-bottom: 14px; padding-bottom: 10px; }
+
+  /* Landing */
+  .landing-hero-simple { margin-bottom: 36px; }
+  .landing-section { margin-bottom: 28px; }
+  .landing-steps { gap: 10px; }
+  .landing-step {
+    display: grid; grid-template-columns: 24px 1fr; column-gap: 12px; row-gap: 2px;
+    padding: 14px 16px; border-radius: var(--radius-md);
+  }
+  .landing-step > svg { grid-row: 1 / span 2; margin-top: 2px; }
+  .landing-step h3 { margin: 0; font-size: 15px; }
+  .landing-step p { font-size: 13px; }
+  .landing-step-num { display: none; }
+  .landing-faq { padding: 16px 12px; border-radius: var(--radius-md); }
+
+  /* Dashboard */
+  .recovery-dashboard { gap: 16px; }
+  .recovery-hero { flex-direction: row; align-items: center; flex-wrap: nowrap; padding: 14px; }
+  .recovery-hero-icon { display: none; }
+  .recovery-hero .card-heading-lg { font-size: 19px; }
+  .recovery-hero .btn { width: auto; flex: none; }
+  .recovery-dashboard-grid { gap: 12px; }
+  .recovery-dashboard-grid .modern-card,
+  .recovery-dashboard .modern-card { margin-bottom: 0; }
+  .recovery-dashboard-metric { gap: 10px; }
+  .recovery-dashboard-metric-heading h2 { font-size: 16px; }
+  .dash-quick-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .dash-quick { padding: 14px; }
+  .dash-checklist ol { font-size: 14px; }
+
+  /* Recovery cases */
+  .recovery-case-workspace { gap: 14px; }
+  .recovery-case-workspace-header { padding: 0; }
+  .recovery-case-workspace-header .recovery-case-actions { flex-direction: row; flex-wrap: nowrap; }
+  .recovery-case-workspace-header .recovery-case-actions .btn { flex: 1; width: auto; justify-content: center; }
+  .recovery-case-list-panel { padding: 14px 12px; }
+  .recovery-case-list-heading { margin-bottom: 12px; }
+  .recovery-case-detail .modern-card-header { flex-direction: column; gap: 8px; }
+  .recovery-case-detail .badge { align-self: flex-start; }
+  .recovery-case-secondary-actions { grid-template-columns: 1fr; }
+  .recovery-case-facts { grid-template-columns: 1fr 1fr; }
+
+  /* Assessment */
+  .disaster-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
+  .disaster-card { min-height: 0; padding: 12px; gap: 6px; }
+  .disaster-card svg { width: 24px; height: 24px; }
+  .disaster-card strong { font-size: 14px; line-height: 1.25; }
+  .disaster-card span { font-size: 12px; }
+  .upload-drop { padding: 18px 12px; }
+  .form-actions-row .btn-lg { min-height: 48px; }
+
+  /* Footer */
+  .site-footer { margin-top: 32px; padding-top: 22px; }
+  .site-footer-grid { grid-template-columns: 1fr 1fr; gap: 18px 16px; }
+  .site-footer-brand { grid-column: 1 / -1; }
+  .site-footer-brand p { max-width: none; margin-top: 4px; }
+  .site-footer-legal { margin-top: 18px; padding-top: 12px; }
+}
+
+@media (max-width: 640px) {
+  input[type="date"], .form-input[type="date"] { width: 100%; min-width: 0; -webkit-appearance: none; appearance: none; }
+  .modern-card > div[style*="justify-content: flex-end"] .btn { width: 100%; justify-content: center; }
+  .recovery-dashboard-metric .btn-sm { width: 100%; justify-content: center; }
+}
+
+/* ======================================================= */
+/* APPLICATION EDITOR (sectioned form)                      */
+/* ======================================================= */
+.application-editor { display: flex; flex-direction: column; gap: 16px; }
+.app-section {
+  padding: 20px 22px; background: var(--white);
+  border: 1px solid var(--slate-200); border-radius: var(--radius-lg);
+}
+.app-section-title {
+  display: flex; align-items: center; gap: 10px; margin: 0 0 16px;
+  font-size: 16px; font-weight: 800; color: var(--slate-900);
+}
+.app-section-title span {
+  display: inline-grid; place-items: center; width: 24px; height: 24px; flex: none;
+  border-radius: 50%; font-size: 12px; font-weight: 800;
+  color: var(--primary); background: var(--info-bg); border: 1px solid var(--info-border);
+}
+.app-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 14px 16px; }
+.app-stack { display: flex; flex-direction: column; gap: 14px; margin-top: 14px; }
+.application-editor .form-group { margin: 0; gap: 6px; }
+.application-editor .form-label { font-size: 13px; font-weight: 700; text-transform: none; letter-spacing: 0; }
+.application-editor .form-input,
+.application-editor .form-select,
+.application-editor .form-textarea { min-height: 44px; padding: 10px 12px; font-size: 15px; }
+.application-editor .form-textarea { min-height: 96px; }
+.application-editor .field-help { margin: 0; }
+.application-editor .location-toolbar { margin-bottom: 12px; }
+.application-editor .location-toolbar + div { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 14px 16px; }
+.application-editor .location-toolbar + div .form-group { margin: 0; }
+.app-optional > summary { cursor: pointer; font-weight: 700; font-size: 15px; color: var(--slate-900); }
+.app-optional[open] > summary { margin-bottom: 16px; }
+.app-final { background: var(--slate-50); }
+.app-confirm label { display: flex; align-items: flex-start; gap: 12px; cursor: pointer; line-height: 1.45; }
+.app-confirm input[type="checkbox"] { width: 20px; height: 20px; margin-top: 2px; flex: none; }
+.app-confirm .field-help { display: block; margin-top: 4px; }
+.app-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--slate-200); }
+@media (max-width: 640px) {
+  .app-section { padding: 16px 14px; border-radius: var(--radius-md); }
+  .app-grid { grid-template-columns: 1fr; }
+  .application-editor .location-toolbar + div { grid-template-columns: 1fr; }
+  .app-actions { flex-direction: column-reverse; }
+  .app-actions .btn { width: 100%; justify-content: center; }
 }
