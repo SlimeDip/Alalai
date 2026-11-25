@@ -234,13 +234,23 @@ function CaseDetail({
   );
   const canPrepare = Boolean(recoveryCase.case_id);
 
+  const [tab, setTab] = useState('overview');
+  const hasCost = recoveryCase.estimated_cost_min != null || recoveryCase.estimated_cost_max != null;
+  const programCount = eligibility.state === 'results' ? eligibility.programs.length : 0;
+  const tabs = [
+    { id: 'overview', label: 'Overview' },
+    { id: 'losses', label: 'Losses', count: losses.length },
+    ...(programCount > 0 ? [{ id: 'programs', label: 'Programs', count: programCount }] : []),
+    { id: 'applications', label: 'Applications', count: applicationsLoading ? null : relatedApplications.length }
+  ];
+
   return (
     <article className="modern-card recovery-case-detail">
       <button type="button" className="btn btn-secondary btn-sm recovery-case-back" onClick={onBack}>
         <ArrowLeft size={14} /> Back to cases
       </button>
 
-      <header className="modern-card-header">
+      <header className="recovery-case-head">
         <div>
           <h2 className="card-heading-lg">{recoveryCase.disaster_type || 'Disaster type not recorded'}</h2>
           <p className="recovery-case-detail-meta"><MapPin size={14} aria-hidden /> {location}</p>
@@ -254,136 +264,151 @@ function CaseDetail({
         </span>
       </header>
 
+      <div className="recovery-case-stats">
+        <div>
+          <span>Estimated cost</span>
+          <strong>
+            {hasCost
+              ? `${recoveryCase.estimated_cost_min != null ? peso(recoveryCase.estimated_cost_min) : '—'} – ${recoveryCase.estimated_cost_max != null ? peso(recoveryCase.estimated_cost_max) : '—'}`
+              : 'Not available'}
+          </strong>
+        </div>
+        <div><span>Loss records</span><strong>{losses.length}</strong></div>
+        <div><span>Applications</span><strong>{applicationsLoading ? '…' : relatedApplications.length}</strong></div>
+      </div>
       <p role="note" className="recovery-case-disclaimer">
-        Amounts are unverified estimates from reported information, not official decisions.
+        Amounts are unverified estimates, not official decisions.
       </p>
 
       <div className="recovery-case-action-layout">
         <button
           type="button"
-          className="btn btn-primary recovery-case-action-primary"
+          className="btn btn-primary"
           disabled={!canPrepare}
           onClick={() => onPrepareApplication(recoveryCase)}
         >
-          Prepare an application for this case <ArrowRight size={15} />
+          Prepare application <ArrowRight size={15} />
         </button>
-        <div className="recovery-case-secondary-actions">
-          <button
-            type="button"
-            className="btn btn-secondary"
-            disabled={!canPrepare}
-            onClick={() => onNavigateToWorkflow('aid', recoveryCase.case_id)}
-          >
-            <HandCoins size={15} /> Open aid ledger for this case
-          </button>
-        </div>
+        <button
+          type="button"
+          className="btn btn-secondary"
+          disabled={!canPrepare}
+          onClick={() => onNavigateToWorkflow('aid', recoveryCase.case_id)}
+        >
+          <HandCoins size={15} /> Aid ledger
+        </button>
       </div>
 
-      <Section id="household" title="Household information">
-        {hasHouseholdDetails ? (
-          <dl className="recovery-case-facts">
-            {Object.entries(detail.household).map(([field, value]) => (
-              <div key={field}><dt>{HOUSEHOLD_LABELS[field] || field}</dt><dd>{value}</dd></div>
-            ))}
-          </dl>
-        ) : <p className="card-subheading">No household or contact details were saved with this case.</p>}
-      </Section>
+      <div className="recovery-case-tabs" role="tablist" aria-label="Case sections">
+        {tabs.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            role="tab"
+            aria-selected={tab === t.id}
+            className={`recovery-case-tab${tab === t.id ? ' is-active' : ''}`}
+            onClick={() => setTab(t.id)}
+          >
+            {t.label}{t.count != null && <span>{t.count}</span>}
+          </button>
+        ))}
+      </div>
 
-      <Section id="assessment" title="Assessment summary">
-        {hasAssessmentDetails ? (
+      <div className="recovery-case-tabpanel" role="tabpanel">
+        {tab === 'overview' && (
           <>
-            {recoveryCase.damage_summary && <p>{recoveryCase.damage_summary}</p>}
-            {recoveryCase.raw_description && (
-              <p className="card-subheading" style={{ whiteSpace: 'pre-wrap' }}>
-                <strong>Reported damage details: </strong>{recoveryCase.raw_description}
-              </p>
-            )}
-            {(recoveryCase.estimated_cost_min != null || recoveryCase.estimated_cost_max != null) && (
-              <p>
-                <strong>Estimated recovery cost (not verified): </strong>
-                {recoveryCase.estimated_cost_min != null ? peso(recoveryCase.estimated_cost_min) : '—'}
-                {' – '}
-                {recoveryCase.estimated_cost_max != null ? peso(recoveryCase.estimated_cost_max) : '—'}
-              </p>
+            <div className="recovery-case-block">
+              <h3>Assessment</h3>
+              {hasAssessmentDetails ? (
+                <>
+                  {recoveryCase.damage_summary && <p>{recoveryCase.damage_summary}</p>}
+                  {recoveryCase.raw_description && (
+                    <p className="card-subheading" style={{ whiteSpace: 'pre-wrap' }}>
+                      <strong>Reported: </strong>{recoveryCase.raw_description}
+                    </p>
+                  )}
+                </>
+              ) : <p className="card-subheading">No assessment summary is available.</p>}
+              {detail.damageCategories.length > 0 && (
+                <div className="chip-row">
+                  {detail.damageCategories.map((category, index) => (
+                    <span className="badge badge-agency" key={`${category}-${index}`}>{category}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="recovery-case-block">
+              <h3>Household</h3>
+              {hasHouseholdDetails ? (
+                <dl className="recovery-case-facts">
+                  {Object.entries(detail.household).map(([field, value]) => (
+                    <div key={field}><dt>{HOUSEHOLD_LABELS[field] || field}</dt><dd>{value}</dd></div>
+                  ))}
+                </dl>
+              ) : <p className="card-subheading">No household details were saved.</p>}
+            </div>
+
+            {hasNotes && (
+              <div className="recovery-case-block">
+                <h3>Notes{recoveryCase.urgency ? ` · ${recoveryCase.urgency} urgency` : ''}</h3>
+                {recoveryCase.safety_precautions?.length > 0 && (
+                  <>
+                    <h4>Safety precautions</h4>
+                    <ul>{recoveryCase.safety_precautions.map((item, index) => <li key={index}>{item}</li>)}</ul>
+                  </>
+                )}
+                {recoveryCase.suggested_actions?.length > 0 && (
+                  <>
+                    <h4>Suggested next steps</h4>
+                    <ul>{recoveryCase.suggested_actions.map((item, index) => <li key={index}>{item}</li>)}</ul>
+                  </>
+                )}
+              </div>
             )}
           </>
-        ) : <p className="card-subheading">No assessment summary or estimate is available for this case.</p>}
-        {detail.damageCategories.length > 0 && (
-          <div className="chip-row">
-            {detail.damageCategories.map((category, index) => (
-              <span className="badge badge-agency" key={`${category}-${index}`}>{category}</span>
-            ))}
-          </div>
         )}
-      </Section>
 
-      <Section id="losses" title="Recorded loss categories" count={losses.length} defaultOpen={losses.length > 0}>
-        {losses.length ? (
-          <div className="recovery-case-loss-list">
-            {losses.map((loss, index) => (
-              <div className="flow-card recovery-case-loss" key={loss.loss_record_id || index}>
-                <strong>{loss.item_category || loss.item_name || loss.loss_type || 'Loss category not recorded'}</strong>
-                {loss.condition && <span>Recorded condition: {loss.condition}</span>}
-                {loss.estimated_loss_php != null && (
-                  <span>Estimated loss (not verified): {peso(loss.estimated_loss_php)}</span>
-                )}
-                {loss.description && <p>{loss.description}</p>}
+        {tab === 'losses' && (
+          losses.length ? (
+            <ul className="recovery-case-loss-list">
+              {losses.map((loss, index) => (
+                <li className="recovery-case-loss" key={loss.loss_record_id || index}>
+                  <div>
+                    <strong>{loss.item_category || loss.item_name || loss.loss_type || 'Loss category not recorded'}</strong>
+                    {loss.condition && <span>{loss.condition}</span>}
+                    {loss.description && <p>{loss.description}</p>}
+                  </div>
+                  {loss.estimated_loss_php != null && <b>{peso(loss.estimated_loss_php)}</b>}
+                </li>
+              ))}
+            </ul>
+          ) : <p className="card-subheading">No loss records for this case.</p>
+        )}
+
+        {tab === 'programs' && programCount > 0 && <Recommendations programs={eligibility.programs} />}
+
+        {tab === 'applications' && (
+          <>
+            {applicationsLoading && <p role="status" className="card-subheading">Loading…</p>}
+            {applicationsError && <p role="alert" className="alert alert-error">{applicationsError}</p>}
+            {!applicationsLoading && !applicationsError && relatedApplications.length === 0 && (
+              <p className="card-subheading">No applications linked to this case yet.</p>
+            )}
+            {relatedApplications.map((application) => (
+              <div className="recovery-case-related-application" key={application.id}>
+                <div>
+                  <strong>{application.reference_number}</strong>
+                  <p className="card-subheading">{[application.applicant_name, application.status].filter(Boolean).join(' · ')}</p>
+                </div>
+                <button type="button" className="btn btn-secondary btn-sm" onClick={() => onOpenApplication(application)}>
+                  <FileText size={14} /> Open
+                </button>
               </div>
             ))}
-          </div>
-        ) : <p className="card-subheading">No separate loss records are available for this case.</p>}
-      </Section>
-
-      {hasNotes && (
-        <Section id="notes" title="Assessment notes" defaultOpen={false}>
-          {recoveryCase.urgency && <p><strong>Assessment urgency: </strong>{recoveryCase.urgency}</p>}
-          {recoveryCase.safety_precautions?.length > 0 && (
-            <>
-              <strong>Safety precautions suggested by the assessment</strong>
-              <ul>{recoveryCase.safety_precautions.map((item, index) => <li key={index}>{item}</li>)}</ul>
-            </>
-          )}
-          {recoveryCase.suggested_actions?.length > 0 && (
-            <>
-              <strong>Suggested next steps</strong>
-              <ul>{recoveryCase.suggested_actions.map((item, index) => <li key={index}>{item}</li>)}</ul>
-            </>
-          )}
-        </Section>
-      )}
-
-      {eligibility.state === 'results' && (
-        <Section
-          id="programs"
-          title="Possible program matches"
-          count={eligibility.programs.length}
-        >
-          <Recommendations programs={eligibility.programs} />
-        </Section>
-      )}
-
-      <Section
-        id="applications"
-        title="Applications linked to this case"
-        count={applicationsLoading ? null : relatedApplications.length}
-      >
-        {applicationsLoading && <p role="status" className="card-subheading">Loading…</p>}
-        {applicationsError && <p role="alert" className="alert alert-error">{applicationsError}</p>}
-        {!applicationsLoading && !applicationsError && relatedApplications.length === 0 && (
-          <p className="card-subheading">No saved applications are linked to this case.</p>
+          </>
         )}
-        {relatedApplications.map((application) => (
-          <div className="recovery-case-related-application" key={application.id}>
-            <div>
-              <strong>{application.reference_number}</strong>
-              <p className="card-subheading">{[application.applicant_name, application.status].filter(Boolean).join(' · ')}</p>
-            </div>
-            <button type="button" className="btn btn-secondary btn-sm" onClick={() => onOpenApplication(application)}>
-              <FileText size={14} /> Open application
-            </button>
-          </div>
-        ))}
-      </Section>
+      </div>
     </article>
   );
 }
