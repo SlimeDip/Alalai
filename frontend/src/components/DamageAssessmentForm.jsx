@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   AlertTriangle,
   CheckCircle2,
@@ -60,8 +60,83 @@ const SCREENING_OUTCOME_LABELS = {
   outcomeUnavailable: 'Not screened'
 };
 
+function ProgramDetailsDialog({ program, onClose, onChoose }) {
+  const closeRef = useRef(null);
+  const sections = [
+    ['Why it appeared in screening', program.reasons],
+    ['Information to review or provide', program.missingInformation],
+    ['Conditions and limitations', program.restrictions]
+  ].filter(([, items]) => items.length > 0);
+
+  useEffect(() => {
+    closeRef.current?.focus();
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [onClose]);
+
+  return (
+    <div
+      className="case-dialog-backdrop"
+      onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}
+    >
+      <div
+        className="program-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="program-dialog-title"
+      >
+        <div className="program-dialog-head">
+          <div className="program-dialog-heading">
+            <span className={`subsidy-outcome subsidy-outcome--${program.outcomeClass}`}>
+              {SCREENING_OUTCOME_LABELS[program.outcomeKey] || 'Status unavailable'}
+            </span>
+            <h2 id="program-dialog-title">{program.title || 'Program title unavailable'}</h2>
+          </div>
+          <button
+            type="button"
+            ref={closeRef}
+            className="auth-close-btn"
+            onClick={onClose}
+            aria-label="Close details"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="program-dialog-body">
+          {sections.length === 0 && <p className="field-help">No details were returned for this program.</p>}
+          {sections.map(([label, items]) => (
+            <div key={label} className="program-dialog-section">
+              <h3>{label}</h3>
+              <ul>{items.map((item, index) => <li key={index}>{item}</li>)}</ul>
+            </div>
+          ))}
+        </div>
+
+        <div className="program-dialog-actions">
+          <button type="button" className="btn btn-secondary" onClick={onClose}>{"Close"}</button>
+          {program.outcomeKey !== 'noCurrentMatch' && (
+            <button type="button" className="btn btn-primary" onClick={onChoose}>
+              {"Choose This Program"} <ArrowRight size={15} />
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function DamageAssessmentForm({ user, csrfToken, onSelectSubsidyForApplication, onViewReliefOptions }) {
   const [currentStep, setCurrentStep] = useState(1);
+  const [detailsProgram, setDetailsProgram] = useState(null);
   const [inputMethod, setInputMethod] = useState(null);
 
   const [formData, setFormData] = useState({
@@ -614,21 +689,14 @@ export default function DamageAssessmentForm({ user, csrfToken, onSelectSubsidyF
                       {sub.short_description && (
                         <p className="program-card-desc">{sub.short_description}</p>
                       )}
-                      <details className="program-card-more">
-                        <summary>{"See why it matched and what to prepare"}</summary>
-                        <div className="subsidy-screening-details">
-                          {[
-                            ["Why it appeared in screening", sub.reasons],
-                            ["Information to review or provide", sub.missingInformation],
-                            ["Conditions and limitations", sub.restrictions]
-                          ].map(([label, items]) => items.length > 0 && (
-                            <div key={label}>
-                              <strong>{label}</strong>
-                              <ul>{items.map((item, itemIndex) => <li key={itemIndex}>{item}</li>)}</ul>
-                            </div>
-                          ))}
-                        </div>
-                      </details>
+                      <button
+                        type="button"
+                        className="program-card-more-btn"
+                        aria-haspopup="dialog"
+                        onClick={() => setDetailsProgram(sub)}
+                      >
+                        {"See why it matched and what to prepare"}
+                      </button>
                     </div>
                     {sub.outcomeKey !== 'noCurrentMatch' && (
                       <button
@@ -653,6 +721,22 @@ export default function DamageAssessmentForm({ user, csrfToken, onSelectSubsidyF
             )}
           </div>
         </div>
+      )}
+      {detailsProgram && (
+        <ProgramDetailsDialog
+          program={detailsProgram}
+          onClose={() => setDetailsProgram(null)}
+          onChoose={() => {
+            const program = detailsProgram;
+            setDetailsProgram(null);
+            onSelectSubsidyForApplication({
+              subsidy: program,
+              assessment: result,
+              applicant: formData,
+              returnTab: 'assessment'
+            });
+          }}
+        />
       )}
     </div>
   );
