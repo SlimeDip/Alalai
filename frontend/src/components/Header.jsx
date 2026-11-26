@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import BrandLogo from './BrandLogo';
 import { Menu, X, LogOut, LogIn, User, Moon, Sun, ChevronDown } from 'lucide-react';
 
 export default function Header({
@@ -75,7 +76,7 @@ export default function Header({
           tabIndex={0}
         >
           <div className="brand-logo">
-            {"Alalai"}
+            <BrandLogo />
           </div>
         </div>
 
@@ -169,7 +170,7 @@ export default function Header({
         <div className="mobile-drawer-overlay" style={{ display: 'block' }} onClick={() => setMobileMenuOpen(false)}>
           <div className="mobile-drawer" onClick={(e) => e.stopPropagation()}>
             <div className="mobile-drawer-top">
-              <div className="brand-logo">{"Alalai"}</div>
+              <div className="brand-logo"><BrandLogo /></div>
               <button type="button" onClick={() => setMobileMenuOpen(false)} className="icon-btn" aria-label="Close menu">
                 <X size={20} />
               </button>

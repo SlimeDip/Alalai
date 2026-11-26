@@ -4276,3 +4276,16 @@ html.dark .alert-success { background: var(--success-bg); border-color: var(--su
   .program-dialog-actions { flex-direction: column-reverse; }
   .program-dialog-actions .btn { width: 100%; justify-content: center; min-height: 46px; }
 }
+
+/* ---------- Brand logo ---------- */
+.brand-img { display: inline-flex; align-items: center; line-height: 0; }
+.brand-img img { display: block; width: auto; }
+.brand-img--wordmark img { height: 38px; }
+.brand-img--icon img { height: 34px; }
+.brand-img-dark { display: none !important; }
+html.dark .brand-img-light { display: none !important; }
+html.dark .brand-img-dark { display: block !important; }
+.brand-logo { display: inline-flex; align-items: center; }
+.site-footer-brand .brand-img { margin-bottom: 8px; }
+@media (max-width: 768px) { .brand-img--wordmark img { height: 32px; } }
+@media (max-width: 400px) { .brand-img--wordmark img { height: 28px; } }
