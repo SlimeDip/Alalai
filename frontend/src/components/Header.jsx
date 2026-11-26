@@ -135,9 +135,15 @@ export default function Header({
 
           {user && !user.isGuest ? (
             <div className="nav-user-cluster">
-              <button type="button" className="btn-pill-dark" onClick={onOpenProfile}>
+              <button
+                type="button"
+                className="btn-pill-dark nav-user-btn"
+                onClick={onOpenProfile}
+                aria-label={`Profile: ${(user?.name || '').split(' ')[0] || 'Guest'}`}
+                title={user?.name || 'Profile'}
+              >
                 <User size={14} />
-                <span>{(user?.name || '').split(' ')[0] || "Guest"}</span>
+                <span className="nav-user-name">{(user?.name || '').split(' ')[0] || "Guest"}</span>
               </button>
               <button type="button" className="btn btn-secondary btn-sm nav-logout-btn" onClick={onLogout} title={"Sign Out"} aria-label="Sign out">
                 <LogOut size={13} />
@@ -145,9 +151,6 @@ export default function Header({
             </div>
           ) : (
             <div className="nav-user-cluster">
-              <button type="button" className="btn btn-secondary nav-guest-btn" onClick={onContinueAsGuest}>
-                {"Continue as Guest"}
-              </button>
               <button type="button" className="btn-pill-dark" onClick={onOpenLogin}>
                 <LogIn size={14} />
                 {"Sign In"}

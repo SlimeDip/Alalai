@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Printer,
   Save,
@@ -26,6 +26,8 @@ import { getAssessmentEligibilityModel } from '../utils/subsidyPresentation';
 import { createApplicationFormData } from '../utils/applicationForm';
 import LocationFields from './LocationFields';
 
+const PROGRAM_REQUIRED_MESSAGE = 'Choose the aid program this application is for.';
+
 export default function OfficialApplicationView({
   initialData,
   user,
@@ -45,7 +47,20 @@ export default function OfficialApplicationView({
   const [casesError, setCasesError] = useState('');
   const [catalog, setCatalog] = useState([]);
   const [catalogError, setCatalogError] = useState('');
+  const feedbackRef = useRef(null);
   const isAccountUser = Boolean(user && !user.isGuest);
+
+  // Bring the result of Save / Print into view; the message sits at the top of the page, while
+  // the buttons that trigger it are at the bottom, so it would otherwise go unnoticed.
+  useEffect(() => {
+    if (!saveError && !saveSuccess) return;
+    const target = saveError === PROGRAM_REQUIRED_MESSAGE
+      ? document.getElementById('application-program')
+      : feedbackRef.current;
+    if (!target) return;
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (target.id === 'application-program') target.focus({ preventScroll: true });
+  }, [saveError, saveSuccess]);
 
   useEffect(() => {
     let active = true;
@@ -81,7 +96,6 @@ export default function OfficialApplicationView({
   }, [isAccountUser, user]);
 
   const selectedProgram = getApplicationProgram(formData);
-  const PROGRAM_REQUIRED_MESSAGE = 'Choose the aid program this application is for.';
 
   const handleProgramChange = (event) => {
     const title = event.target.value;
@@ -139,7 +153,6 @@ export default function OfficialApplicationView({
     if (!selectedProgram) {
       setSaveError(PROGRAM_REQUIRED_MESSAGE);
       setActiveView('editor');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
     setActiveView('preview');
@@ -257,13 +270,13 @@ export default function OfficialApplicationView({
         </div>
 
         {saveSuccess && (
-          <div role="status" className="alert alert-success">
+          <div role="status" className="alert alert-success" ref={feedbackRef}>
             <CheckCircle2 size={16} />
             <strong>{saveSuccess}</strong>
           </div>
         )}
         {saveError && (
-          <div role="alert" className="alert alert-error">
+          <div role="alert" className="alert alert-error" ref={feedbackRef} tabIndex={-1}>
             {saveError}
           </div>
         )}

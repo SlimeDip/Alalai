@@ -96,6 +96,11 @@ function validateHouseholdMembers(value) {
 function validateApplicationPayload(body, { existing = null, userId } = {}) {
   if (!isRecord(body)) return { error: 'Request body must be a JSON object.' };
 
+  // Saved profiles store the number of children as a number, so accept a whole number here.
+  if (Number.isInteger(body.children_count) && body.children_count >= 0) {
+    body.children_count = String(body.children_count);
+  }
+
   for (const field of stringFields) {
     if (body[field] != null && typeof body[field] !== 'string') {
       return { error: `${field} must be a string.` };

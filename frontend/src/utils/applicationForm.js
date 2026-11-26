@@ -103,12 +103,13 @@ export function createApplicationFormData(initialData, user) {
       profile.spouseName,
       'N/A'
     ),
-    children_count: firstValue(
+    // A saved profile stores this as a number (0 is valid), but the form and server use text.
+    children_count: String(firstValue(
       applicant.childrenCount,
       applicant.children_count,
       profile.childrenCount,
       '0'
-    ),
+    )),
     disaster_type: firstValue(
       applicant.disasterType,
       applicant.disaster_type,

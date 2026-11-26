@@ -345,10 +345,12 @@ export default function LocationFields({
         {/* PUROK / STREET */}
         {includeStreet && (
           <div className="form-group">
-            <label className="form-label">Purok / Street</label>
+            <label className="form-label" htmlFor="purok-street">Purok / Street</label>
             <input
+              id="purok-street"
               type="text"
               name="purokStreet"
+              autoComplete="address-line1"
               placeholder="Purok / House No. / Street"
               value={values.purokStreet || ''}
               onChange={(e) => onChangeField('purokStreet', e.target.value)}

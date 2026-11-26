@@ -198,7 +198,7 @@ export default function SavedApplicationsList({
                     </button>
                   </div>
                 )}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
+                <div className="record-meta">
                   {hasCustomName && (
                     <span style={{ fontSize: 12, color: 'var(--slate-500)' }}>
                       {item.reference_number}
@@ -211,15 +211,17 @@ export default function SavedApplicationsList({
                 </div>
                 <p className="record-program">
                   <HandCoins size={13} aria-hidden />
-                  {program
-                    ? <>For program: <strong>{program}</strong></>
-                    : <span className="record-program-missing">No aid program chosen — open to choose one</span>}
+                  <span>
+                    {program
+                      ? <>For program: <strong>{program}</strong></>
+                      : <span className="record-program-missing">No aid program chosen — open to choose one</span>}
+                  </span>
                 </p>
-                <h4 style={{ fontSize: 15, fontWeight: 600, marginTop: 4 }}>
+                <h4 className="record-applicant">
                   {item.applicant_name}
                 </h4>
-                <p style={{ fontSize: 13, color: 'var(--slate-600)', marginTop: 2 }}>
-                  <MapPin size={13} style={{ display: 'inline', marginRight: 4 }} />
+                <p className="record-location">
+                  <MapPin size={13} aria-hidden />
                   {item.barangay}, {item.city_municipality}, {item.province} • ({item.disaster_type})
                 </p>
               </div>

@@ -4289,3 +4289,87 @@ html.dark .brand-img-dark { display: block !important; }
 .site-footer-brand .brand-img { margin-bottom: 8px; }
 @media (max-width: 768px) { .brand-img--wordmark img { height: 32px; } }
 @media (max-width: 400px) { .brand-img--wordmark img { height: 28px; } }
+
+/* ---------- Header: keep everything inside the bar now that the logo is wider ---------- */
+.brand-block { flex: none; }
+.modern-navbar { gap: 12px; }
+@media (max-width: 1280px) {
+  .brand-img--wordmark img { height: 30px; }
+  .navbar-cta { gap: 8px; }
+  .nav-user-cluster { gap: 6px; }
+  .navbar-links .navbar-link { padding: 8px 12px; }
+}
+@media (max-width: 1100px) {
+  .brand-img--wordmark img { height: 28px; }
+  .navbar-links .navbar-link { padding: 8px 9px; }
+}
+
+/* ---------- Saved applications: tidy mobile cards ---------- */
+.record-program > span { min-width: 0; overflow-wrap: anywhere; }
+.record-program svg { margin-top: 2px; }
+@media (max-width: 640px) {
+  .record-row { flex-direction: column; align-items: stretch; gap: 14px; padding: 14px; }
+  .record-title { font-size: 15px; }
+  .record-actions { flex-wrap: nowrap; width: 100%; }
+  .record-actions .btn-primary { flex: 1 1 auto; justify-content: center; white-space: nowrap; min-height: 44px; }
+  .record-actions .btn-secondary { flex: 0 0 44px; width: 44px; min-height: 44px; padding: 0; justify-content: center; }
+}
+
+/* Header at tablet-landscape widths (nav still shown, just under the 1100px mark): the profile
+   button shows only its icon so the bar never pushes the sign-out button outside the card. */
+@media (min-width: 993px) and (max-width: 1100px) {
+  .nav-user-name { display: none; }
+  .navbar-cta .nav-user-btn { padding: 10px 12px; }
+  .navbar-links .navbar-link { padding: 8px 8px; }
+}
+
+/* ---------- Saved applications: more breathing room ---------- */
+.record-row > div:first-child { display: flex; flex-direction: column; gap: 10px; }
+.record-row .record-program, .record-row .record-title-row { margin: 0; }
+.record-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 10px; }
+.record-meta > span:first-child:not(.badge) { flex-basis: 100%; font-size: 12px; color: var(--slate-500); overflow-wrap: anywhere; }
+.record-applicant { margin: 4px 0 0; font-size: 15px; font-weight: 600; }
+.record-location { display: flex; align-items: flex-start; gap: 6px; margin: 0; font-size: 13px; line-height: 1.45; color: var(--slate-600); }
+.record-location svg { flex: none; margin-top: 2px; }
+@media (max-width: 640px) {
+  .record-row { gap: 18px; padding: 18px 16px; }
+  .record-row > div:first-child { gap: 12px; }
+  .record-actions { gap: 10px; padding-top: 2px; }
+}
+
+/* Hide the scrollbar under the case tabs (still swipe/scroll-able) */
+.recovery-case-tabs { scrollbar-width: none; -ms-overflow-style: none; }
+.recovery-case-tabs::-webkit-scrollbar { display: none; }
+
+/* Case tabs: sideways scroll only, roomier, with edge fades as a scroll cue */
+.recovery-case-tabs-wrap { position: relative; }
+.recovery-case-tabs { overflow-x: auto; overflow-y: hidden; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; gap: 8px; padding: 0 4px; }
+.recovery-case-tab { flex: none; padding: 12px 18px; }
+.recovery-case-tabs-wrap::before, .recovery-case-tabs-wrap::after { content: ""; position: absolute; top: 0; bottom: 1px; width: 36px; pointer-events: none; opacity: 0; transition: opacity .15s; z-index: 1; }
+.recovery-case-tabs-wrap::before { left: 0; background: linear-gradient(to right, var(--card-bg, #fff) 25%, transparent); }
+.recovery-case-tabs-wrap::after { right: 0; background: linear-gradient(to left, var(--card-bg, #fff) 25%, transparent); }
+.recovery-case-tabs-wrap.fade-left::before, .recovery-case-tabs-wrap.fade-right::after { opacity: 1; }
+@media (max-width: 640px) {
+  .recovery-case-tab { flex: none; padding: 12px 16px; font-size: 14px; gap: 6px; }
+  .recovery-case-tab span { padding: 1px 6px; }
+}
+
+/* ---------- Header: fit Guest + Sign In inside the bar at laptop widths (1101-1440px) ---------- */
+.navbar-links { min-width: min-content; }
+@media (min-width: 1101px) and (max-width: 1440px) {
+  .modern-navbar { gap: 10px; }
+  .navbar-links .navbar-link { padding: 8px 10px; font-size: 13.5px; }
+  .navbar-cta { gap: 8px; }
+  .header-tools { gap: 6px; }
+  .navbar-cta .nav-guest-btn, .navbar-cta .btn-pill-light { padding-left: 14px; padding-right: 14px; }
+}
+@media (min-width: 1101px) and (max-width: 1500px) {
+  .nav-guest-btn { display: none; }
+}
+
+/* Remember-me: aligned with the fields above it, with room around it */
+.auth-remember { width: fit-content; margin: 2px 0 8px; padding: 2px 4px 2px 6px; gap: 10px; line-height: 1.3; }
+
+/* Never let the nav pill slide over the logo */
+.brand-block { position: relative; z-index: 1; }
+.modern-navbar { flex-wrap: nowrap; }

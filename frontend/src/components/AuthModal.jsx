@@ -193,10 +193,12 @@ export default function AuthModal({
             </>
           )}
           {isProfile && <div className="auth-field"><label htmlFor="auth-profile-email"><Mail size={14} /> Email address</label><input id="auth-profile-email" type="email" value={formData.email} disabled autoComplete="email" /></div>}
-          <div className="auth-field">
+          {mode !== 'signin' && (
+            <div className="auth-field">
             <label htmlFor="auth-mobile"><Phone size={14} /> Contact number{isProfile ? ' *' : ''}</label>
             <input id="auth-mobile" type="tel" name="mobile" required={isProfile} value={formData.mobile} onChange={update} autoComplete="tel" inputMode="tel" placeholder="0917-000-0000" />
           </div>
+          )}
 
           {(isProfile || mode === 'signup') && (
             <>

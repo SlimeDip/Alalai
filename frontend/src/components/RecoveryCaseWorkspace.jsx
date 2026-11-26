@@ -395,6 +395,20 @@ function CaseDetail({
   const canPrepare = Boolean(recoveryCase.case_id);
 
   const [tab, setTab] = useState('overview');
+  const tabsRef = useRef(null);
+  const [tabEdges, setTabEdges] = useState({ left: false, right: false });
+  const updateTabEdges = useCallback(() => {
+    const el = tabsRef.current;
+    if (!el) return;
+    const left = el.scrollLeft > 2;
+    const right = el.scrollLeft + el.clientWidth < el.scrollWidth - 2;
+    setTabEdges((prev) => (prev.left === left && prev.right === right ? prev : { left, right }));
+  }, []);
+  useEffect(() => {
+    updateTabEdges();
+    window.addEventListener('resize', updateTabEdges);
+    return () => window.removeEventListener('resize', updateTabEdges);
+  }, [updateTabEdges, tab]);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [draftName, setDraftName] = useState('');
@@ -508,19 +522,21 @@ function CaseDetail({
         />
       )}
 
-      <div className="recovery-case-tabs" role="tablist" aria-label="Case sections">
-        {tabs.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            role="tab"
-            aria-selected={tab === t.id}
-            className={`recovery-case-tab${tab === t.id ? ' is-active' : ''}`}
-            onClick={() => setTab(t.id)}
-          >
-            {t.label}{t.count != null && <span>{t.count}</span>}
-          </button>
-        ))}
+      <div className={`recovery-case-tabs-wrap${tabEdges.left ? ' fade-left' : ''}${tabEdges.right ? ' fade-right' : ''}`}>
+        <div className="recovery-case-tabs" role="tablist" aria-label="Case sections" ref={tabsRef} onScroll={updateTabEdges}>
+          {tabs.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              role="tab"
+              aria-selected={tab === t.id}
+              className={`recovery-case-tab${tab === t.id ? ' is-active' : ''}`}
+              onClick={() => setTab(t.id)}
+            >
+              {t.label}{t.count != null && <span>{t.count}</span>}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="recovery-case-tabpanel" role="tabpanel">

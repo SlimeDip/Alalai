@@ -84,3 +84,14 @@ test('attachment checklist reports vault categories without asserting document c
   assert.deepEqual(checklist.damagePhotoFiles.map((document) => document.document_id), ['DOC-PHOTO']);
   assert.deepEqual(checklist.otherFiles.map((document) => document.document_id), ['DOC-OTHER']);
 });
+
+test('a saved profile with zero children fills the form as text, not a number', () => {
+  const form = createApplicationFormData(null, { name: 'Resident', childrenCount: 0 });
+  assert.equal(form.children_count, '0');
+  assert.equal(typeof form.children_count, 'string');
+
+  const noProfileValue = createApplicationFormData(null, { name: 'Resident', childrenCount: '' });
+  assert.equal(noProfileValue.children_count, '');
+
+  assert.equal(createApplicationFormData(null, { isGuest: true }).children_count, '0');
+});

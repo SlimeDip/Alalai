@@ -1430,3 +1430,22 @@ test('recovery cases report their impact and are deleted only by their owner', a
 
   await api(`/api/applications/${linked.result.data.id}`, { method: 'DELETE' });
 });
+
+test('a numeric children_count from a saved profile is accepted', async () => {
+  const created = await api('/api/applications', {
+    method: 'POST',
+    body: {
+      applicant_name: 'Children Count Resident',
+      province: 'Leyte',
+      city_municipality: 'Tacloban',
+      barangay: 'Barangay 1',
+      children_count: 0,
+      applied_subsidies: ['Emergency Cash Transfer (ECT)'],
+      sworn_attestation: true,
+      status: 'DRAFT'
+    }
+  });
+  assert.equal(created.response.status, 201, JSON.stringify(created.result));
+  assert.equal(created.result.data.children_count, '0');
+  await api(`/api/applications/${created.result.data.id}`, { method: 'DELETE' });
+});
