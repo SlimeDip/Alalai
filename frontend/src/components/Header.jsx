@@ -208,9 +208,6 @@ export default function Header({
                 </>
               ) : (
                 <>
-                  <button type="button" className="btn btn-secondary" style={{ width: '100%', marginBottom: '8px' }} onClick={() => { onContinueAsGuest(); setMobileMenuOpen(false); }}>
-                    {"Continue as Guest"}
-                  </button>
                   <button type="button" className="btn-pill-dark" style={{ width: '100%' }} onClick={() => { setMobileMenuOpen(false); onOpenLogin(); }}>
                     {"Sign In"}
                   </button>

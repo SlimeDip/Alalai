@@ -604,7 +604,7 @@ export default function OfficialApplicationView({
             <section className="app-section">
               <h3 className="app-section-title"><span>8</span>{"Farm / fishery details"}</h3>
               <p className="field-help">{"Only for farmers or fisherfolk applying to an agricultural or crop-insurance program."}</p>
-              <div className="form-grid">
+              <div className="app-grid">
                 <div className="form-group">
                   <label className="form-label">RSBSA registration number</label>
                   <input type="text" name="rsbsa_number" value={formData.rsbsa_number} onChange={handleChange} className="form-input" />

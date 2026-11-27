@@ -4373,3 +4373,6 @@ html.dark .brand-img-dark { display: block !important; }
 /* Never let the nav pill slide over the logo */
 .brand-block { position: relative; z-index: 1; }
 .modern-navbar { flex-wrap: nowrap; }
+
+/* Farm / fishery section: space between the helper note and its fields */
+.app-section > .field-help { margin: 0 0 14px; }

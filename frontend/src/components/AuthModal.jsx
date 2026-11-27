@@ -252,7 +252,6 @@ export default function AuthModal({
             <button type="submit" disabled={saving} className="auth-primary-action">
               {saving ? 'Saving...' : isProfile ? 'Save changes' : mode === 'signup' ? 'Create account' : 'Sign in'} <ArrowRight size={16} />
             </button>
-            {!isProfile && <button type="button" className="auth-secondary-action" onClick={() => { onContinueAsGuest(); onClose(); }}>Continue as Guest</button>}
           </div>
         </form>
       </div>

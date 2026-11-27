@@ -161,7 +161,7 @@ router.post('/', optionalAuthenticatedUser, upload.single('damageImage'), async 
       householdSize: Number(householdSize) || 1,
       image: req.file
     });
-    console.log('AI response JSON:', JSON.stringify(assessmentResult, null, 2));
+    // console.log('AI response JSON:', JSON.stringify(assessmentResult, null, 2));
 
     // Generate unique ID
     const assessmentId = 'CASE-' + crypto.randomUUID();
